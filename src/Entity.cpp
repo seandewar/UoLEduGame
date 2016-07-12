@@ -25,3 +25,27 @@ Entity()
 WorldEntity::~WorldEntity()
 {
 }
+
+
+UnitEntity::UnitEntity() :
+WorldEntity()
+{
+}
+
+
+UnitEntity::~UnitEntity()
+{
+}
+
+
+AliveEntity::AliveEntity() :
+UnitEntity(),
+maxHealth_(1),
+health_(1)
+{
+}
+
+
+AliveEntity::~AliveEntity()
+{
+}

@@ -38,10 +38,21 @@ UnitEntity::~UnitEntity()
 }
 
 
-AliveEntity::AliveEntity() :
-UnitEntity(),
+AliveStats::AliveStats() :
 maxHealth_(1),
-health_(1)
+health_(1),
+moveSpeed_(100.0f)
+{
+}
+
+
+AliveStats::~AliveStats()
+{
+}
+
+
+AliveEntity::AliveEntity() :
+UnitEntity()
 {
 }
 

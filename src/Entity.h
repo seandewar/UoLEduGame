@@ -59,6 +59,8 @@ public:
 
     inline void SetSize(const sf::Vector2f& size) { rect_.width = size.x; rect_.height = size.y; }
     inline sf::Vector2f GetSize() const { return sf::Vector2f(rect_.width, rect_.height); }
+
+    inline sf::Vector2f GetCenterPosition() const { return GetPosition() + (GetSize() * 0.5f); }
 };
 
 /**
@@ -74,15 +76,16 @@ public:
 };
 
 /**
-* Base class for an ent which has health and stats.
+* Stats of an AliveEnt.
 */
-class AliveEntity : public UnitEntity
+class AliveStats
 {
     u32 maxHealth_, health_;
+    float moveSpeed_;
 
 public:
-    AliveEntity();
-    virtual ~AliveEntity();
+    AliveStats();
+    virtual ~AliveStats();
 
     inline virtual void SetHealth(u32 health) { health_ = std::min(maxHealth_, health); }
     inline virtual u32 GetHealth() const { return health_; }
@@ -99,4 +102,22 @@ public:
         health_ += std::min(healAmount, UINT32_MAX - health_);
         health_ = std::min(maxHealth_, health_);
     }
+
+    inline virtual void SetMoveSpeed(float speed) { moveSpeed_ = speed; }
+    inline virtual float GetMoveSpeed() const { return moveSpeed_; }
+};
+
+/**
+* Base class for an ent which has health and stats.
+*/
+class AliveEntity : public UnitEntity
+{
+    AliveStats stats_;
+
+public:
+    AliveEntity();
+    virtual ~AliveEntity();
+
+    inline AliveStats& GetStats() { return stats_; }
+    inline const AliveStats& GetStats() const { return stats_; }
 };

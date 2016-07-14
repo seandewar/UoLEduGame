@@ -6,6 +6,9 @@
 #include "DungeonGen.h"
 
 
+const sf::Time Game::FrameTimeStep = sf::microseconds(16667);
+
+
 Game::Game(sf::RenderTarget& target) :
 target_(target)
 {

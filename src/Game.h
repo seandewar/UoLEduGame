@@ -3,6 +3,7 @@
 #include <memory>
 
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Time.hpp>
 
 #include "GameFilesystem.h"
 #include "World.h"
@@ -20,6 +21,8 @@ class Game
 	World world_;
 
 public:
+    static const sf::Time FrameTimeStep;
+
 	Game(sf::RenderTarget& target);
 	~Game();
 

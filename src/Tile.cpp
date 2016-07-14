@@ -5,6 +5,19 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 
 
+const sf::Vector2f BaseTile::TileSize = sf::Vector2f(5.0f, 5.0f);
+
+
+BaseTile::BaseTile()
+{
+}
+
+
+BaseTile::~BaseTile()
+{
+}
+
+
 GenericTile::GenericTile(GenericTileType type) :
 type_(type)
 {
@@ -21,7 +34,7 @@ void GenericTile::Render(sf::RenderTarget& target, const sf::Vector2f& pos)
 	// TODO use a sprite
 	sf::RectangleShape tile;
 	tile.setPosition(pos);
-	tile.setSize(sf::Vector2f(TILE_WIDTH, TILE_HEIGHT));
+    tile.setSize(TileSize);
 
 	switch (type_) {
 	case GenericTileType::CaveFloor:
@@ -102,14 +115,4 @@ bool GenericTile::IsWalkable() const
 	default:
 		return false;
 	}
-}
-
-
-BaseTile::BaseTile()
-{
-}
-
-
-BaseTile::~BaseTile()
-{
 }

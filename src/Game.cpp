@@ -33,9 +33,10 @@ void Game::RunFrame()
 
 	sf::View testView;
 	testView.reset(sf::FloatRect(0.0f, 0.0f, 1.5f * 1024.0f, 1.5f * 768.0f));
+
 	testView.setCenter(sf::Vector2f(
-		TILE_WIDTH * testArea_->GetWidth() * 0.5f,
-		TILE_HEIGHT * testArea_->GetHeight() * 0.5f
+		BaseTile::TileSize.x * testArea_->GetWidth() * 0.5f,
+		BaseTile::TileSize.y * testArea_->GetHeight() * 0.5f
 		));
 	target_.setView(testView);
 

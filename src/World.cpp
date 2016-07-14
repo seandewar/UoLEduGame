@@ -111,9 +111,9 @@ void WorldArea::Render(sf::RenderTarget& target)
 		for (u32 x = 0; x < w_; ++x) {
 			auto& tile = tiles_[GetTileIndex(x, y)];
 
-			if (tile) {
-				tile->Render(target, sf::Vector2f(x * TILE_WIDTH, y * TILE_HEIGHT));
-			}
+            if (tile) {
+                tile->Render(target, sf::Vector2f(x * BaseTile::TileSize.x, y * BaseTile::TileSize.y));
+            }
 		}
 	}
 

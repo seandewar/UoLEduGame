@@ -4,16 +4,14 @@
 
 #include <SFML/Graphics/RenderTarget.hpp>
 
-// TODO have a camera
-#define TILE_WIDTH 5.0f
-#define TILE_HEIGHT 5.0f
-
 /**
 * Represents the base class of a tile inside of the game world.
 */
 class BaseTile
 {
 public:
+    static const sf::Vector2f TileSize;
+
 	BaseTile();
 	virtual ~BaseTile();
 

@@ -83,6 +83,6 @@ public:
 	~DungeonAreaGen();
 
     void ConfigureGenSettings();
-	std::unique_ptr<WorldArea> GenerateNewArea();
+    std::unique_ptr<WorldArea> GenerateNewArea(u32 w = 200, u32 h = 200);
 };
 

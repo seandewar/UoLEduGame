@@ -21,7 +21,8 @@ DungeonAreaGen::~DungeonAreaGen()
 
 bool DungeonAreaGen::CheckRoomRectanglePlaceable(WorldArea& area, u32 topX, u32 topY, u32 w, u32 h) const
 {
-    if (!area.IsTileLocationInBounds(topX + w - 1, topY + h - 1)) {
+    if (!area.IsTileLocationInBounds(topX, topY) ||
+        !area.IsTileLocationInBounds(topX + w - 1, topY + h - 1)) {
         return false;
     }
 
@@ -187,7 +188,8 @@ bool DungeonAreaGen::GenerateStructure(WorldArea& area, Rng& rng, ActiveGenPassa
 
 bool DungeonAreaGen::CheckPassageRectanglePlaceable(const WorldArea& area, u32 topX, u32 topY, u32 w, u32 h) const
 {
-    if (!area.IsTileLocationInBounds(topX + w - 1, topY + h - 1)) {
+    if (!area.IsTileLocationInBounds(topX, topY) ||
+        !area.IsTileLocationInBounds(topX + w - 1, topY + h - 1)) {
         return false;
     }
 
@@ -497,17 +499,20 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
 }
 
 
-std::unique_ptr<WorldArea> DungeonAreaGen::GenerateNewArea()
+std::unique_ptr<WorldArea> DungeonAreaGen::GenerateNewArea(u32 w, u32 h)
 {
     printf("DungeonAreaGen: Generating new area for node '%s'\n", GameFilesystem::GetNodePathString(node_).c_str());
 
     Rng rng(genSeed_);
-	auto area = std::make_unique<WorldArea>(&node_);
+	auto area = std::make_unique<WorldArea>(&node_, w, h);
 
     int genTryCount = 0;
     while (true) {
         ++genTryCount;
+
         currentStructureCount_ = 0;
+        activePassages_.clear();
+        newActivePassages_.clear();
 
         // generate fallback area if we've used all our retries
         if (genTryCount > genMaxRetries_) {

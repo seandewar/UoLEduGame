@@ -106,6 +106,14 @@ public:
     bool CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const;
     bool CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const;
 
+    /**
+    * Returns the time between 0.0f and 1.0f when the collision occurs - multiply by
+    * the velocity to get the vector to subtract from the velocity so that the rectangle
+    * doesn't intersect with the inside of the colliding tile.
+    */
+    float CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
+        BaseTile** outTile, u32* outTileX, u32* outTileY);
+
     EntityId AddEntity(std::unique_ptr<Entity>& ent);
     bool RemoveEntity(EntityId id);
 

@@ -175,13 +175,74 @@ bool WorldArea::CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const
     for (u32 y = topY; y < (topY + h) && y < h_; ++y) {
         for (u32 x = topX; x < (topX + w) && x < w_; ++x) {
             auto tile = GetTile(x, y);
-            if (!tile || !tile->IsWalkable()) {
+
+            if (tile && !tile->IsWalkable()) {
                 return false;
             }
         }
     }
 
     return true;
+}
+
+
+float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
+    BaseTile** outTile, u32* outTileX, u32* outTileY)
+{
+    auto broadphaseRect = Collision::GetAABBSweepBroadphaseRegion(rectInfo);
+
+    auto tilesBroadphaseRect = sf::Rect<u32>(
+        broadphaseRect.left, broadphaseRect.top,
+        std::ceil(broadphaseRect.width), std::ceil(broadphaseRect.height)
+        );
+
+    // impossible to collide with any tiles if broadphase area is out of bounds
+    if (!IsTileLocationInBounds(tilesBroadphaseRect.left, tilesBroadphaseRect.top)) {
+        return 1.0f;
+    }
+
+    // test for the lowest collision time and its corrisponding tile - 
+    // if it's 1.0f after the test then there was no collision
+    float collisionTime = 1.0f;
+    BaseTile* collisionTile = nullptr;
+    u32 collisionTileX, collisionTileY;
+
+    for (u32 y = tilesBroadphaseRect.top; y < (tilesBroadphaseRect.top + tilesBroadphaseRect.height) && y < h_; ++y) {
+        for (u32 x = tilesBroadphaseRect.left; x < (tilesBroadphaseRect.left + tilesBroadphaseRect.width) && x < w_; ++x) {
+            auto tile = GetTile(x, y);
+
+            if (tile && !tile->IsWalkable()) {
+                auto tileRectInfo = CollisionRectInfo(sf::FloatRect(x, y, BaseTile::TileSize.x, BaseTile::TileSize.y));
+
+                auto tileCollisionTime = Collision::RectangleAABBSweep(rectInfo, tileRectInfo, nullptr);
+                if (tileCollisionTime < collisionTime) {
+                    // found a closer collision with a tile
+                    collisionTime = tileCollisionTime;
+                    collisionTile = tile;
+                    collisionTileX = x;
+                    collisionTileY = y;
+                }
+            }
+        }
+    }
+
+    // out tile ptr and coords if collision
+    // and return collision time
+    if (collisionTile) {
+        if (outTile) {
+            *outTile = collisionTile;
+        }
+
+        if (outTileX) {
+            *outTileX = collisionTileX;
+        }
+
+        if (outTileY) {
+            *outTileY = collisionTileY;
+        }
+    }
+
+    return collisionTime;
 }
 
 

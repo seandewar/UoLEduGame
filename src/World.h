@@ -102,6 +102,7 @@ public:
 	}
 
     bool CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const;
+    bool CheckRectangleCollision(u32 topX, u32 topY, u32 w, u32 h) const;
 
     EntityId AddEntity(std::unique_ptr<Entity>& ent);
     bool RemoveEntity(EntityId id);

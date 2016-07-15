@@ -166,6 +166,25 @@ bool WorldArea::CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const
 }
 
 
+bool WorldArea::CheckRectangleCollision(u32 topX, u32 topY, u32 w, u32 h) const
+{
+    if (!IsTileLocationInBounds(topX, topY)) {
+        return false;
+    }
+
+    for (u32 y = topY; y < (topY + h) && y < h_; ++y) {
+        for (u32 x = topX; x < (topX + w) && x < w_; ++x) {
+            auto tile = GetTile(x, y);
+            if (!tile || !tile->IsWalkable()) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
 EntityId WorldArea::AddEntity(std::unique_ptr<Entity>& ent)
 {
     if (ent->assignedArea_ != nullptr) {

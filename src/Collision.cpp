@@ -36,7 +36,7 @@ float Collision::RectangleAABBSweep(const CollisionRectInfo& r1, const Collision
         exitInv.y = r2.rect.top - (r1.rect.top + r1.rect.height);
     }
 
-    // find dist of collision & leaving dist for each axis
+    // find time of collision & leaving dist for each axis
     // prevent divisions by 0 by checking for 0 in the velo components
     sf::Vector2f entry, exit;
 
@@ -58,12 +58,12 @@ float Collision::RectangleAABBSweep(const CollisionRectInfo& r1, const Collision
         exit.y = exitInv.y / r1.velocity.y;
     }
 
-    // find the earliest or latest collision dist
-    float entryDistNormalised = std::max(entry.x, entry.y);
-    float exitDistNormalised = std::min(exit.x, exit.y);
+    // find the earliest or latest collision time
+    float entryTime = std::max(entry.x, entry.y);
+    float exitTime = std::min(exit.x, exit.y);
 
     // no collision
-    if (entryDistNormalised > exitDistNormalised ||
+    if (entryTime > exitTime ||
         entry.x < 0.0f && entry.y < 0.0f ||
         entry.x > 1.0f || entry.y > 1.0f) {
         if (outNormal) {
@@ -94,5 +94,5 @@ float Collision::RectangleAABBSweep(const CollisionRectInfo& r1, const Collision
         }
     }
 
-    return entryDistNormalised;
+    return entryTime;
 }

@@ -29,6 +29,8 @@ add_executable(UoLEduGame
 	src/GameFilesystem.cpp
     src/Entity.h
     src/Entity.cpp
+    src/Player.h
+    src/Player.cpp
 	src/World.h
 	src/World.cpp
 	src/Tile.h

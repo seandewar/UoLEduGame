@@ -187,13 +187,15 @@ bool WorldArea::CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const
 
 
 float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
-    BaseTile** outTile, u32* outTileX, u32* outTileY)
+    BaseTile** outTile, u32* outTileX, u32* outTileY, sf::Vector2f* outNormal)
 {
     auto broadphaseRect = Collision::GetAABBSweepBroadphaseRegion(rectInfo);
 
-    auto tilesBroadphaseRect = sf::Rect<u32>(
-        broadphaseRect.left, broadphaseRect.top,
-        std::ceil(broadphaseRect.width), std::ceil(broadphaseRect.height)
+    auto tilesBroadphaseRect = sf::Rect<u32>(//0, 0, w_, h_);
+        static_cast<u32>(broadphaseRect.left / BaseTile::TileSize.x),
+        static_cast<u32>(broadphaseRect.top / BaseTile::TileSize.y),
+        static_cast<u32>(std::ceil(broadphaseRect.width / BaseTile::TileSize.x)),
+        static_cast<u32>(std::ceil(broadphaseRect.height / BaseTile::TileSize.y))
         );
 
     // impossible to collide with any tiles if broadphase area is out of bounds
@@ -206,21 +208,27 @@ float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInf
     float collisionTime = 1.0f;
     BaseTile* collisionTile = nullptr;
     u32 collisionTileX, collisionTileY;
+    sf::Vector2f collisionNormal;
 
-    for (u32 y = tilesBroadphaseRect.top; y < (tilesBroadphaseRect.top + tilesBroadphaseRect.height) && y < h_; ++y) {
-        for (u32 x = tilesBroadphaseRect.left; x < (tilesBroadphaseRect.left + tilesBroadphaseRect.width) && x < w_; ++x) {
+    for (u32 y = tilesBroadphaseRect.top; y <= (tilesBroadphaseRect.top + tilesBroadphaseRect.height) && y < h_; ++y) {
+        for (u32 x = tilesBroadphaseRect.left; x <= (tilesBroadphaseRect.left + tilesBroadphaseRect.width) && x < w_; ++x) {
             auto tile = GetTile(x, y);
 
             if (tile && !tile->IsWalkable()) {
-                auto tileRectInfo = CollisionRectInfo(sf::FloatRect(x, y, BaseTile::TileSize.x, BaseTile::TileSize.y));
+                auto tileRectInfo = CollisionRectInfo(sf::FloatRect(
+                    x * BaseTile::TileSize.x, y * BaseTile::TileSize.y,
+                    BaseTile::TileSize.x, BaseTile::TileSize.y
+                    ));
 
-                auto tileCollisionTime = Collision::RectangleAABBSweep(rectInfo, tileRectInfo, nullptr);
+                sf::Vector2f tileCollisionNormal;
+                auto tileCollisionTime = Collision::RectangleAABBSweep(rectInfo, tileRectInfo, &tileCollisionNormal);
                 if (tileCollisionTime < collisionTime) {
                     // found a closer collision with a tile
                     collisionTime = tileCollisionTime;
                     collisionTile = tile;
                     collisionTileX = x;
                     collisionTileY = y;
+                    collisionNormal = tileCollisionNormal;
                 }
             }
         }
@@ -239,6 +247,10 @@ float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInf
 
         if (outTileY) {
             *outTileY = collisionTileY;
+        }
+
+        if (outNormal) {
+            *outNormal = collisionNormal;
         }
     }
 

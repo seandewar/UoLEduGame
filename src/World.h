@@ -112,7 +112,8 @@ public:
     * doesn't intersect with the inside of the colliding tile.
     */
     float CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
-        BaseTile** outTile, u32* outTileX, u32* outTileY);
+        BaseTile** outTile = nullptr, u32* outTileX = nullptr, u32* outTileY = nullptr,
+        sf::Vector2f* outNormal = nullptr);
 
     EntityId AddEntity(std::unique_ptr<Entity>& ent);
     bool RemoveEntity(EntityId id);

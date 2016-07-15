@@ -62,10 +62,11 @@ float Collision::RectangleAABBSweep(const CollisionRectInfo& r1, const Collision
     float entryTime = std::max(entry.x, entry.y);
     float exitTime = std::min(exit.x, exit.y);
 
-    // no collision
+    // check for no collisions
     if (entryTime > exitTime ||
         entry.x < 0.0f && entry.y < 0.0f ||
-        entry.x > 1.0f || entry.y > 1.0f) {
+        entry.x < 0.0f && (r1.rect.left + r1.rect.width < r2.rect.left || r1.rect.left > r2.rect.left + r2.rect.width) ||
+        entry.y < 0.0f && (r1.rect.top + r1.rect.height < r2.rect.top || r1.rect.top > r2.rect.top + r2.rect.height)) {
         if (outNormal) {
             *outNormal = sf::Vector2f();
         }

@@ -191,7 +191,7 @@ float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInf
 {
     auto broadphaseRect = Collision::GetAABBSweepBroadphaseRegion(rectInfo);
 
-    auto tilesBroadphaseRect = sf::Rect<u32>(//0, 0, w_, h_);
+    auto tilesBroadphaseRect = sf::Rect<u32>(
         static_cast<u32>(broadphaseRect.left / BaseTile::TileSize.x),
         static_cast<u32>(broadphaseRect.top / BaseTile::TileSize.y),
         static_cast<u32>(std::ceil(broadphaseRect.width / BaseTile::TileSize.x)),

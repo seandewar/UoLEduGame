@@ -1,13 +1,15 @@
 #include "Player.h"
 
 #include <SFML/Window/Keyboard.hpp>
-
 #include <SFML/Graphics/RectangleShape.hpp> // TODO debug
+
+#include "World.h"
 
 
 PlayerEntity::PlayerEntity() :
 AliveEntity()
 {
+    SetSize(BaseTile::TileSize * 0.9f); // TODO debug?
 }
 
 
@@ -23,17 +25,46 @@ void PlayerEntity::Tick()
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
         moveDir.y -= 1.0f;
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
         moveDir.y += 1.0f;
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         moveDir.x -= 1.0f;
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
         moveDir.x += 1.0f;
     }
 
-    // TODO
+    auto velocity = moveDir * GetStats().GetMoveSpeed();
+
+    // TODO test
+    BaseTile* collidedTile = nullptr;
+    u32 collidedTileX, collidedTileY;
+    sf::Vector2f collisionNormal;
+
+    auto collisionTime = GetAssignedArea()->CheckEntRectTileSweepCollision(
+        CollisionRectInfo(GetRectangle(), sf::Vector2f(velocity.x, 0.0f)),
+        &collidedTile, &collidedTileX, &collidedTileY, &collisionNormal
+        );
+
+    if (collisionTime != 1.0f) {
+        printf("collision x!\n");
+    }
+
+    velocity.x *= std::max(0.0f, collisionTime - 0.01f);
+    SetPosition(GetPosition() + sf::Vector2f(velocity.x, 0.0f));
+
+    collisionTime = GetAssignedArea()->CheckEntRectTileSweepCollision(
+        CollisionRectInfo(GetRectangle(), sf::Vector2f(0.0f, velocity.y)),
+        &collidedTile, &collidedTileX, &collidedTileY, &collisionNormal
+        );
+
+    if (collisionTime != 1.0f) {
+        printf("collision y!\n");
+    }
+
+    velocity.y *= std::max(0.0f, collisionTime - 0.01f);
+    SetPosition(GetPosition() + sf::Vector2f(0.0f, velocity.y));
 }
 
 

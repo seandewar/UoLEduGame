@@ -4,6 +4,7 @@
 
 #include "GameFilesystemGen.h"
 #include "DungeonGen.h"
+#include "Player.h" // TODO test
 
 
 const sf::Time Game::FrameTimeStep = sf::microseconds(16667);
@@ -20,6 +21,12 @@ target_(target)
 	testArea_ = std::move(dgen.GenerateNewArea());
 
 	world_.SetCurrentArea(testArea_.get());
+
+    auto pid = testArea_->AddEntity(static_cast<std::unique_ptr<Entity>>(std::make_unique<PlayerEntity>()));
+    static_cast<PlayerEntity*>(testArea_->GetEntity(pid))->SetPosition(sf::Vector2f(
+        BaseTile::TileSize.x * testArea_->GetWidth() * 0.5f,
+        BaseTile::TileSize.y * testArea_->GetHeight() * 0.5f
+        ));
 }
 
 

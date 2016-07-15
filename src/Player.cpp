@@ -47,10 +47,6 @@ void PlayerEntity::Tick()
         &collidedTile, &collidedTileX, &collidedTileY, &collisionNormal
         );
 
-    if (collisionTime != 1.0f) {
-        printf("collision x!\n");
-    }
-
     velocity.x *= std::max(0.0f, collisionTime - 0.01f);
     SetPosition(GetPosition() + sf::Vector2f(velocity.x, 0.0f));
 
@@ -58,10 +54,6 @@ void PlayerEntity::Tick()
         CollisionRectInfo(GetRectangle(), sf::Vector2f(0.0f, velocity.y)),
         &collidedTile, &collidedTileX, &collidedTileY, &collisionNormal
         );
-
-    if (collisionTime != 1.0f) {
-        printf("collision y!\n");
-    }
 
     velocity.y *= std::max(0.0f, collisionTime - 0.01f);
     SetPosition(GetPosition() + sf::Vector2f(0.0f, velocity.y));

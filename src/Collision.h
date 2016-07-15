@@ -25,6 +25,15 @@ class Collision
 {
 public:
     /**
+    * Gets the approximate region where an AABB sweep collision may occur for the given
+    * rectangle. Only rectangles within the rect area returned should be checked for
+    * an AABB sweeping collision with the rectangle r provided as an essential optimisation.
+    *
+    * Credit to: http://www.gamedev.net/page/resources/_/technical/game-programming/swept-aabb-collision-detection-and-response-r3084
+    */
+    static sf::FloatRect GetAABBSweepBroadphaseRegion(const CollisionRectInfo& r);
+
+    /**
     * Does an AABB sweep using the two rectangles r1 and r2.
     * A normalised distance between 0.0f and 1.0f is returned.
     * indicating where the collision took place.

@@ -166,7 +166,7 @@ bool WorldArea::CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const
 }
 
 
-bool WorldArea::CheckRectangleCollision(u32 topX, u32 topY, u32 w, u32 h) const
+bool WorldArea::CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const
 {
     if (!IsTileLocationInBounds(topX, topY)) {
         return false;

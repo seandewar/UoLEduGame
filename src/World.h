@@ -9,6 +9,7 @@
 #include "Types.h"
 #include "Tile.h"
 #include "Entity.h"
+#include "Collision.h"
 
 class GameFilesystemNode;
 
@@ -19,6 +20,7 @@ class WorldArea
 {
 	const u32 w_, h_;
 	const GameFilesystemNode* relatedNode_;
+
 	std::vector<std::unique_ptr<BaseTile>> tiles_;
 
     EntityId nextEntId_;
@@ -102,7 +104,7 @@ public:
 	}
 
     bool CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const;
-    bool CheckRectangleCollision(u32 topX, u32 topY, u32 w, u32 h) const;
+    bool CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const;
 
     EntityId AddEntity(std::unique_ptr<Entity>& ent);
     bool RemoveEntity(EntityId id);

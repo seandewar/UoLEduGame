@@ -1,6 +1,18 @@
 #include "Collision.h"
 
 
+sf::FloatRect Collision::GetAABBSweepBroadphaseRegion(const CollisionRectInfo& r)
+{
+    sf::FloatRect broadphaseRect;
+    broadphaseRect.left = r.velocity.x > 0.0f ? r.rect.left : r.rect.left + r.velocity.x;
+    broadphaseRect.top = r.velocity.y > 0.0f ? r.rect.top : r.rect.top + r.velocity.y;
+    broadphaseRect.width = r.velocity.x > 0.0f ? r.velocity.x + r.rect.width : r.rect.width - r.velocity.x;
+    broadphaseRect.height = r.velocity.y > 0.0f ? r.velocity.y + r.rect.height : r.rect.height - r.velocity.y;
+
+    return broadphaseRect;
+}
+
+
 float Collision::RectangleAABBSweep(const CollisionRectInfo& r1, const CollisionRectInfo& r2, sf::Vector2f* outNormal)
 {
     // find distance between rects on their near and far sides

@@ -27,6 +27,8 @@ add_executable(UoLEduGame
 	src/GameFilesystemGen.cpp
 	src/GameFilesystem.h
 	src/GameFilesystem.cpp
+    src/Collision.h
+    src/Collision.cpp
     src/Entity.h
     src/Entity.cpp
     src/Player.h

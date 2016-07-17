@@ -1,0 +1,35 @@
+17th
+----
+
+Collision with ents func
+Game view follow Player entity (toggleable for debug)
+Game view only render tiles and ents in view
+Entity Sprites
+Tiles Sprites
+Stair Entity for Up & Down Floors
+DungeonGen Spawn Stair Entity
+Viganett Darkness around screen
+
+OPTIONAL
+--------
+DebugShapes -> DebugRenderables instead...
+std::forward or macro for passing unique_ptr for Ents and Tiles
+
+18th
+----
+
+GameFilesystemGen finish
+Chest entity and sprites (work on Item class afterwards)
+Item class and Chest + Items
+DungeonGen spawn chests depending on files in game fs
+Basic Enemy Entity that follows
+
+19th, 20th, 21st?
+----
+
+Different Enemy Ents
+Objective system + floor nav
+Procedural Item gen
+Procedural ent stats based on objective and seed
+Questions for each item
+Boss?

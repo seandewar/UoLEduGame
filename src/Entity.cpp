@@ -31,10 +31,10 @@ void WorldEntity::MoveWithCollision(const sf::Vector2f& d)
 {
     auto area = GetAssignedArea();
     if (area) {
-        sf::Vector2f dMove;
-        area->TryCollisionRectMove(GetRectangle(), d, &dMove);
+        sf::Vector2f newPos;
+        area->TryCollisionRectMove(GetRectangle(), d, &newPos);
 
-        Move(dMove);
+        SetPosition(newPos);
     }
 }
 
@@ -53,7 +53,7 @@ UnitEntity::~UnitEntity()
 AliveStats::AliveStats() :
 maxHealth_(1),
 health_(1),
-moveSpeed_(1.0f)
+moveSpeed_(50.0f)
 {
 }
 

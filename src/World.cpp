@@ -282,11 +282,11 @@ float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInf
 }
 
 
-bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndDisplacement,
+bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndPos,
     BaseTile** outCollidedTile, u32* outCollidedTileX, u32* outCollidedTileY)
 {
-    // this will hold the final displacement when we're done calculating it
-    sf::Vector2f dFinal = d;
+    // this will hold the final pos of r when we're done calcing it
+    sf::Vector2f endPos = sf::Vector2f(r.left + d.x, r.top + d.y);
 
     // this will hold info about the tile collision if there was one
     BaseTile* collidedTile = nullptr;
@@ -328,14 +328,8 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
                 auto tile = GetTile(x, y);
 
                 if (tile && !tile->IsWalkable()) {
-                    // calc the final displacement for our x stepping depending on what
-                    // side of the tile we hit
-                    if (d.x >= 0.0f) {
-                        dFinal.x = x * BaseTile::TileSize.x - r.width - r.left;
-                    }
-                    else {
-                        dFinal.x = r.left - (x + 1) * BaseTile::TileSize.x;
-                    }
+                    // calc the final pos on x depending on our displacement's dir in x
+                    endPos.x = (d.x >= 0.0f ? x * BaseTile::TileSize.x - r.width : (x + 1) * BaseTile::TileSize.x);
 
                     // mark this tile as collided for now,
                     // y stepping may still find the final collision
@@ -352,13 +346,13 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
     sf::FloatRect yCollisionRegion;
 
     if (d.y >= 0.0f) {
-        yCollisionRegion.left = r.left + dFinal.x;
+        yCollisionRegion.left = endPos.x;
         yCollisionRegion.top = r.top + r.height;
         yCollisionRegion.width = r.width;
         yCollisionRegion.height = d.y;
     }
     else {
-        yCollisionRegion.left = r.left + dFinal.x;
+        yCollisionRegion.left = endPos.x;
         yCollisionRegion.top = r.top + d.y;
         yCollisionRegion.width = r.width;
         yCollisionRegion.height = -d.y;
@@ -384,14 +378,8 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
                 auto tile = GetTile(x, y);
 
                 if (tile && !tile->IsWalkable()) {
-                    // calc the final displacement for our y stepping depending on what
-                    // side of the tile we hit
-                    if (d.y >= 0.0f) {
-                        dFinal.y = y * BaseTile::TileSize.y - r.height - r.top;
-                    }
-                    else {
-                        dFinal.y = r.top - (y + 1) * BaseTile::TileSize.y;
-                    }
+                    // calc the final pos on y depending on our displacement's dir in y
+                    endPos.y = (d.y >= 0.0f ? y * BaseTile::TileSize.y - r.width : (y + 1) * BaseTile::TileSize.y);
 
                     // mark this tile as collided, regardless of whether we collided in x
                     collidedTile = tile;
@@ -408,22 +396,30 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
         (xTileEndX - xTileStartX) * BaseTile::TileSize.x, (xTileEndY - xTileStartY) * BaseTile::TileSize.y));
     xCollisionDbg->setPosition(xTileStartX * BaseTile::TileSize.x, xTileStartY * BaseTile::TileSize.y);
     xCollisionDbg->setFillColor(sf::Color::Transparent);
-    xCollisionDbg->setOutlineColor(sf::Color::Red);
+    xCollisionDbg->setOutlineColor(sf::Color(255, 0, 0, 150));
     xCollisionDbg->setOutlineThickness(-1.0f);
 
     std::unique_ptr<sf::Shape> yCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
         (yTileEndX - yTileStartX) * BaseTile::TileSize.x, (yTileEndY - yTileStartY) * BaseTile::TileSize.y));
     yCollisionDbg->setPosition(yTileStartX * BaseTile::TileSize.x, yTileStartY * BaseTile::TileSize.y);
     yCollisionDbg->setFillColor(sf::Color::Transparent);
-    yCollisionDbg->setOutlineColor(sf::Color::Yellow);
+    yCollisionDbg->setOutlineColor(sf::Color(0, 0, 255, 150));
     yCollisionDbg->setOutlineThickness(-1.0f);
+
+    if (collidedTile) {
+        std::unique_ptr<sf::Shape> tileCollisionDbg = std::make_unique<sf::RectangleShape>(BaseTile::TileSize);
+        tileCollisionDbg->setPosition(collidedTileX * BaseTile::TileSize.x, collidedTileY * BaseTile::TileSize.y);
+        tileCollisionDbg->setFillColor(sf::Color(0, 255, 0, 150));
+
+        AddDebugShape(Game::FrameTimeStep, tileCollisionDbg);
+    }
 
     AddDebugShape(Game::FrameTimeStep, xCollisionDbg);
     AddDebugShape(Game::FrameTimeStep, yCollisionDbg);
 
     // out info and return
-    if (outEndDisplacement) {
-        *outEndDisplacement = dFinal;
+    if (outEndPos) {
+        *outEndPos = endPos;
     }
 
     if (collidedTile) {

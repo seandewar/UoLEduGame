@@ -154,15 +154,15 @@ public:
     * with any unwalkable tiles along the way.
     * Returns false if the rectangle r collides with a tile on the way.
     *
-    * outEndDisplacement writes a displacement where there would be no collisions with other tiles
-    * on the way. If true was returned, this displacement will be equal to d. If false was returned,
-    * this displacement will be displacement needed to make r touch the colliding tile without intersecting
-    * it.
+    * outEndPos writes the position along displacement d where there were no collisions on the way.
+    * If true was returned, this position will be equal to the position of r + d. If false was returned,
+    * this position will be the last position where r is not intersecting any tiles (but is touching the
+    * colliding tile).
     *
     * If false was returned, outCollidedTile, outCollidedTileX and outCollidedTileY is written to with the
     * corrisponding colliding tile's info.
     */
-    bool TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndDisplacement,
+    bool TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndPos,
         BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
 
     EntityId AddEntity(std::unique_ptr<Entity>& ent);

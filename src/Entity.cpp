@@ -27,6 +27,18 @@ WorldEntity::~WorldEntity()
 }
 
 
+void WorldEntity::MoveWithCollision(const sf::Vector2f& d)
+{
+    auto area = GetAssignedArea();
+    if (area) {
+        sf::Vector2f dMove;
+        area->TryCollisionRectMove(GetRectangle(), d, &dMove);
+
+        Move(dMove);
+    }
+}
+
+
 UnitEntity::UnitEntity() :
 WorldEntity()
 {

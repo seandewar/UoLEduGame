@@ -5,6 +5,8 @@
 #include <unordered_map>
 
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Shape.hpp>
+#include <SFML/System/Time.hpp>
 
 #include "Types.h"
 #include "Tile.h"
@@ -18,6 +20,29 @@ class GameFilesystemNode;
 */
 class WorldArea
 {
+    struct DebugShapeInfo
+    {
+        sf::Time timeLeft;
+        std::unique_ptr<sf::Shape> shape;
+
+        DebugShapeInfo(const sf::Time& time, std::unique_ptr<sf::Shape>& shape) :
+            timeLeft(time),
+            shape(std::move(shape))
+        { }
+
+        DebugShapeInfo(DebugShapeInfo&& other) :
+            timeLeft(other.timeLeft),
+            shape(std::move(other.shape))
+        { }
+
+        inline DebugShapeInfo& operator=(DebugShapeInfo&& other)
+        {
+            timeLeft = other.timeLeft;
+            shape = std::move(other.shape);
+            return *this;
+        }
+    };
+
 	const u32 w_, h_;
 	const GameFilesystemNode* relatedNode_;
 
@@ -25,6 +50,8 @@ class WorldArea
 
     EntityId nextEntId_;
     std::unordered_map<EntityId, std::unique_ptr<Entity>> ents_;
+
+    std::vector<DebugShapeInfo> debugShapes_;
 
     inline std::size_t GetTileIndex(u32 x, u32 y) const { return (y * w_) + x; }
 
@@ -34,6 +61,13 @@ class WorldArea
 public:
 	WorldArea(const GameFilesystemNode* relatedNode, u32 w = 200, u32 h = 200);
 	~WorldArea();
+
+    inline void AddDebugShape(const sf::Time& timeToDraw, std::unique_ptr<sf::Shape>& shape)
+    {
+        if (shape) {
+            debugShapes_.emplace_back(timeToDraw, shape);
+        }
+    }
 
     inline bool IsTileLocationInBounds(u32 x, u32 y) const { return x < w_ && y < h_; }
 
@@ -114,6 +148,22 @@ public:
     float CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
         BaseTile** outTile = nullptr, u32* outTileX = nullptr, u32* outTileY = nullptr,
         sf::Vector2f* outNormal = nullptr);
+
+    /**
+    * Returns true if the rectangle r is able to move with displacement d without colliding
+    * with any unwalkable tiles along the way.
+    * Returns false if the rectangle r collides with a tile on the way.
+    *
+    * outEndDisplacement writes a displacement where there would be no collisions with other tiles
+    * on the way. If true was returned, this displacement will be equal to d. If false was returned,
+    * this displacement will be displacement needed to make r touch the colliding tile without intersecting
+    * it.
+    *
+    * If false was returned, outCollidedTile, outCollidedTileX and outCollidedTileY is written to with the
+    * corrisponding colliding tile's info.
+    */
+    bool TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndDisplacement,
+        BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
 
     EntityId AddEntity(std::unique_ptr<Entity>& ent);
     bool RemoveEntity(EntityId id);

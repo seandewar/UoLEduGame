@@ -28,7 +28,7 @@ Basic Enemy Entity that follows
 ----
 
 Different Enemy Ents
-Objective system + floor nav
+Objective system + [floor nav]
 Procedural Item gen
 Procedural ent stats based on objective and seed
 Questions for each item

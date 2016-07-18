@@ -3,10 +3,10 @@
 #include <random>
 #include <memory>
 #include <array>
+#include <chrono>
 
 #include "Types.h"
 #include "GameFilesystem.h"
-
 
 /**
 * Procedurally generates a UNIX-style virtual filesystem for gameplay
@@ -25,7 +25,7 @@ class GameFilesystemGen
     void GenerateHomeDir(GameFilesystemNode& parent, Rng& rng);
 
 public:
-	GameFilesystemGen(RngInt seed);
+    GameFilesystemGen(RngInt seed = static_cast<RngInt>(std::chrono::system_clock::now().time_since_epoch().count()));
 	~GameFilesystemGen();
 
 	std::unique_ptr<GameFilesystem> GenerateNewFilesystem();

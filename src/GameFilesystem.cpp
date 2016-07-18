@@ -20,6 +20,10 @@ GameFilesystemNode::~GameFilesystemNode()
 
 GameFilesystemNode* GameFilesystemNode::AddChildNode(std::unique_ptr<GameFilesystemNode>& node)
 {
+    if (!IsDirectory()) {
+        throw GameFilesystemException("A node that isn't a directory cannot have children.");
+    }
+
 	auto nodePtr = node.get();
 
 	if (node) {
@@ -106,6 +110,95 @@ GameFilesystem::GameFilesystem()
 
 GameFilesystem::~GameFilesystem()
 {
+}
+
+
+GameFilesystemNode* GameFilesystem::GetNodeFromPathString(const std::string& path)
+{
+    if (!GetRootNode()) {
+        return nullptr;
+    }
+
+    std::size_t pathStrPos = 0;
+    std::string pathNextName;
+    GameFilesystemNode* pathCurrentNode = nullptr;
+    int pathDepth = -1;
+
+    do {
+        bool isLastChar = pathStrPos == path.size() - 1;
+        char c = path[pathStrPos];
+
+        // if we find another slash or we're at the end of the string...
+        if (c == '/' || isLastChar) {
+            if (c == '/' && !isLastChar && path[pathStrPos + 1] == '/') {
+                // POSIX paths are allowed to have multiple slashes representing a single slash.
+                continue;
+            }
+            else if (c != '/') {
+                // if this is not a slash /, then it's the last character, which means
+                // the slash was probably omitted & this is the last char of the next node's
+                // name.
+
+                assert(isLastChar);
+                pathNextName += c;
+            }
+
+            if (pathDepth < 0) {
+                // this is the root node slash at the beginning of the path!
+
+                if (!rootNode_) {
+                    // we don't have any root node assigned - fail
+                    pathCurrentNode = nullptr;
+                    break;
+                }
+                else {
+                    pathCurrentNode = rootNode_.get();
+                    pathDepth = 0;
+                    continue;
+                }
+            }
+            else {
+                // search for a node in pathCurrentNode called pathNextName
+                auto pathNextNode = pathCurrentNode->GetChildNode(pathNextName);
+
+                if (!pathNextNode) {
+                    // no child with that name found
+                    pathCurrentNode = nullptr;
+                    break;
+                }
+                else {
+                    // we have a valid node!
+                    // now make sure that the node is a directory node if
+                    // the current path char was a dir slash!
+
+                    if (c == '/' && !pathNextNode->IsDirectory()) {
+                        // dir slash used on file node - fail
+                        pathCurrentNode = nullptr;
+                        break;
+                    }
+                    else {
+                        pathCurrentNode = pathNextNode;
+                        pathNextName.clear();
+                        ++pathDepth;
+                        continue;
+                    }
+                }
+            }
+        }
+        else {
+            if (pathDepth < 0) {
+                // path does not contain root slash - fail
+                pathCurrentNode = nullptr;
+                break;
+            }
+            else {
+                pathNextName += c;
+                continue;
+            }
+        }
+    } while (pathStrPos++ < path.size());
+
+    return pathCurrentNode;
 }
 
 

@@ -3,17 +3,18 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <chrono>
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shape.hpp>
+#include <SFML/Graphics/View.hpp>
 #include <SFML/System/Time.hpp>
 
 #include "Types.h"
 #include "Tile.h"
 #include "Entity.h"
 #include "Collision.h"
-
-class GameFilesystemNode;
+#include "GameFilesystem.h"
 
 /**
 * Represents an area of the game world (a dungeon floor .etc)
@@ -50,6 +51,8 @@ class WorldArea
 
     EntityId nextEntId_;
     std::unordered_map<EntityId, std::unique_ptr<Entity>> ents_;
+
+    sf::View renderView_;
 
     std::vector<DebugShapeInfo> debugShapes_;
 
@@ -141,15 +144,6 @@ public:
     bool CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const;
 
     /**
-    * Returns the time between 0.0f and 1.0f when the collision occurs - multiply by
-    * the velocity to get the vector to subtract from the velocity so that the rectangle
-    * doesn't intersect with the inside of the colliding tile.
-    */
-    float CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
-        BaseTile** outTile = nullptr, u32* outTileX = nullptr, u32* outTileY = nullptr,
-        sf::Vector2f* outNormal = nullptr);
-
-    /**
     * Returns true if the rectangle r is able to move with displacement d without colliding
     * with any unwalkable tiles along the way.
     * Returns false if the rectangle r collides with a tile on the way.
@@ -177,6 +171,8 @@ public:
     Entity* GetEntity(EntityId id);
     const Entity* GetEntity(EntityId id) const;
 
+    inline sf::View& GetRenderView() { return renderView_; }
+
 	inline const GameFilesystemNode* GetRelatedNode() const { return relatedNode_; }
 
 	inline u32 GetWidth() const { return w_; }
@@ -188,16 +184,21 @@ public:
 */
 class World
 {
+    GameFilesystem& areaFs_;
+
+    std::unordered_map<std::string, std::unique_ptr<WorldArea>> areas_;
 	WorldArea* currentArea_;
 
 public:
-	World();
+    World(GameFilesystem& areaFs);
 	~World();
 
 	void Tick();
 	void Render(sf::RenderTarget& target);
 
-	inline void SetCurrentArea(WorldArea* area) { currentArea_ = area; }
-	inline WorldArea* GetCurrentArea() { return currentArea_; }
+    bool NavigateToFsArea(const std::string& fsAreaPath);
+
+    inline GameFilesystem& GetAreaFilesystem() { return areaFs_; }
+    inline WorldArea* GetCurrentArea() { return currentArea_; }
 };
 

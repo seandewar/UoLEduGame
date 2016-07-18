@@ -15,10 +15,8 @@ class Game
 {
 	sf::RenderTarget& target_;
 
-	std::unique_ptr<GameFilesystem> testFs_;
-	std::unique_ptr<WorldArea> testArea_;
-
-	World world_;
+    std::unique_ptr<GameFilesystem> worldFs_;
+	std::unique_ptr<World> world_;
 
 public:
     static const sf::Time FrameTimeStep;
@@ -27,5 +25,8 @@ public:
 	~Game();
 
 	void RunFrame();
+
+    void Tick();
+    void Render();
 };
 

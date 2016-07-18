@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <cassert>
 #include <stdexcept>
 
 #include "Types.h"
@@ -75,6 +76,17 @@ public:
 
 	GameFilesystemNode* AddChildNode(std::unique_ptr<GameFilesystemNode>& node);
 	inline GameFilesystemNode* GetChildNode(std::size_t i) { return childNodes_[i].get(); }
+    inline GameFilesystemNode* GetChildNode(const std::string& name)
+    {
+        for (auto& node : childNodes_) {
+            assert(node);
+            if (node->GetName() == name) {
+                return node.get();
+            }
+        }
+
+        return nullptr; // child not found with that name
+    }
 
 	void SetName(const std::string& name);
 	inline std::string GetName() const { return name_; }
@@ -103,10 +115,12 @@ class GameFilesystem
 	std::unique_ptr<GameFilesystemNode> rootNode_;
 
 public:
-	static std::string GetNodePathString(const GameFilesystemNode& node);
+    static std::string GetNodePathString(const GameFilesystemNode& node);
 
 	GameFilesystem();
 	~GameFilesystem();
+
+    GameFilesystemNode* GetNodeFromPathString(const std::string& path);
 
 	GameFilesystemNode* SetRootNode(std::unique_ptr<GameFilesystemNode>& node);
 	inline GameFilesystemNode* GetRootNode() { return rootNode_.get(); }

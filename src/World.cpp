@@ -5,6 +5,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 
 #include "Game.h"
+#include "DungeonGen.h"
 
 
 WorldArea::WorldArea(const GameFilesystemNode* relatedNode, u32 w, u32 h) :
@@ -14,6 +15,7 @@ w_(w),
 h_(h),
 nextEntId_(0)
 {
+    renderView_.setCenter(sf::Vector2f(w_ * BaseTile::TileSize.x, h_ * BaseTile::TileSize.y) * 0.5f);
 }
 
 
@@ -123,6 +125,7 @@ void WorldArea::Tick()
 void WorldArea::Render(sf::RenderTarget& target)
 {
     // TODO render on-screen ONLY!!!!!!!!!!!!!!
+    target.setView(renderView_);
 
     // render tiles
 	for (u32 y = 0; y < h_; ++y) {
@@ -207,78 +210,6 @@ bool WorldArea::CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const
     }
 
     return true;
-}
-
-
-float WorldArea::CheckEntRectTileSweepCollision(const CollisionRectInfo& rectInfo,
-    BaseTile** outTile, u32* outTileX, u32* outTileY, sf::Vector2f* outNormal)
-{
-    auto broadphaseRect = Collision::GetAABBSweepBroadphaseRegion(rectInfo);
-
-    auto tilesBroadphaseRect = sf::Rect<u32>(
-        static_cast<u32>(broadphaseRect.left / BaseTile::TileSize.x),
-        static_cast<u32>(broadphaseRect.top / BaseTile::TileSize.y),
-        static_cast<u32>(std::ceil(broadphaseRect.width / BaseTile::TileSize.x)),
-        static_cast<u32>(std::ceil(broadphaseRect.height / BaseTile::TileSize.y))
-        );
-
-    // impossible to collide with any tiles if broadphase area is out of bounds
-    if (!IsTileLocationInBounds(tilesBroadphaseRect.left, tilesBroadphaseRect.top)) {
-        return 1.0f;
-    }
-
-    // test for the lowest collision time and its corrisponding tile - 
-    // if it's 1.0f after the test then there was no collision
-    float collisionTime = 1.0f;
-    BaseTile* collisionTile = nullptr;
-    u32 collisionTileX, collisionTileY;
-    sf::Vector2f collisionNormal;
-
-    for (u32 y = tilesBroadphaseRect.top; y <= (tilesBroadphaseRect.top + tilesBroadphaseRect.height) && y < h_; ++y) {
-        for (u32 x = tilesBroadphaseRect.left; x <= (tilesBroadphaseRect.left + tilesBroadphaseRect.width) && x < w_; ++x) {
-            auto tile = GetTile(x, y);
-
-            if (tile && !tile->IsWalkable()) {
-                auto tileRectInfo = CollisionRectInfo(sf::FloatRect(
-                    x * BaseTile::TileSize.x, y * BaseTile::TileSize.y,
-                    BaseTile::TileSize.x, BaseTile::TileSize.y
-                    ));
-
-                sf::Vector2f tileCollisionNormal;
-                auto tileCollisionTime = Collision::RectangleAABBSweep(rectInfo, tileRectInfo, &tileCollisionNormal);
-                if (tileCollisionTime < collisionTime) {
-                    // found a closer collision with a tile
-                    collisionTime = tileCollisionTime;
-                    collisionTile = tile;
-                    collisionTileX = x;
-                    collisionTileY = y;
-                    collisionNormal = tileCollisionNormal;
-                }
-            }
-        }
-    }
-
-    // out tile ptr and coords if collision
-    // and return collision time
-    if (collisionTile) {
-        if (outTile) {
-            *outTile = collisionTile;
-        }
-
-        if (outTileX) {
-            *outTileX = collisionTileX;
-        }
-
-        if (outTileY) {
-            *outTileY = collisionTileY;
-        }
-
-        if (outNormal) {
-            *outNormal = collisionNormal;
-        }
-    }
-
-    return collisionTime;
 }
 
 
@@ -503,8 +434,9 @@ const Entity* WorldArea::GetEntity(EntityId id) const
 }
 
 
-World::World() :
-currentArea_(nullptr)
+World::World(GameFilesystem& areaFs) :
+currentArea_(nullptr),
+areaFs_(areaFs)
 {
 }
 
@@ -527,4 +459,47 @@ void World::Render(sf::RenderTarget& target)
 	if (currentArea_) {
 		currentArea_->Render(target);
 	}
+}
+
+
+bool World::NavigateToFsArea(const std::string& fsAreaPath)
+{
+    // check if the area has already been loaded in
+    auto it = areas_.find(fsAreaPath);
+
+    if (it != areas_.end()) {
+        // area is already loaded, change to it
+        currentArea_ = it->second.get();
+        printf("World - current area changed to EXISTING loaded area '%s'\n", fsAreaPath.c_str());
+        return true;
+    }
+    else {
+        // area is not already loaded in, search the fs for the node to
+        // load it in
+
+        auto fsNode = areaFs_.GetNodeFromPathString(fsAreaPath);
+        if (!fsNode) {
+            // area node not found
+            fprintf(stderr, "WARN World - could not change current area to '%s' - fs error!\n", fsAreaPath.c_str());
+            return false;
+        }
+
+        // area not loaded, gen it in
+        DungeonAreaGen areaGen(*fsNode);
+        auto area = areaGen.GenerateNewArea();
+
+        if (!area) {
+            // area gen failed epically
+            fprintf(stderr, "WARN World - could not change current area to '%s' - area gen failed!\n", fsAreaPath.c_str());
+            return false;
+        }
+
+        // add area to loaded list
+        auto result = areas_.emplace(GameFilesystem::GetNodePathString(*fsNode), std::move(area));
+        assert(result.second);
+        printf("World - current area changed to NEW loaded area '%s'\n", fsAreaPath.c_str());
+
+        currentArea_ = result.first->second.get();
+        return true;
+    }
 }

@@ -54,6 +54,9 @@ if (SFML_FOUND)
   target_link_libraries(UoLEduGame ${SFML_LIBRARIES})
 endif()
 
+# copy assets to binary dir
+file(INSTALL assets DESTINATION ${CMAKE_BINARY_DIR})
+
 # install system and compiler runtimes .etc
 include(InstallRequiredSystemLibraries)
 

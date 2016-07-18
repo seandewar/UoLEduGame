@@ -32,8 +32,7 @@ enum class GenericTileType
 	PassageFloor,
     PassageWall,
 	CaveFloor,
-	CaveWall,
-	Pillar
+	CaveWall
 };
 
 /**

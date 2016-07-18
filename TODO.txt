@@ -2,18 +2,18 @@
 ----
 
 Collision with ents func
-Game view follow Player entity (toggleable for debug)
-Game view only render tiles and ents in view
+[Game view follow Player entity (toggleable for debug)]
+[Game view only render tiles and ents in view]
 Entity Sprites
-Tiles Sprites
+[Tiles Sprites]
 Stair Entity for Up & Down Floors
 DungeonGen Spawn Stair Entity
-Viganett Darkness around screen
+[Viganett Darkness around screen]
 
 OPTIONAL
 --------
-DebugShapes -> DebugRenderables instead...
-std::forward or macro for passing unique_ptr for Ents and Tiles
+[DebugShapes -> DebugRenderables instead...]
+[std::forward or macro for passing unique_ptr for Ents] and Tiles
 
 18th
 ----

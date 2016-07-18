@@ -2,10 +2,12 @@
 
 #include <cassert>
 
-#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+
+#include "Game.h"
 
 
-const sf::Vector2f BaseTile::TileSize = sf::Vector2f(5.0f, 5.0f);
+const sf::Vector2f BaseTile::TileSize = sf::Vector2f(16.0f, 16.0f);
 
 
 BaseTile::BaseTile()
@@ -31,42 +33,36 @@ GenericTile::~GenericTile()
 
 void GenericTile::Render(sf::RenderTarget& target, const sf::Vector2f& pos)
 {
-	// TODO use a sprite
-	sf::RectangleShape tile;
-	tile.setPosition(pos);
-    tile.setSize(TileSize);
+    sf::Sprite tileSprite(GameAssets::Get().genericTilesSheet);
+	tileSprite.setPosition(pos);
 
 	switch (type_) {
+    case GenericTileType::RoomFloor:
+        tileSprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
+        break;
+
+    case GenericTileType::RoomWall:
+        tileSprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
+        break;
+
+    case GenericTileType::PassageFloor:
+        tileSprite.setTextureRect(sf::IntRect(32, 0, 16, 16));
+        break;
+
+    case GenericTileType::PassageWall:
+        tileSprite.setTextureRect(sf::IntRect(48, 0, 16, 16));
+        break;
+
 	case GenericTileType::CaveFloor:
-		tile.setFillColor(sf::Color(115, 77, 38));
+        tileSprite.setTextureRect(sf::IntRect(64, 0, 16, 16));
 		break;
 
 	case GenericTileType::CaveWall:
-		tile.setFillColor(sf::Color(77, 51, 25));
-		break;
-
-	case GenericTileType::PassageFloor:
-		tile.setFillColor(sf::Color(100, 100, 100));
-		break;
-
-    case GenericTileType::PassageWall:
-        tile.setFillColor(sf::Color(50, 50, 50));
-        break;
-
-	case GenericTileType::RoomFloor:
-		tile.setFillColor(sf::Color(95, 57, 18));
-		break;
-
-	case GenericTileType::RoomWall:
-		tile.setFillColor(sf::Color(55, 55, 55));
-		break;
-
-	case GenericTileType::Pillar:
-		tile.setFillColor(sf::Color(100, 100, 100));
+        tileSprite.setTextureRect(sf::IntRect(80, 0, 16, 16));
 		break;
 	}
 
-	target.draw(tile);
+	target.draw(tileSprite);
 }
 
 
@@ -91,9 +87,6 @@ std::string GenericTile::GetName() const
 	case GenericTileType::RoomWall:
 		return "Room Wall";
 
-	case GenericTileType::Pillar:
-		return "Pillar";
-
 	default:
 		return "GenericTile";
 	}
@@ -108,7 +101,6 @@ bool GenericTile::IsWalkable() const
 	case GenericTileType::PassageFloor:
 		return true;
 
-	case GenericTileType::Pillar:
 	case GenericTileType::CaveWall:
 	case GenericTileType::RoomWall:
     case GenericTileType::PassageWall:

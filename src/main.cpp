@@ -17,6 +17,16 @@ int main(int argc, char* argv[])
 
 	Game game(window);
 
+    if (!GameAssets::Get().LoadAssets()) {
+        fprintf(stderr, "ERROR - Failed to load game assets! Exiting\n");
+        return EXIT_FAILURE;
+    }
+
+    if (!game.Init()) {
+        fprintf(stderr, "ERROR - Failed to init game! Exiting\n");
+        return EXIT_FAILURE;
+    }
+
 	while (window.isOpen()) {
 		// handle window events
 		sf::Event event;
@@ -25,14 +35,21 @@ int main(int argc, char* argv[])
 			case sf::Event::Closed:
 				window.close();
 				break;
+
+            case sf::Event::KeyPressed:
+                // F1 debug mode toggle
+                if (event.key.code == sf::Keyboard::F1) {
+                    game.SetDebugMode(!game.IsInDebugMode());
+                }
 			}
 		}
 
 		// game loop
-		game.RunFrame();
+        game.Tick();
+        game.Render();
 		window.display();
 	}
 
-
+    printf("Exiting game\n");
     return EXIT_SUCCESS;
 }

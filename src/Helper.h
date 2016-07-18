@@ -2,6 +2,9 @@
 
 #include <random>
 
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Text.hpp>
+
 #include "Types.h"
 
 /**
@@ -46,4 +49,15 @@ public:
 	{
 		return GenerateRandomBool<decltype(rng_)>(rng_, trueProbability);
 	}
+
+    static inline void RenderTextWithDropShadow(sf::RenderTarget& target, const sf::Text& text, 
+        const sf::Vector2f& offset = sf::Vector2f(5.0f, 5.0f), const sf::Color& color = sf::Color(0, 0, 0))
+    {
+        auto textShadow = text;
+        textShadow.move(offset);
+        textShadow.setColor(color);
+
+        target.draw(textShadow);
+        target.draw(text);
+    }
 };

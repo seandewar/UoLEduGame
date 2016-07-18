@@ -4,6 +4,7 @@
 
 #include <SFML/Graphics/RectangleShape.hpp>
 
+#include "Helper.h"
 #include "Game.h"
 #include "DungeonGen.h"
 
@@ -100,36 +101,49 @@ void WorldArea::Tick()
     // tick ents
     for (auto& entEntry : ents_) {
         auto& ent = entEntry.second;
+        assert(ent);
 
         if (!ent->IsMarkedForDeletion()) {
             ent->Tick();
         }
     }
 
-    // tick debug shapes timer
-    for (auto it = debugShapes_.begin(); it != debugShapes_.end();) {
-        auto& shapeInfo = *it;
+    // tick debug renderables timer
+    for (auto it = debugRenderables_.begin(); it != debugRenderables_.end();) {
+        auto& renderableInfo = *it;
 
-        if (shapeInfo.timeLeft > sf::Time::Zero) {
-            shapeInfo.timeLeft -= Game::FrameTimeStep;
+        if (renderableInfo.timeLeft > sf::Time::Zero) {
+            renderableInfo.timeLeft -= Game::FrameTimeStep;
 
             ++it;
         }
         else {
-            it = debugShapes_.erase(it);
+            it = debugRenderables_.erase(it);
         }
     }
 }
 
 
-void WorldArea::Render(sf::RenderTarget& target)
+void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
 {
-    // TODO render on-screen ONLY!!!!!!!!!!!!!!
     target.setView(renderView_);
 
-    // render tiles
-	for (u32 y = 0; y < h_; ++y) {
-		for (u32 x = 0; x < w_; ++x) {
+    // calculate the render region for culling
+    // NOTE: culling doesn't take rotation into account - look at the 
+    // seperate axis theorem to implement that if needed
+    sf::FloatRect renderRegion(renderView_.getCenter() - (renderView_.getSize() * 0.5f), renderView_.getSize());
+
+    // render tiles with culling
+    u32 xTileStart = static_cast<u32>(std::max(0.0f, renderRegion.left / BaseTile::TileSize.x));
+    u32 yTileStart = static_cast<u32>(std::max(0.0f, renderRegion.top / BaseTile::TileSize.y));
+    u32 xTileMax = static_cast<u32>(std::ceil((renderRegion.left + renderRegion.width) / BaseTile::TileSize.x));
+    u32 yTileMax = static_cast<u32>(std::ceil((renderRegion.top + renderRegion.height) / BaseTile::TileSize.y));
+
+    xTileMax = std::min(w_, xTileMax);
+    yTileMax = std::min(h_, yTileMax);
+
+	for (u32 y = yTileStart; y < yTileMax; ++y) {
+		for (u32 x = xTileStart; x < xTileMax; ++x) {
 			auto& tile = tiles_[GetTileIndex(x, y)];
 
             if (tile) {
@@ -138,20 +152,39 @@ void WorldArea::Render(sf::RenderTarget& target)
 		}
 	}
 
-    // render ents
+    // render ents with culling
     for (auto& entEntry : ents_) {
         auto& ent = entEntry.second;
+        assert(ent);
 
         if (!ent->IsMarkedForDeletion()) {
-            ent->Render(target);
+
+            auto worldEnt = dynamic_cast<WorldEntity*>(ent.get());
+            if (!worldEnt || renderRegion.intersects(worldEnt->GetRectangle())) {
+                ent->Render(target);
+            }
         }
     }
 
-    // render debug shapes
-    for (auto& shapeInfo : debugShapes_) {
-        assert(shapeInfo.shape);
-        target.draw(*shapeInfo.shape);
+    if (renderDebug) {
+        // render debug renderables (w/o culling!)
+        for (auto& renderableInfo : debugRenderables_) {
+            assert(renderableInfo.drawable);
+            target.draw(*renderableInfo.drawable);
+
+            if (renderableInfo.IsTransformable()) {
+                auto transformable = dynamic_cast<sf::Transformable*>(renderableInfo.drawable.get());
+                assert(transformable);
+
+                sf::Text debugLabel(renderableInfo.labelString, GameAssets::Get().gameFont, 12);
+                debugLabel.setPosition(transformable->getPosition());
+                debugLabel.setScale(transformable->getScale() * 0.25f);
+                Helper::RenderTextWithDropShadow(target, debugLabel, sf::Vector2f(0.5f, 0.5f));
+            }
+        }
     }
+
+    target.setView(target.getDefaultView());
 }
 
 
@@ -323,14 +356,14 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
     }
 
     // debug draw collision regions
-    std::unique_ptr<sf::Shape> xCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
+    auto xCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
         (xTileEndX - xTileStartX) * BaseTile::TileSize.x, (xTileEndY - xTileStartY) * BaseTile::TileSize.y));
     xCollisionDbg->setPosition(xTileStartX * BaseTile::TileSize.x, xTileStartY * BaseTile::TileSize.y);
     xCollisionDbg->setFillColor(sf::Color::Transparent);
     xCollisionDbg->setOutlineColor(sf::Color(255, 0, 0, 150));
     xCollisionDbg->setOutlineThickness(-1.0f);
 
-    std::unique_ptr<sf::Shape> yCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
+    auto yCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
         (yTileEndX - yTileStartX) * BaseTile::TileSize.x, (yTileEndY - yTileStartY) * BaseTile::TileSize.y));
     yCollisionDbg->setPosition(yTileStartX * BaseTile::TileSize.x, yTileStartY * BaseTile::TileSize.y);
     yCollisionDbg->setFillColor(sf::Color::Transparent);
@@ -338,15 +371,15 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
     yCollisionDbg->setOutlineThickness(-1.0f);
 
     if (collidedTile) {
-        std::unique_ptr<sf::Shape> tileCollisionDbg = std::make_unique<sf::RectangleShape>(BaseTile::TileSize);
+        auto tileCollisionDbg = std::make_unique<sf::RectangleShape>(BaseTile::TileSize);
         tileCollisionDbg->setPosition(collidedTileX * BaseTile::TileSize.x, collidedTileY * BaseTile::TileSize.y);
         tileCollisionDbg->setFillColor(sf::Color(0, 255, 0, 150));
 
-        AddDebugShape(Game::FrameTimeStep, tileCollisionDbg);
+        AddDebugRenderable(Game::FrameTimeStep, tileCollisionDbg, "collidedTile");
     }
 
-    AddDebugShape(Game::FrameTimeStep, xCollisionDbg);
-    AddDebugShape(Game::FrameTimeStep, yCollisionDbg);
+    AddDebugRenderable(Game::FrameTimeStep, xCollisionDbg, "xStep");
+    AddDebugRenderable(Game::FrameTimeStep, yCollisionDbg, "yStep");
 
     // out info and return
     if (outEndPos) {
@@ -371,31 +404,6 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
 }
 
 
-EntityId WorldArea::AddEntity(std::unique_ptr<Entity>& ent)
-{
-    if (ent->assignedArea_ != nullptr) {
-        fprintf(stderr, "WARN!! Entity %s (id: %u, area ptr: %p) already assigned to another area!\n",
-            ent->GetName().c_str(), ent->GetAssignedId(), static_cast<void*>(ent->GetAssignedArea()));
-
-        assert(!"Entity already assigned to area!");
-        return Entity::InvalidId;
-    }
-
-    assert(nextEntId_ != Entity::InvalidId);
-
-    if (!ent || nextEntId_ == Entity::InvalidId) {
-        return Entity::InvalidId;
-    }
-
-    printf("Adding new ent %s (ent id %u)\n", ent->GetName().c_str(), nextEntId_);
-    ent->assignedArea_ = this;
-    ent->assignedId_ = nextEntId_;
-    ents_.emplace(nextEntId_, std::move(ent));
-
-    return nextEntId_++;
-}
-
-
 bool WorldArea::RemoveEntity(EntityId id)
 {
     auto it = ents_.find(id);
@@ -412,29 +420,20 @@ bool WorldArea::RemoveEntity(EntityId id)
 }
 
 
-Entity* WorldArea::GetEntity(EntityId id)
+bool WorldArea::CenterViewOnWorldEntity(EntityId entId)
 {
-    auto it = ents_.find(id);
-    if (it == ents_.end()) {
-        return nullptr;
+    auto ent = dynamic_cast<WorldEntity*>(GetEntity(entId));
+    if (!ent) {
+        return false;
     }
 
-    return it->second.get();
-}
-
-
-const Entity* WorldArea::GetEntity(EntityId id) const
-{
-    auto it = ents_.find(id);
-    if (it == ents_.end()) {
-        return nullptr;
-    }
-
-    return it->second.get();
+    renderView_.setCenter(ent->GetCenterPosition());
+    return true;
 }
 
 
 World::World(GameFilesystem& areaFs) :
+debugMode_(false),
 currentArea_(nullptr),
 areaFs_(areaFs)
 {
@@ -457,7 +456,7 @@ void World::Tick()
 void World::Render(sf::RenderTarget& target)
 {
 	if (currentArea_) {
-		currentArea_->Render(target);
+		currentArea_->Render(target, debugMode_);
 	}
 }
 
@@ -469,8 +468,11 @@ bool World::NavigateToFsArea(const std::string& fsAreaPath)
 
     if (it != areas_.end()) {
         // area is already loaded, change to it
-        currentArea_ = it->second.get();
+        assert(it->second && it->second->GetRelatedNode());
+
         printf("World - current area changed to EXISTING loaded area '%s'\n", fsAreaPath.c_str());
+        currentArea_ = it->second.get();
+        currentAreaFsPath_ = GameFilesystem::GetNodePathString(*currentArea_->GetRelatedNode());
         return true;
     }
     else {
@@ -495,11 +497,13 @@ bool World::NavigateToFsArea(const std::string& fsAreaPath)
         }
 
         // add area to loaded list
-        auto result = areas_.emplace(GameFilesystem::GetNodePathString(*fsNode), std::move(area));
+        auto fsAreaActualPath = GameFilesystem::GetNodePathString(*fsNode);
+        auto result = areas_.emplace(fsAreaActualPath, std::move(area));
         assert(result.second);
-        printf("World - current area changed to NEW loaded area '%s'\n", fsAreaPath.c_str());
 
+        printf("World - current area changed to NEW loaded area '%s'\n", fsAreaPath.c_str());
         currentArea_ = result.first->second.get();
+        currentAreaFsPath_ = fsAreaActualPath;
         return true;
     }
 }

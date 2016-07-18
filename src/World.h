@@ -21,27 +21,45 @@
 */
 class WorldArea
 {
-    struct DebugShapeInfo
+    struct DebugRenderableInfo
     {
+    private:
+        bool isTransformable_;
+
+    public:
         sf::Time timeLeft;
-        std::unique_ptr<sf::Shape> shape;
+        std::unique_ptr<sf::Drawable> drawable;
+        std::string labelString;
 
-        DebugShapeInfo(const sf::Time& time, std::unique_ptr<sf::Shape>& shape) :
+        DebugRenderableInfo(const sf::Time& time, std::unique_ptr<sf::Drawable>& drawable,
+            const std::string& labelString) :
             timeLeft(time),
-            shape(std::move(shape))
-        { }
+            drawable(std::move(drawable)),
+            labelString(labelString)
+        {
+            isTransformable_ = dynamic_cast<sf::Transformable*>(this->drawable.get()) != nullptr;
+        }
 
-        DebugShapeInfo(DebugShapeInfo&& other) :
+        DebugRenderableInfo(DebugRenderableInfo&& other) :
             timeLeft(other.timeLeft),
-            shape(std::move(other.shape))
+            drawable(std::move(other.drawable)),
+            labelString(other.labelString),
+            isTransformable_(other.isTransformable_)
         { }
 
-        inline DebugShapeInfo& operator=(DebugShapeInfo&& other)
+        inline DebugRenderableInfo& operator=(DebugRenderableInfo&& other)
         {
             timeLeft = other.timeLeft;
-            shape = std::move(other.shape);
+            drawable = std::move(other.drawable);
+            labelString = other.labelString;
+            isTransformable_ = other.isTransformable_;
             return *this;
         }
+
+        /**
+        * Whether or not the Renderable inherits from sf::Transformable
+        */
+        inline bool IsTransformable() const { return isTransformable_; }
     };
 
 	const u32 w_, h_;
@@ -54,7 +72,7 @@ class WorldArea
 
     sf::View renderView_;
 
-    std::vector<DebugShapeInfo> debugShapes_;
+    std::vector<DebugRenderableInfo> debugRenderables_;
 
     inline std::size_t GetTileIndex(u32 x, u32 y) const { return (y * w_) + x; }
 
@@ -65,10 +83,14 @@ public:
 	WorldArea(const GameFilesystemNode* relatedNode, u32 w = 200, u32 h = 200);
 	~WorldArea();
 
-    inline void AddDebugShape(const sf::Time& timeToDraw, std::unique_ptr<sf::Shape>& shape)
+    template <typename T>
+    inline void AddDebugRenderable(const sf::Time& timeToDraw, std::unique_ptr<T>& drawable,
+        const std::string& labelString = std::string())
     {
-        if (shape) {
-            debugShapes_.emplace_back(timeToDraw, shape);
+        if (drawable) {
+            // TODO: No idea why I have to perform a move for the conversion...?
+            debugRenderables_.emplace_back(timeToDraw,
+                static_cast<std::unique_ptr<sf::Drawable>>(std::move(drawable)), labelString);
         }
     }
 
@@ -159,18 +181,68 @@ public:
     bool TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndPos,
         BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
 
-    EntityId AddEntity(std::unique_ptr<Entity>& ent);
+    template <typename T>
+    EntityId AddEntity(std::unique_ptr<T>& ent)
+    {
+        if (ent->assignedArea_ != nullptr) {
+            fprintf(stderr, "WARN!! Entity %s (id: %u, area ptr: %p) already assigned to another area!\n",
+                ent->GetName().c_str(), ent->GetAssignedId(), static_cast<void*>(ent->GetAssignedArea()));
+
+            assert(!"Entity already assigned to area!");
+            return Entity::InvalidId;
+        }
+
+        assert(nextEntId_ != Entity::InvalidId);
+
+        if (!ent || nextEntId_ == Entity::InvalidId) {
+            return Entity::InvalidId;
+        }
+
+        printf("Adding new ent %s (ent id %u)\n", ent->GetName().c_str(), nextEntId_);
+        ent->assignedArea_ = this;
+        ent->assignedId_ = nextEntId_;
+        ents_.emplace(nextEntId_, std::move(ent));
+
+        return nextEntId_++;
+    }
+
+    template <typename T, typename... Args>
+    EntityId EmplaceEntity(Args&&... args)
+    {
+        return AddEntity<T>(std::make_unique<T>(std::forward<Args>(args)...));
+    }
+
     bool RemoveEntity(EntityId id);
 
 	void Tick();
-	void Render(sf::RenderTarget& target);
+	void Render(sf::RenderTarget& target, bool renderDebug = false);
 
 	BaseTile* GetTile(u32 x, u32 y);
     const BaseTile* GetTile(u32 x, u32 y) const;
 
-    Entity* GetEntity(EntityId id);
-    const Entity* GetEntity(EntityId id) const;
+    template <typename T = Entity>
+    T* GetEntity(EntityId id)
+    {
+        auto it = ents_.find(id);
+        if (it == ents_.end()) {
+            return nullptr;
+        }
 
+        return static_cast<T*>(it->second.get());
+    }
+
+    template <typename T = Entity>
+    const T* GetEntity(EntityId id) const
+    {
+        auto it = ents_.find(id);
+        if (it == ents_.end()) {
+            return nullptr;
+        }
+
+        return static_cast<const T*>(it->second.get());
+    }
+
+    bool CenterViewOnWorldEntity(EntityId entId);
     inline sf::View& GetRenderView() { return renderView_; }
 
 	inline const GameFilesystemNode* GetRelatedNode() const { return relatedNode_; }
@@ -184,10 +256,13 @@ public:
 */
 class World
 {
+    bool debugMode_;
+
     GameFilesystem& areaFs_;
 
     std::unordered_map<std::string, std::unique_ptr<WorldArea>> areas_;
 	WorldArea* currentArea_;
+    std::string currentAreaFsPath_;
 
 public:
     World(GameFilesystem& areaFs);
@@ -200,5 +275,9 @@ public:
 
     inline GameFilesystem& GetAreaFilesystem() { return areaFs_; }
     inline WorldArea* GetCurrentArea() { return currentArea_; }
+    inline std::string GetCurrentAreaFsPath() const { return currentAreaFsPath_; }
+
+    inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
+    inline bool IsInDebugMode() const { return debugMode_; }
 };
 

@@ -10,7 +10,7 @@
 PlayerEntity::PlayerEntity() :
 AliveEntity()
 {
-    SetSize(BaseTile::TileSize * 0.5f); // TODO debug?
+    SetSize(sf::Vector2f(12.0f, 12.0f)); // TODO debug?
 }
 
 
@@ -37,12 +37,6 @@ void PlayerEntity::Tick()
     }
 
     auto d = moveDir * GetStats().GetMoveSpeed() * Game::FrameTimeStep.asSeconds();
-
-    //std::unique_ptr<sf::Shape> r = std::make_unique<sf::RectangleShape>(GetSize());
-    //r->setPosition(GetPosition());
-    //r->setFillColor(sf::Color::Magenta);
-    //GetAssignedArea()->AddDebugShape(Game::FrameTimeStep, r);
-
     MoveWithCollision(d);
 }
 

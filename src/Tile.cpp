@@ -37,20 +37,33 @@ void GenericTile::Render(sf::RenderTarget& target, const sf::Vector2f& pos)
 	tileSprite.setPosition(pos);
 
 	switch (type_) {
-    case GenericTileType::RoomFloor:
+    case GenericTileType::RoomFloor1:
         tileSprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
         break;
 
+    case GenericTileType::RoomFloor2:
+        tileSprite.setTextureRect(sf::IntRect(0, 16, 16, 16));
+        break;
+
+    case GenericTileType::RoomFloor3:
+        tileSprite.setTextureRect(sf::IntRect(0, 32, 16, 16));
+        break;
+
+    case GenericTileType::RoomFloor4:
+        tileSprite.setTextureRect(sf::IntRect(0, 48, 16, 16));
+        break;
+
+    case GenericTileType::RoomFloor5:
+        tileSprite.setTextureRect(sf::IntRect(0, 64, 16, 16));
+        break;
+
     case GenericTileType::RoomWall:
+    case GenericTileType::PassageWall:
         tileSprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
         break;
 
     case GenericTileType::PassageFloor:
         tileSprite.setTextureRect(sf::IntRect(32, 0, 16, 16));
-        break;
-
-    case GenericTileType::PassageWall:
-        tileSprite.setTextureRect(sf::IntRect(48, 0, 16, 16));
         break;
 
 	case GenericTileType::CaveFloor:
@@ -60,6 +73,9 @@ void GenericTile::Render(sf::RenderTarget& target, const sf::Vector2f& pos)
 	case GenericTileType::CaveWall:
         tileSprite.setTextureRect(sf::IntRect(80, 0, 16, 16));
 		break;
+
+    default:
+        return;
 	}
 
 	target.draw(tileSprite);
@@ -75,7 +91,11 @@ std::string GenericTile::GetName() const
 	case GenericTileType::CaveWall:
 		return "Cave Wall";
 
-	case GenericTileType::RoomFloor:
+	case GenericTileType::RoomFloor1:
+    case GenericTileType::RoomFloor2:
+    case GenericTileType::RoomFloor3:
+    case GenericTileType::RoomFloor4:
+    case GenericTileType::RoomFloor5:
 		return "Room Floor";
 
 	case GenericTileType::PassageFloor:
@@ -97,7 +117,11 @@ bool GenericTile::IsWalkable() const
 {
 	switch (type_) {
 	case GenericTileType::CaveFloor:
-	case GenericTileType::RoomFloor:
+	case GenericTileType::RoomFloor1:
+    case GenericTileType::RoomFloor2:
+    case GenericTileType::RoomFloor3:
+    case GenericTileType::RoomFloor4:
+    case GenericTileType::RoomFloor5:
 	case GenericTileType::PassageFloor:
 		return true;
 

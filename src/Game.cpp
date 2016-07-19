@@ -1,11 +1,13 @@
 #include "Game.h"
 
 #include <SFML/Graphics/Sprite.hpp>
-#include <SFML/Window/Keyboard.hpp>
 
 #include "Helper.h"
 #include "GameFilesystemGen.h"
 #include "Player.h"
+#include "IPlayerUsable.h"
+
+#include "Stairs.h" // TODO DEBUG
 
 
 #define LOAD_FROM_FILE(asset, assetPath) \
@@ -24,6 +26,8 @@ bool GameAssets::LoadAssets()
 
     LOAD_FROM_FILE(viewVignette, "assets/DarknessVignette.png");
     LOAD_FROM_FILE(genericTilesSheet, "assets/GenericTiles.png");
+    LOAD_FROM_FILE(stairsSpriteSheet, "assets/StairSprites.png");
+    LOAD_FROM_FILE(playerSpriteSheet, "assets/PlayerSprites.png");
     return true;
 }
 
@@ -31,9 +35,8 @@ bool GameAssets::LoadAssets()
 const sf::Time Game::FrameTimeStep = sf::microseconds(16667);
 
 
-Game::Game(sf::RenderTarget& target) :
+Game::Game() :
 debugMode_(false),
-target_(target),
 playerId_(Entity::InvalidId)
 {
 }
@@ -53,24 +56,69 @@ bool Game::Init()
 bool Game::SpawnPlayer(const sf::Vector2f& pos)
 {
     playerId_ = GetWorldArea()->EmplaceEntity<PlayerEntity>();
-    auto player = GetWorldArea()->GetEntity<PlayerEntity>(playerId_);
-    if (!player) {
+    if (playerId_ == Entity::InvalidId) {
         return false;
     }
 
-    player->SetPosition(pos);
+    GetPlayerEntity()->SetPosition(pos);
     return true;
 }
 
 
-void Game::ViewFollowPlayer()
+bool Game::RemovePlayer()
 {
-    auto area = GetWorldArea();
-
-    if (area && playerId_ != Entity::InvalidId) {
-        area->GetRenderView().setSize(250.0f, 250.0f);
-        area->CenterViewOnWorldEntity(playerId_);
+    if (!GetWorldArea() || !GetPlayerEntity() ||
+        !GetWorldArea()->RemoveEntity(playerId_)) {
+        playerId_ = Entity::InvalidId;
+        return false;
     }
+
+    playerId_ = Entity::InvalidId;
+    return true;
+}
+
+
+bool Game::ChangeLevel(const std::string& fsNodePath)
+{
+    if (!world_ || !world_->PreloadFsArea(fsNodePath)) {
+        return false;
+    }
+
+    // TODO save player stats so we can restore the player in the next
+    // area.
+    if (GetWorldArea()) {
+        RemovePlayer();
+    }
+
+    if (!world_->NavigateToFsArea(fsNodePath)) {
+        return false;
+    }
+
+    // TODO debug - spawn near staircase!! & remove this stair debug crap
+    auto center = 0.5f * sf::Vector2f(
+        BaseTile::TileSize.x * GetWorldArea()->GetWidth(),
+        BaseTile::TileSize.y * GetWorldArea()->GetHeight()
+        );
+
+    if (!GetWorldArea()->GetRelatedNode()->IsRootDirectoryNode()) {
+        auto upstair = GetWorldArea()->EmplaceEntity<UpStairEntity>();
+        GetWorldArea()->GetEntity<WorldEntity>(upstair)->SetPosition(center);
+    }
+
+    std::string downstairTarget;
+    auto child = GetWorldArea()->GetRelatedNode()->GetChildNode(0);
+    if (child) {
+        downstairTarget = child->GetName();
+    }
+
+    auto downstair = GetWorldArea()->EmplaceEntity<DownStairEntity>(downstairTarget);
+    GetWorldArea()->GetEntity<WorldEntity>(downstair)->SetPosition(center + sf::Vector2f(32.0f, 0.0f));
+
+    if (!SpawnPlayer(center)) {
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -82,22 +130,35 @@ bool Game::NewGame()
     }
 
     world_ = std::make_unique<World>(*worldFs_);
-    if (!world_->NavigateToFsArea("/")) {
+
+    if (!ChangeLevel("/")) {
         return false;
     }
 
-    SpawnPlayer(0.5f * sf::Vector2f(
-        BaseTile::TileSize.x * GetWorldArea()->GetWidth(),
-        BaseTile::TileSize.y * GetWorldArea()->GetHeight()
-        )); // TODO spawn near staircase!!
-
     return true;
+}
+
+
+void Game::ViewFollowPlayer()
+{
+    auto area = GetWorldArea();
+
+    if (area && playerId_ != Entity::InvalidId) {
+        area->GetRenderView().setSize(250.0f, 187.5f);
+        area->CenterViewOnWorldEntity(playerId_);
+    }
 }
 
 
 void Game::Tick()
 {
     if (world_) {
+        // check if we have a scheduled level change
+        if (!scheduledLevelChangeFsNodePath_.empty()) {
+            ChangeLevel(scheduledLevelChangeFsNodePath_);
+            scheduledLevelChangeFsNodePath_.clear();
+        }
+
         world_->SetDebugMode(debugMode_);
         world_->Tick();
 
@@ -106,7 +167,6 @@ void Game::Tick()
             auto area = GetWorldArea();
             if (area) {
                 // center on map and zoom out
-
                 area->GetRenderView().setCenter(
                     0.5f * area->GetWidth() * BaseTile::TileSize.x, 
                     0.5f * area->GetHeight() * BaseTile::TileSize.y
@@ -125,38 +185,54 @@ void Game::Tick()
 }
 
 
-void Game::RenderVignette()
-{
-    sf::Sprite vignetteSprite(GameAssets::Get().viewVignette);
-    vignetteSprite.setScale(
-        target_.getView().getSize().x / vignetteSprite.getTextureRect().width,
-        target_.getView().getSize().y / vignetteSprite.getTextureRect().height
-        );
-
-    target_.draw(vignetteSprite);
-}
-
-
-void Game::RenderUILocation()
+void Game::RenderUILocation(sf::RenderTarget& target)
 {
     if (world_) {
         sf::Text locationText("Location: " + world_->GetCurrentAreaFsPath(), GameAssets::Get().gameFont, 28);
         locationText.setPosition(5.0f, 5.0f);
         locationText.setColor(sf::Color(255, 255, 255));
 
-        Helper::RenderTextWithDropShadow(target_, locationText);
+        Helper::RenderTextWithDropShadow(target, locationText);
     }
 }
 
 
-void Game::Render()
+void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
 {
-    target_.clear();
+    auto area = GetWorldArea();
+    auto player = GetPlayerEntity();
+
+    if (area && player) {
+        auto useable = dynamic_cast<IPlayerUsable*>(area->GetEntity(player->GetTargettedUsableEntity()));
+
+        if (useable) {
+            sf::Text targetUseText(std::string("Press E: ") + useable->GetUseText(), GameAssets::Get().gameFont, 22);
+            targetUseText.setPosition(5.0f, 50.0f);
+            targetUseText.setColor(sf::Color(255, 255, 0));
+
+            Helper::RenderTextWithDropShadow(target, targetUseText);
+        }
+    }
+}
+
+
+void Game::Render(sf::RenderTarget& target)
+{
+    target.clear();
 
     if (world_) {
-        world_->Render(target_);
+        world_->Render(target);
 
-        RenderVignette();
-        RenderUILocation();
+        RenderUILocation(target);
+        RenderUIPlayerUseTargetText(target);
     }
+}
+
+
+void Game::RunFrame(sf::RenderTarget& target)
+{
+    Tick();
+    Render(target);
+    
+    eventKeysPressed_.clear();
 }

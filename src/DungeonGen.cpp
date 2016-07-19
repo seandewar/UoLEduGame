@@ -48,7 +48,7 @@ bool DungeonAreaGen::CheckRoomRectanglePlaceable(WorldArea& area, u32 topX, u32 
 }
 
 
-bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, u32 topX, u32 topY, u32 w, u32 h)
+bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h)
 {
     if (w <= 2 || h <= 2) {
         assert(!"Room size too small (w or h <= 2)! Room will only be generated as walls at this size.");
@@ -59,13 +59,41 @@ bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, u32 topX, u32 topY, u32 w, 
         return false;
     }
 
+    GenericTileType floorType;
+    switch (Helper::GenerateRandomInt(rng, 1, 5)) {
+    case 1:
+        floorType = GenericTileType::RoomFloor1;
+        break;
+
+    case 2:
+        floorType = GenericTileType::RoomFloor2;
+        break;
+
+    case 3:
+        floorType = GenericTileType::RoomFloor3;
+        break;
+
+    case 4:
+        floorType = GenericTileType::RoomFloor4;
+        break;
+
+    case 5:
+        floorType = GenericTileType::RoomFloor5;
+        break;
+
+    default:
+        assert(!"Unknown room floor type!");
+        floorType = GenericTileType::RoomFloor1;
+        break;
+    }
+
     for (u32 y = topY; y < (topY + h) && y < area.GetHeight(); ++y) {
         for (u32 x = topX; x < (topX + w) && x < area.GetWidth(); ++x) {
             if (x == topX || x == (topX + w - 1) || y == topY || y == (topY + h - 1)) {
                 area.PlaceTile(x, y, GenericTileType::RoomWall);
             }
             else {
-                area.SetTile(x, y, GenericTileType::RoomFloor);
+                area.SetTile(x, y, floorType);
             }
         }
     }
@@ -76,7 +104,7 @@ bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, u32 topX, u32 topY, u32 w, 
 
 bool DungeonAreaGen::GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h)
 {
-    if (!PlaceEmptyRoom(area, topX, topY, w, h)) {
+    if (!PlaceEmptyRoom(area, rng, topX, topY, w, h)) {
         return false;
     }
 

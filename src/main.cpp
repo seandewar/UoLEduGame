@@ -15,14 +15,12 @@ int main(int argc, char* argv[])
         );
 	window.setFramerateLimit(targetFrameRate);
 
-	Game game(window);
-
     if (!GameAssets::Get().LoadAssets()) {
         fprintf(stderr, "ERROR - Failed to load game assets! Exiting\n");
         return EXIT_FAILURE;
     }
 
-    if (!game.Init()) {
+    if (!Game::Get().Init()) {
         fprintf(stderr, "ERROR - Failed to init game! Exiting\n");
         return EXIT_FAILURE;
     }
@@ -39,14 +37,15 @@ int main(int argc, char* argv[])
             case sf::Event::KeyPressed:
                 // F1 debug mode toggle
                 if (event.key.code == sf::Keyboard::F1) {
-                    game.SetDebugMode(!game.IsInDebugMode());
+                    Game::Get().SetDebugMode(!Game::Get().IsInDebugMode());
                 }
+
+                Game::Get().AddPressedEventKey(event.key.code);
 			}
 		}
 
 		// game loop
-        game.Tick();
-        game.Render();
+        Game::Get().RunFrame(window);
 		window.display();
 	}
 

@@ -4,16 +4,11 @@
 Collision with ents func
 [Game view follow Player entity (toggleable for debug)]
 [Game view only render tiles and ents in view]
-Entity Sprites
-[Tiles Sprites]
-Stair Entity for Up & Down Floors
+[Entity Sprites (handle in Render())]
+[Tiles Sprites (handle in Render())]
+[Stair Entity for Up & Down Floors]
 DungeonGen Spawn Stair Entity
 [Viganett Darkness around screen]
-
-OPTIONAL
---------
-[DebugShapes -> DebugRenderables instead...]
-[std::forward or macro for passing unique_ptr for Ents] and Tiles
 
 18th
 ----
@@ -30,6 +25,7 @@ Basic Enemy Entity that follows
 Different Enemy Ents
 Objective system + [floor nav]
 Procedural Item gen
-Procedural ent stats based on objective and seed
+Procedural ent alivestats based on objective and seed
 Questions for each item
 Boss?
+AUDIO

@@ -31,8 +31,11 @@ add_executable(UoLEduGame
     src/Collision.cpp
     src/Entity.h
     src/Entity.cpp
+    src/IPlayerUsable.h
     src/Player.h
     src/Player.cpp
+    src/Stairs.h
+    src/Stairs.cpp
 	src/World.h
 	src/World.cpp
 	src/Tile.h

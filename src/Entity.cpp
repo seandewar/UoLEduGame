@@ -53,7 +53,7 @@ UnitEntity::~UnitEntity()
 AliveStats::AliveStats() :
 maxHealth_(1),
 health_(1),
-moveSpeed_(50.0f)
+moveSpeed_(60.0f)
 {
 }
 

@@ -70,6 +70,8 @@ class WorldArea
     EntityId nextEntId_;
     std::unordered_map<EntityId, std::unique_ptr<Entity>> ents_;
 
+    std::vector<std::unique_ptr<sf::Drawable>> frameUiRenderables_;
+
     sf::View renderView_;
 
     std::vector<DebugRenderableInfo> debugRenderables_;
@@ -78,6 +80,8 @@ class WorldArea
 
 	inline std::unique_ptr<BaseTile>& GetTileElement(u32 x, u32 y) { return tiles_[GetTileIndex(x, y)]; }
     inline const std::unique_ptr<BaseTile>& GetTileElement(u32 x, u32 y) const { return tiles_[GetTileIndex(x, y)]; }
+
+    void RenderVignette(sf::RenderTarget& target);
 
 public:
 	WorldArea(const GameFilesystemNode* relatedNode, u32 w = 200, u32 h = 200);
@@ -89,8 +93,23 @@ public:
     {
         if (drawable) {
             // TODO: No idea why I have to perform a move for the conversion...?
+            // probably due to DebugRenderableInfo's definition...
             debugRenderables_.emplace_back(timeToDraw,
                 static_cast<std::unique_ptr<sf::Drawable>>(std::move(drawable)), labelString);
+        }
+    }
+
+    template <typename T>
+    inline void AddDebugRenderable(std::unique_ptr<T>& drawable, const std::string& labelString = std::string())
+    {
+        AddDebugRenderable<T>(Game::FrameTimeStep, drawable, labelString);
+    }
+
+    template <typename T>
+    inline void AddFrameUIRenderable(std::unique_ptr<T>& drawable)
+    {
+        if (drawable) {
+            frameUiRenderables_.emplace_back(std::move(drawable));
         }
     }
 
@@ -181,6 +200,38 @@ public:
     bool TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndPos,
         BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
 
+    /**
+    * Returns a vector of pairs containing EntityId in range along with their squared distance away
+    * from pos as a float.
+    */
+    template <typename T = WorldEntity>
+    std::vector<std::pair<EntityId, float>> GetWorldEntitiesInRange(const sf::Vector2f& pos, float maxDistance) const
+    {
+        std::vector<std::pair<EntityId, float>> result;
+        auto maxDistanceSq = maxDistance * maxDistance;
+
+        for (auto& entInfo : ents_) {
+            auto& ent = entInfo.second;
+            assert(ent);
+
+            auto worldEnt = dynamic_cast<T*>(ent.get());
+            
+            if (worldEnt) {
+                auto worldEntPos = worldEnt->GetCenterPosition();
+                
+                auto aSq = (worldEntPos.x - pos.x) * (worldEntPos.x - pos.x);
+                auto bSq = (worldEntPos.y - pos.y) * (worldEntPos.y - pos.y);
+
+                auto distanceSq = aSq + bSq;
+                if (distanceSq <= maxDistanceSq) {
+                    result.emplace_back(entInfo.first, distanceSq);
+                }
+            }
+        }
+
+        return result;
+    }
+
     template <typename T>
     EntityId AddEntity(std::unique_ptr<T>& ent)
     {
@@ -192,7 +243,10 @@ public:
             return Entity::InvalidId;
         }
 
-        assert(nextEntId_ != Entity::InvalidId);
+        if (nextEntId_ == Entity::InvalidId) {
+            assert(!"No more entity ids left!");
+            throw std::runtime_error("No more entity IDs left!");
+        }
 
         if (!ent || nextEntId_ == Entity::InvalidId) {
             return Entity::InvalidId;
@@ -223,6 +277,10 @@ public:
     template <typename T = Entity>
     T* GetEntity(EntityId id)
     {
+        if (id == Entity::InvalidId) {
+            return nullptr;
+        }
+
         auto it = ents_.find(id);
         if (it == ents_.end()) {
             return nullptr;
@@ -234,6 +292,10 @@ public:
     template <typename T = Entity>
     const T* GetEntity(EntityId id) const
     {
+        if (id == Entity::InvalidId) {
+            return nullptr;
+        }
+
         auto it = ents_.find(id);
         if (it == ents_.end()) {
             return nullptr;
@@ -271,6 +333,10 @@ public:
 	void Tick();
 	void Render(sf::RenderTarget& target);
 
+    /**
+    * Returns true if successfully loaded or already loaded. False otherwise.
+    */
+    bool PreloadFsArea(const std::string& fsAreaPath);
     bool NavigateToFsArea(const std::string& fsAreaPath);
 
     inline GameFilesystem& GetAreaFilesystem() { return areaFs_; }

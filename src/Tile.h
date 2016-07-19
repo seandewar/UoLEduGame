@@ -27,7 +27,11 @@ public:
 */
 enum class GenericTileType
 {
-	RoomFloor,
+	RoomFloor1,
+    RoomFloor2,
+    RoomFloor3,
+    RoomFloor4,
+    RoomFloor5,
 	RoomWall,
 	PassageFloor,
     PassageWall,

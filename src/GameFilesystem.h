@@ -75,8 +75,30 @@ public:
 	~GameFilesystemNode();
 
 	GameFilesystemNode* AddChildNode(std::unique_ptr<GameFilesystemNode>& node);
-	inline GameFilesystemNode* GetChildNode(std::size_t i) { return childNodes_[i].get(); }
+
+	inline GameFilesystemNode* GetChildNode(std::size_t i) 
+    { 
+        return i < childNodes_.size() ? childNodes_[i].get() : nullptr;
+    }
+
     inline GameFilesystemNode* GetChildNode(const std::string& name)
+    {
+        for (auto& node : childNodes_) {
+            assert(node);
+            if (node->GetName() == name) {
+                return node.get();
+            }
+        }
+
+        return nullptr; // child not found with that name
+    }
+
+    inline const GameFilesystemNode* GetChildNode(std::size_t i) const
+    {
+        return i < childNodes_.size() ? childNodes_[i].get() : nullptr;
+    }
+
+    inline const GameFilesystemNode* GetChildNode(const std::string& name) const
     {
         for (auto& node : childNodes_) {
             assert(node);

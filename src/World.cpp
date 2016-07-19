@@ -2,11 +2,13 @@
 
 #include <cassert>
 
+#include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
 #include "Helper.h"
 #include "Game.h"
 #include "DungeonGen.h"
+#include "Player.h"
 
 
 WorldArea::WorldArea(const GameFilesystemNode* relatedNode, u32 w, u32 h) :
@@ -87,6 +89,20 @@ bool WorldArea::RemoveTile(u32 x, u32 y)
 
 void WorldArea::Tick()
 {
+    // tick debug renderables timer
+    for (auto it = debugRenderables_.begin(); it != debugRenderables_.end();) {
+        auto& renderableInfo = *it;
+
+        renderableInfo.timeLeft -= Game::FrameTimeStep;
+
+        if (renderableInfo.timeLeft > sf::Time::Zero) {
+            ++it;
+        }
+        else {
+            it = debugRenderables_.erase(it);
+        }
+    }
+
     // tick tiles
 	for (u32 y = 0; y < h_; ++y) {
 		for (u32 x = 0; x < w_; ++x) {
@@ -107,27 +123,25 @@ void WorldArea::Tick()
             ent->Tick();
         }
     }
+}
 
-    // tick debug renderables timer
-    for (auto it = debugRenderables_.begin(); it != debugRenderables_.end();) {
-        auto& renderableInfo = *it;
 
-        if (renderableInfo.timeLeft > sf::Time::Zero) {
-            renderableInfo.timeLeft -= Game::FrameTimeStep;
+void WorldArea::RenderVignette(sf::RenderTarget& target)
+{
+    sf::Sprite vignetteSprite(GameAssets::Get().viewVignette);
+    vignetteSprite.setScale(
+        target.getView().getSize().x / vignetteSprite.getTextureRect().width,
+        target.getView().getSize().y / vignetteSprite.getTextureRect().height
+        );
 
-            ++it;
-        }
-        else {
-            it = debugRenderables_.erase(it);
-        }
-    }
+    target.draw(vignetteSprite);
 }
 
 
 void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
 {
     target.setView(renderView_);
-
+    
     // calculate the render region for culling
     // NOTE: culling doesn't take rotation into account - look at the 
     // seperate axis theorem to implement that if needed
@@ -147,27 +161,71 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
 			auto& tile = tiles_[GetTileIndex(x, y)];
 
             if (tile) {
-                tile->Render(target, sf::Vector2f(x * BaseTile::TileSize.x, y * BaseTile::TileSize.y));
+                sf::Vector2f tileDrawPos(x * BaseTile::TileSize.x, y * BaseTile::TileSize.y);
+                tile->Render(target, tileDrawPos);
             }
 		}
 	}
 
-    // render ents with culling
+    // render ents with culling - keep player on top of all ents
+    PlayerEntity* playerEnt = nullptr;
+
     for (auto& entEntry : ents_) {
         auto& ent = entEntry.second;
         assert(ent);
 
         if (!ent->IsMarkedForDeletion()) {
-
             auto worldEnt = dynamic_cast<WorldEntity*>(ent.get());
+
             if (!worldEnt || renderRegion.intersects(worldEnt->GetRectangle())) {
-                ent->Render(target);
+                // try cast to PlayerEntity - if it's not a player or WorldEntity then this will
+                // return null
+                auto playerEntCast = dynamic_cast<PlayerEntity*>(worldEnt);
+
+                if (!playerEntCast) {
+                    ent->Render(target);
+                }
+                else {
+                    // this is the player entity, make note of it
+                    // so we can draw the entity on top of the others.
+                    playerEnt = playerEntCast;
+                }
+
+                // if debug, render world ent rect
+                if (renderDebug && worldEnt) {
+                    auto worldEntRectDbg = std::make_unique<sf::RectangleShape>(worldEnt->GetSize());
+                    worldEntRectDbg->setPosition(worldEnt->GetPosition());
+                    worldEntRectDbg->setFillColor(sf::Color(255, 192, 203));
+                    worldEntRectDbg->setOutlineColor(sf::Color(255, 100, 100));
+                    worldEntRectDbg->setOutlineThickness(-1.0f);
+
+                    AddDebugRenderable(worldEntRectDbg,
+                        std::string("id ") + std::to_string(entEntry.first) + "\n" + worldEnt->GetName());
+                }
             }
         }
     }
 
+    // if we found a player ent, render it now so it is on top of all ents
+    if (playerEnt) {
+        playerEnt->Render(target);
+    }
+
+    // render vignette
+    target.setView(target.getDefaultView());
+    RenderVignette(target);
+
+    // render frame ui renderables and clear list when done
+    target.setView(renderView_);
+    for (auto& drawable : frameUiRenderables_) {
+        assert(drawable);
+        target.draw(*drawable);
+    }
+
+    frameUiRenderables_.clear();
+
+    // render debug renderables if debug mode (w/o culling!)
     if (renderDebug) {
-        // render debug renderables (w/o culling!)
         for (auto& renderableInfo : debugRenderables_) {
             assert(renderableInfo.drawable);
             target.draw(*renderableInfo.drawable);
@@ -176,9 +234,9 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
                 auto transformable = dynamic_cast<sf::Transformable*>(renderableInfo.drawable.get());
                 assert(transformable);
 
-                sf::Text debugLabel(renderableInfo.labelString, GameAssets::Get().gameFont, 12);
+                sf::Text debugLabel(renderableInfo.labelString, GameAssets::Get().gameFont);
                 debugLabel.setPosition(transformable->getPosition());
-                debugLabel.setScale(transformable->getScale() * 0.25f);
+                debugLabel.setScale(0.1f, 0.1f);
                 Helper::RenderTextWithDropShadow(target, debugLabel, sf::Vector2f(0.5f, 0.5f));
             }
         }
@@ -355,31 +413,31 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
         }
     }
 
-    // debug draw collision regions
-    auto xCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
-        (xTileEndX - xTileStartX) * BaseTile::TileSize.x, (xTileEndY - xTileStartY) * BaseTile::TileSize.y));
-    xCollisionDbg->setPosition(xTileStartX * BaseTile::TileSize.x, xTileStartY * BaseTile::TileSize.y);
-    xCollisionDbg->setFillColor(sf::Color::Transparent);
-    xCollisionDbg->setOutlineColor(sf::Color(255, 0, 0, 150));
-    xCollisionDbg->setOutlineThickness(-1.0f);
+    //// debug draw collision regions
+    //auto xCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
+    //    (xTileEndX - xTileStartX) * BaseTile::TileSize.x, (xTileEndY - xTileStartY) * BaseTile::TileSize.y));
+    //xCollisionDbg->setPosition(xTileStartX * BaseTile::TileSize.x, xTileStartY * BaseTile::TileSize.y);
+    //xCollisionDbg->setFillColor(sf::Color::Transparent);
+    //xCollisionDbg->setOutlineColor(sf::Color(255, 0, 0, 150));
+    //xCollisionDbg->setOutlineThickness(-1.0f);
 
-    auto yCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
-        (yTileEndX - yTileStartX) * BaseTile::TileSize.x, (yTileEndY - yTileStartY) * BaseTile::TileSize.y));
-    yCollisionDbg->setPosition(yTileStartX * BaseTile::TileSize.x, yTileStartY * BaseTile::TileSize.y);
-    yCollisionDbg->setFillColor(sf::Color::Transparent);
-    yCollisionDbg->setOutlineColor(sf::Color(0, 0, 255, 150));
-    yCollisionDbg->setOutlineThickness(-1.0f);
+    //auto yCollisionDbg = std::make_unique<sf::RectangleShape>(sf::Vector2f(
+    //    (yTileEndX - yTileStartX) * BaseTile::TileSize.x, (yTileEndY - yTileStartY) * BaseTile::TileSize.y));
+    //yCollisionDbg->setPosition(yTileStartX * BaseTile::TileSize.x, yTileStartY * BaseTile::TileSize.y);
+    //yCollisionDbg->setFillColor(sf::Color::Transparent);
+    //yCollisionDbg->setOutlineColor(sf::Color(0, 0, 255, 150));
+    //yCollisionDbg->setOutlineThickness(-1.0f);
 
-    if (collidedTile) {
-        auto tileCollisionDbg = std::make_unique<sf::RectangleShape>(BaseTile::TileSize);
-        tileCollisionDbg->setPosition(collidedTileX * BaseTile::TileSize.x, collidedTileY * BaseTile::TileSize.y);
-        tileCollisionDbg->setFillColor(sf::Color(0, 255, 0, 150));
+    //if (collidedTile) {
+    //    auto tileCollisionDbg = std::make_unique<sf::RectangleShape>(BaseTile::TileSize);
+    //    tileCollisionDbg->setPosition(collidedTileX * BaseTile::TileSize.x, collidedTileY * BaseTile::TileSize.y);
+    //    tileCollisionDbg->setFillColor(sf::Color(0, 255, 0, 150));
 
-        AddDebugRenderable(Game::FrameTimeStep, tileCollisionDbg, "collidedTile");
-    }
+    //    AddDebugRenderable(tileCollisionDbg, "collidedTile");
+    //}
 
-    AddDebugRenderable(Game::FrameTimeStep, xCollisionDbg, "xStep");
-    AddDebugRenderable(Game::FrameTimeStep, yCollisionDbg, "yStep");
+    //AddDebugRenderable(xCollisionDbg, "xStep");
+    //AddDebugRenderable(yCollisionDbg, "yStep");
 
     // out info and return
     if (outEndPos) {
@@ -461,18 +519,13 @@ void World::Render(sf::RenderTarget& target)
 }
 
 
-bool World::NavigateToFsArea(const std::string& fsAreaPath)
+bool World::PreloadFsArea(const std::string& fsAreaPath)
 {
     // check if the area has already been loaded in
     auto it = areas_.find(fsAreaPath);
 
     if (it != areas_.end()) {
-        // area is already loaded, change to it
-        assert(it->second && it->second->GetRelatedNode());
-
-        printf("World - current area changed to EXISTING loaded area '%s'\n", fsAreaPath.c_str());
-        currentArea_ = it->second.get();
-        currentAreaFsPath_ = GameFilesystem::GetNodePathString(*currentArea_->GetRelatedNode());
+        // area is already loaded.
         return true;
     }
     else {
@@ -482,7 +535,7 @@ bool World::NavigateToFsArea(const std::string& fsAreaPath)
         auto fsNode = areaFs_.GetNodeFromPathString(fsAreaPath);
         if (!fsNode) {
             // area node not found
-            fprintf(stderr, "WARN World - could not change current area to '%s' - fs error!\n", fsAreaPath.c_str());
+            fprintf(stderr, "ERR World - could not preload area for '%s' - fs error!\n", fsAreaPath.c_str());
             return false;
         }
 
@@ -492,7 +545,7 @@ bool World::NavigateToFsArea(const std::string& fsAreaPath)
 
         if (!area) {
             // area gen failed epically
-            fprintf(stderr, "WARN World - could not change current area to '%s' - area gen failed!\n", fsAreaPath.c_str());
+            fprintf(stderr, "ERR World - could not preload area for '%s' - area gen failed!\n", fsAreaPath.c_str());
             return false;
         }
 
@@ -501,9 +554,26 @@ bool World::NavigateToFsArea(const std::string& fsAreaPath)
         auto result = areas_.emplace(fsAreaActualPath, std::move(area));
         assert(result.second);
 
-        printf("World - current area changed to NEW loaded area '%s'\n", fsAreaPath.c_str());
-        currentArea_ = result.first->second.get();
-        currentAreaFsPath_ = fsAreaActualPath;
+        printf("World - preloaded area for '%s'\n", fsAreaPath.c_str());
         return true;
     }
+}
+
+
+bool World::NavigateToFsArea(const std::string& fsAreaPath)
+{
+    if (!PreloadFsArea(fsAreaPath)) {
+        fprintf(stderr, "ERR World - could not switch to area for '%s' - preload failed!\n", fsAreaPath.c_str());
+        return false;
+    }
+
+    auto it = areas_.find(fsAreaPath);
+    assert(it != areas_.end());
+    assert(it->second && it->second->GetRelatedNode());
+
+    printf("World - current area changed to loaded area for '%s'\n", fsAreaPath.c_str());
+    currentArea_ = it->second.get();
+    currentAreaFsPath_ = GameFilesystem::GetNodePathString(*currentArea_->GetRelatedNode());
+
+    return true;
 }

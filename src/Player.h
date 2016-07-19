@@ -7,12 +7,23 @@
 */
 class PlayerEntity : public AliveEntity
 {
+    float useRange_;
+    EntityId targettedUsableEnt_;
+
+    void HandleMovement();
+    void HandleUseNearbyObjects();
+
 public:
     PlayerEntity();
     virtual ~PlayerEntity();
 
     virtual void Tick() override;
     virtual void Render(sf::RenderTarget& target) override;
+
+    inline void SetUseRange(float useRange) { useRange_ = useRange; }
+    inline float GetUseRange() const { return useRange_; }
+
+    inline EntityId GetTargettedUsableEntity() const { return targettedUsableEnt_; }
 
     inline virtual std::string GetUnitName() const override { return "Player"; }
 

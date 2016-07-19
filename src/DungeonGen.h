@@ -62,7 +62,7 @@ class DungeonAreaGen
     int currentStructureCount_;
 
     bool CheckRoomRectanglePlaceable(WorldArea& area, u32 topX, u32 topY, u32 w, u32 h) const;
-	bool PlaceEmptyRoom(WorldArea& area, u32 topX, u32 topY, u32 w, u32 h);
+	bool PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h);
     bool GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h);
 
     inline bool GenerateCenterRoom(WorldArea& area, Rng& rng, u32 w, u32 h)

@@ -58,6 +58,7 @@ if (SFML_FOUND)
 endif()
 
 # copy assets to binary dir
+file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/assets)
 file(INSTALL assets DESTINATION ${CMAKE_BINARY_DIR})
 
 # install system and compiler runtimes .etc

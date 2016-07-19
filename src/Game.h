@@ -62,7 +62,7 @@ class Game
         return area ? area->GetEntity<PlayerEntity>(playerId_) : nullptr;
     }
     
-    bool SpawnPlayer(const sf::Vector2f& pos);
+    bool SpawnPlayer(const sf::Vector2f* optionalStartPos = nullptr);
     bool RemovePlayer();
 
     bool ChangeLevel(const std::string& fsNodePath);

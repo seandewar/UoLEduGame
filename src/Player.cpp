@@ -6,8 +6,19 @@
 
 #include "World.h"
 #include "Game.h"
+#include "Helper.h"
 #include "IPlayerUsable.h"
 #include "Stairs.h"
+
+
+PlayerDefaultStartEntity::PlayerDefaultStartEntity()
+{
+}
+
+
+PlayerDefaultStartEntity::~PlayerDefaultStartEntity()
+{
+}
 
 
 PlayerEntity::PlayerEntity() :
@@ -21,6 +32,31 @@ targettedUsableEnt_(InvalidId)
 
 PlayerEntity::~PlayerEntity()
 {
+}
+
+
+bool PlayerEntity::SetPositionToDefaultStart()
+{
+    auto area = GetAssignedArea();
+
+    if (!area) {
+        return false;
+    }
+
+    auto startEnts = area->GetAllEntitiesOfType<PlayerDefaultStartEntity>();
+    if (startEnts.size() <= 0) {
+        return false;
+    }
+
+    auto chosenStartEnt = area->GetEntity<PlayerDefaultStartEntity>(
+        startEnts[Helper::GenerateRandomInt<std::size_t>(0, startEnts.size() - 1)]);
+
+    if (!chosenStartEnt) {
+        return false;
+    }
+
+    SetPosition(chosenStartEnt->GetPosition());
+    return true;
 }
 
 

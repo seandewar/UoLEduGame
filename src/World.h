@@ -73,7 +73,6 @@ class WorldArea
     std::vector<std::unique_ptr<sf::Drawable>> frameUiRenderables_;
 
     sf::View renderView_;
-
     std::vector<DebugRenderableInfo> debugRenderables_;
 
     inline std::size_t GetTileIndex(u32 x, u32 y) const { return (y * w_) + x; }
@@ -302,6 +301,53 @@ public:
         }
 
         return static_cast<const T*>(it->second.get());
+    }
+
+    template <typename T>
+    std::vector<EntityId> GetAllEntitiesOfType() const
+    {
+        static_assert(!std::is_same<T, Entity>::value,
+            "GetAllEntitiesOfType<T>() - T is of type Entity; use GetAllEntities() instead.");
+
+        std::vector<EntityId> result;
+
+        for (auto& entInfo : ents_) {
+            auto& ent = entInfo.second;
+            assert(ent);
+
+            if (dynamic_cast<T*>(ent.get())) {
+                result.emplace_back(entInfo.first);
+            }
+        }
+
+        return result;
+    }
+
+    template <typename T>
+    EntityId GetFirstEntityOfType() const
+    {
+        for (auto& entInfo : ents_) {
+            auto& ent = entInfo.second;
+            assert(ent);
+
+            if (dynamic_cast<T*>(ent.get())) {
+                return entInfo.first;
+            }
+        }
+
+        return Entity::InvalidId;
+    }
+
+    inline std::vector<EntityId> GetAllEntities() const
+    {
+        std::vector<EntityId> result;
+
+        for (auto& entInfo : ents_) {
+            assert(entInfo.second);
+            result.emplace_back(entInfo.first);
+        }
+
+        return result;
     }
 
     bool CenterViewOnWorldEntity(EntityId entId);

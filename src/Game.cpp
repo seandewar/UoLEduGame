@@ -53,17 +53,33 @@ bool Game::Init()
 }
 
 
-bool Game::SpawnPlayer(const sf::Vector2f& pos)
+bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
 {
-    playerId_ = GetWorldArea()->EmplaceEntity<PlayerEntity>();
+    auto area = GetWorldArea();
+
+    if (!area) {
+        return false;
+    }
+
+    playerId_ = area->EmplaceEntity<PlayerEntity>();
     if (playerId_ == Entity::InvalidId) {
         return false;
     }
 
+    // get spawned player & restore stats to our cached copy
     auto player = GetPlayerEntity();
-
     player->SetStats(cachedPlayerStats_);
-    player->SetPosition(pos);
+    
+    // set player location to a default start or start pos if provided
+    if (!optionalStartPos) {
+        printf("Spawning player at default start location for area\n");
+        player->SetPositionToDefaultStart();
+    }
+    else {
+        printf("Spawning player at custom start location\n");
+        player->SetPosition(*optionalStartPos);
+    }
+
     return true;
 }
 
@@ -83,27 +99,40 @@ bool Game::RemovePlayer()
 
 bool Game::ChangeLevel(const std::string& fsNodePath)
 {
+    // try to preload the area
     if (!world_ || !world_->PreloadFsArea(fsNodePath)) {
         return false;
     }
 
-    auto player = GetPlayerEntity();
-    if (GetWorldArea() && player) {
-        cachedPlayerStats_ = player->GetStats();
+    auto oldArea = GetWorldArea();
+    auto oldPlayer = oldArea ? GetPlayerEntity() : nullptr;
+
+    // remove the old player ent and cache it's stats so we can restore them
+    // on the new player ent
+    if (oldPlayer) {
+        cachedPlayerStats_ = oldPlayer->GetStats();
         RemovePlayer();
     }
 
+    // get the old fs node so we can get enough info on where to spawn the player
+    // in the new level
+    auto oldFsNode = oldArea ? oldArea->GetRelatedNode() : nullptr;
+
+    // try to change level area
     if (!world_->NavigateToFsArea(fsNodePath)) {
         return false;
     }
 
-    // TODO debug - spawn near staircase!! & remove this stair debug crap
+    ///// TODO DEBUG CRAP - MAKE DUNGEON GEN SPAWN THESE STAIRS /////
     auto center = 0.5f * sf::Vector2f(
         BaseTile::TileSize.x * GetWorldArea()->GetWidth(),
         BaseTile::TileSize.y * GetWorldArea()->GetHeight()
         );
 
-    if (!GetWorldArea()->GetRelatedNode()->IsRootDirectoryNode()) {
+    auto defaultStart = GetWorldArea()->EmplaceEntity<PlayerDefaultStartEntity>();
+    GetWorldArea()->GetEntity<WorldEntity>(defaultStart)->SetPosition(center);
+
+    if (GetWorldArea()->GetRelatedNode()->GetParent()) {
         auto upstair = GetWorldArea()->EmplaceEntity<UpStairEntity>();
         GetWorldArea()->GetEntity<WorldEntity>(upstair)->SetPosition(center);
     }
@@ -116,9 +145,55 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
 
     auto downstair = GetWorldArea()->EmplaceEntity<DownStairEntity>(downstairTarget);
     GetWorldArea()->GetEntity<WorldEntity>(downstair)->SetPosition(center + sf::Vector2f(32.0f, 0.0f));
+    ///// TODO END OF DEBUG CRAP /////
 
-    if (!SpawnPlayer(center)) {
-        return false;
+    auto currentArea = GetWorldArea();
+    auto currentFsNode = currentArea->GetRelatedNode();
+
+    // determine start pos for player based on old fs node
+    if (oldFsNode && oldFsNode->GetParent() == currentFsNode) {
+        // if our current node is the parent of our old node, spawn at
+        // the down stairs that navigate to our old node's area
+
+        auto downstairEnts = currentArea->GetAllEntitiesOfType<DownStairEntity>();
+        DownStairEntity* startDownstairEnt = nullptr;
+
+        for (auto entId : downstairEnts) {
+            auto ent = currentArea->GetEntity<DownStairEntity>(entId);
+
+            if (ent && ent->GetDestinationFsNodeName() == oldFsNode->GetName()) {
+                startDownstairEnt = ent;
+                break;
+            }
+        }
+
+        if (!startDownstairEnt) {
+            fprintf(stderr, "WARN - could not find corrisponding DownStairEntity to spawn player at!\n");
+            fprintf(stderr, " Will spawn at default start instead.\n");
+            fprintf(stderr, "\t(From '%s' to '%s')\n", GameFilesystem::GetNodePathString(*oldFsNode).c_str(),
+                GameFilesystem::GetNodePathString(*currentFsNode).c_str());
+        }
+
+        if (!SpawnPlayer(startDownstairEnt ? &startDownstairEnt->GetPosition() : nullptr)) {
+            return false;
+        }
+    }
+    else if (currentFsNode && currentFsNode->GetParent() == oldFsNode) {
+        // if our current node is the child of our old node, then spawn
+        // at the up stairs
+
+        auto upstairEnt = currentArea->GetEntity<UpStairEntity>(
+            currentArea->GetFirstEntityOfType<UpStairEntity>());
+
+        if (!SpawnPlayer(upstairEnt ? &upstairEnt->GetPosition() : nullptr)) {
+            return false;
+        }
+    }
+    else {
+        // none of our start spawn conditions were met, just do a default spawn
+        if (!SpawnPlayer()) {
+            return false;
+        }
     }
 
     return true;

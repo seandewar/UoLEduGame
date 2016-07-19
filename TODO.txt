@@ -7,7 +7,7 @@
 [Tiles Sprites (handle in Render())]
 [Stair Entity for Up & Down Floors]
 DungeonGen Spawn Stair Entity
-Spawn player at correct stairs when change level
+[Spawn player at correct stairs when change level]
 [Viganett Darkness around screen]
 
 19th, 20th, 21st

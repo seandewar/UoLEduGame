@@ -121,6 +121,8 @@ public:
     AliveEntity();
     virtual ~AliveEntity();
 
+    inline void SetStats(AliveStats& newStats) { stats_ = newStats; }
+
     inline AliveStats& GetStats() { return stats_; }
     inline const AliveStats& GetStats() const { return stats_; }
 };

@@ -68,7 +68,7 @@ void UpStairEntity::Use(EntityId playerId)
                 auto newFsNodePath = GameFilesystem::GetNodePathString(*targetFsNode);
 
                 // TODO player spawn at corrisponding stairs in new level
-                Game::Get().ScheduleLevelChange(newFsNodePath);
+                Game::Get().SetLevelChange(newFsNodePath);
             }
         }
     }
@@ -127,7 +127,7 @@ void DownStairEntity::Use(EntityId playerId)
                 auto newFsNodePath = GameFilesystem::GetNodePathString(*targetFsNode);
 
                 // TODO player spawn at root stairs in new level
-                Game::Get().ScheduleLevelChange(newFsNodePath);
+                Game::Get().SetLevelChange(newFsNodePath);
             }
         }
     }

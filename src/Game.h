@@ -49,6 +49,7 @@ class Game
     std::unique_ptr<GameFilesystem> worldFs_;
 	std::unique_ptr<World> world_;
 
+    AliveStats cachedPlayerStats_;
     EntityId playerId_;
 
     std::string scheduledLevelChangeFsNodePath_;
@@ -102,7 +103,7 @@ public:
     void RunFrame(sf::RenderTarget& target);
 
     bool NewGame();
-    inline void ScheduleLevelChange(const std::string& fsNodePath) { scheduledLevelChangeFsNodePath_ = fsNodePath; }
+    inline void SetLevelChange(const std::string& fsNodePath) { scheduledLevelChangeFsNodePath_ = fsNodePath; }
 
     inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
     inline bool IsInDebugMode() const { return debugMode_; }

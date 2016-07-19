@@ -60,7 +60,10 @@ bool Game::SpawnPlayer(const sf::Vector2f& pos)
         return false;
     }
 
-    GetPlayerEntity()->SetPosition(pos);
+    auto player = GetPlayerEntity();
+
+    player->SetStats(cachedPlayerStats_);
+    player->SetPosition(pos);
     return true;
 }
 
@@ -84,9 +87,9 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         return false;
     }
 
-    // TODO save player stats so we can restore the player in the next
-    // area.
-    if (GetWorldArea()) {
+    auto player = GetPlayerEntity();
+    if (GetWorldArea() && player) {
+        cachedPlayerStats_ = player->GetStats();
         RemovePlayer();
     }
 

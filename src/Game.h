@@ -70,6 +70,7 @@ class Game
 
     void ViewFollowPlayer();
 
+    void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
     void RenderUIPlayerHealth(sf::RenderTarget& target);

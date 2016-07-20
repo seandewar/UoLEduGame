@@ -316,6 +316,16 @@ void Game::RenderUIPlayerHealth(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUILoadingArea(sf::RenderTarget& target)
+{
+    sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 16);
+    loadingText.setPosition(target.getView().getCenter() - 0.5f *
+        sf::Vector2f(loadingText.getGlobalBounds().width, loadingText.getGlobalBounds().height));
+
+    Helper::RenderTextWithDropShadow(target, loadingText);
+}
+
+
 void Game::Render(sf::RenderTarget& target)
 {
     target.clear();
@@ -327,13 +337,9 @@ void Game::Render(sf::RenderTarget& target)
         RenderUIPlayerUseTargetText(target);
         RenderUIPlayerHealth(target);
 
+        // if level is going to change next frame, display loading text
         if (!scheduledLevelChangeFsNodePath_.empty()) {
-            // level will change next frame, so display loading UI message
-            sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 16);
-            loadingText.setPosition(target.getView().getCenter() - 0.5f *
-                sf::Vector2f(loadingText.getGlobalBounds().width, loadingText.getGlobalBounds().height));
-
-            Helper::RenderTextWithDropShadow(target, loadingText);
+            RenderUILoadingArea(target);
         }
     }
 }

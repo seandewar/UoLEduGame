@@ -29,6 +29,7 @@ struct GameAssets
     sf::Texture genericTilesSheet;
     sf::Texture stairsSpriteSheet;
     sf::Texture playerSpriteSheet;
+    sf::Texture chestsSpriteSheet;
 
     bool LoadAssets();
 

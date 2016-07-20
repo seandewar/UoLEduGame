@@ -6,7 +6,7 @@
 [Entity Sprites (handle in Render())]
 [Tiles Sprites (handle in Render())]
 [Stair Entity for Up & Down Floors]
-DungeonGen Spawn Stair Entity
+[DungeonGen Spawn Stair Entity & DownStairs]
 [Spawn player at correct stairs when change level]
 [Viganett Darkness around screen]
 
@@ -15,7 +15,7 @@ DungeonGen Spawn Stair Entity
 
 UNITEMPS
 GameFilesystemGen finish
-Chest entity and sprites (work on Item class afterwards)
+[Chest entity and sprites] (work on Item class afterwards)
 Item class and Chest + Items
 DungeonGen spawn chests depending on files in game fs
 Basic Enemy Entity that follows

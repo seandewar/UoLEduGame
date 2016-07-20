@@ -6,8 +6,9 @@
 #include "GameFilesystemGen.h"
 #include "Player.h"
 #include "IPlayerUsable.h"
+#include "Stairs.h"
 
-#include "Stairs.h" // TODO DEBUG
+#include "Chest.h" // TODO DEBUG DEBUG DEBUG DEBUG DEBUG
 
 
 #define LOAD_FROM_FILE(asset, assetPath) \
@@ -28,6 +29,7 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(genericTilesSheet, "assets/GenericTiles.png");
     LOAD_FROM_FILE(stairsSpriteSheet, "assets/StairSprites.png");
     LOAD_FROM_FILE(playerSpriteSheet, "assets/PlayerSprites.png");
+    LOAD_FROM_FILE(chestsSpriteSheet, "assets/ChestSprites.png");
     return true;
 }
 
@@ -123,28 +125,32 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         return false;
     }
 
-    ///// TODO DEBUG CRAP - MAKE DUNGEON GEN SPAWN THESE STAIRS /////
+    ///// TODO DEBUG CRAP - MAKE DUNGEON GEN SPAWN THESE CHESTS /////
     auto center = 0.5f * sf::Vector2f(
         BaseTile::TileSize.x * GetWorldArea()->GetWidth(),
         BaseTile::TileSize.y * GetWorldArea()->GetHeight()
         );
 
-    auto defaultStart = GetWorldArea()->EmplaceEntity<PlayerDefaultStartEntity>();
-    GetWorldArea()->GetEntity<WorldEntity>(defaultStart)->SetPosition(center);
+    auto chest1 = GetWorldArea()->GetEntity<ChestEntity>(GetWorldArea()->EmplaceEntity<ChestEntity>(
+        ChestType::RedChest, "firefox"));
+    chest1->SetPosition(center);
 
-    if (GetWorldArea()->GetRelatedNode()->GetParent()) {
-        auto upstair = GetWorldArea()->EmplaceEntity<UpStairEntity>();
-        GetWorldArea()->GetEntity<WorldEntity>(upstair)->SetPosition(center);
-    }
+    auto chest2 = GetWorldArea()->GetEntity<ChestEntity>(GetWorldArea()->EmplaceEntity<ChestEntity>(
+        ChestType::BlueChest, "bash"));
+    chest2->SetPosition(center + sf::Vector2f(16.0f, 0.0f));
 
-    std::string downstairTarget;
-    auto child = GetWorldArea()->GetRelatedNode()->GetChildNode(0);
-    if (child) {
-        downstairTarget = child->GetName();
-    }
+    auto chest3 = GetWorldArea()->GetEntity<ChestEntity>(GetWorldArea()->EmplaceEntity<ChestEntity>(
+        ChestType::PurpleChest, "less"));
+    chest3->SetPosition(center + sf::Vector2f(-16.0f, 0.0f));
 
-    auto downstair = GetWorldArea()->EmplaceEntity<DownStairEntity>(downstairTarget);
-    GetWorldArea()->GetEntity<WorldEntity>(downstair)->SetPosition(center + sf::Vector2f(32.0f, 0.0f));
+    //std::string downstairTarget;
+    //auto child = GetWorldArea()->GetRelatedNode()->GetChildNode(0);
+    //if (child) {
+    //    downstairTarget = child->GetName();
+    //}
+
+    //auto downstair = GetWorldArea()->EmplaceEntity<DownStairEntity>(downstairTarget);
+    //GetWorldArea()->GetEntity<WorldEntity>(downstair)->SetPosition(center + sf::Vector2f(32.0f, 0.0f));
     ///// TODO END OF DEBUG CRAP /////
 
     auto currentArea = GetWorldArea();
@@ -303,6 +309,14 @@ void Game::Render(sf::RenderTarget& target)
 
         RenderUILocation(target);
         RenderUIPlayerUseTargetText(target);
+
+        if (!scheduledLevelChangeFsNodePath_.empty()) {
+            // level will change next frame, so display loading UI message
+            sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 24);
+            loadingText.setPosition(target.getView().getCenter() - 0.5f *
+                sf::Vector2f(loadingText.getGlobalBounds().width, loadingText.getGlobalBounds().height));
+            Helper::RenderTextWithDropShadow(target, loadingText);
+        }
     }
 }
 

@@ -65,6 +65,8 @@ class DungeonAreaGen
 	bool PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h);
     bool GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h);
 
+    bool AddPlayerStart(WorldArea& area);
+
     inline bool GenerateCenterRoom(WorldArea& area, Rng& rng, u32 w, u32 h)
     {
         return GenerateRoom(area, rng, (area.GetWidth() - w) / 2, (area.GetHeight() - h) / 2, w, h);
@@ -77,6 +79,8 @@ class DungeonAreaGen
 
     bool GenerateFallbackArea(WorldArea& area, Rng& rng);
     bool GenerateArea(WorldArea& area, Rng& rng);
+
+    bool PlaceDownStairs(WorldArea& area, Rng& rng);
 
 public:
     DungeonAreaGen(const GameFilesystemNode& node);

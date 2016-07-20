@@ -5,6 +5,8 @@
 
 #include "Helper.h"
 #include "World.h"
+#include "Player.h"
+#include "Stairs.h"
 
 
 DungeonAreaGen::DungeonAreaGen(const GameFilesystemNode& node) :
@@ -16,6 +18,41 @@ node_(node)
 
 DungeonAreaGen::~DungeonAreaGen()
 {
+}
+
+
+bool DungeonAreaGen::AddPlayerStart(WorldArea& area)
+{
+    // spawn the default player start
+    auto defaultStartEnt = area.GetEntity<PlayerDefaultStartEntity>(area.EmplaceEntity<PlayerDefaultStartEntity>());
+    if (!defaultStartEnt) {
+        return false;
+    }
+
+    auto areaCenter = 0.5f * 
+        sf::Vector2f(area.GetWidth() * BaseTile::TileSize.x, area.GetHeight() * BaseTile::TileSize.y);
+
+    defaultStartEnt->SetPosition(areaCenter);
+
+    // spawn the upstair if the fs node has a parent that the stairs can navigate to
+    if (node_.GetParent()) {
+        auto upstairEnt = area.GetEntity<UpStairEntity>(area.EmplaceEntity<UpStairEntity>());
+        if (!upstairEnt) {
+            return false;
+        }
+
+        if (!area.CheckEntRectangleWalkable(sf::FloatRect(areaCenter.x, areaCenter.y,
+            upstairEnt->GetSize().x, upstairEnt->GetSize().y))) {
+            fprintf(stderr, "ERR - DungeonAreaGen - No room to place UpStairEntity for player start!\n");
+
+            area.RemoveEntity(upstairEnt->GetAssignedId());
+            return false;
+        }
+
+        upstairEnt->SetCenterPosition(areaCenter);
+    }
+
+    return true;
 }
 
 
@@ -421,6 +458,47 @@ bool DungeonAreaGen::GrowActivePassage(WorldArea& area, Rng& rng, ActiveGenPassa
 }
 
 
+bool DungeonAreaGen::PlaceDownStairs(WorldArea& area, Rng& rng)
+{
+    for (std::size_t i = 0; i < node_.GetChildrenCount(); ++i) {
+        auto childNode = node_.GetChildNode(i);
+
+        if (childNode && childNode->IsDirectory()) {
+            // try to create stairs for this node
+            // TODO less bruteforcey?!?!?!?
+            bool placedStair = false;
+            int tryCount = 0;
+
+            while (tryCount++ < 1000) {
+                auto desiredArea = sf::FloatRect(
+                    Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetWidth() - 1) * BaseTile::TileSize.x,
+                    Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetHeight() - 1) * BaseTile::TileSize.y,
+                    BaseTile::TileSize.x, BaseTile::TileSize.y
+                    );
+
+                if (area.CheckEntRectangleWalkable(desiredArea) &&
+                    area.GetFirstWorldEntInRectangle(desiredArea) == Entity::InvalidId) {
+                    auto downstairEnt = area.GetEntity<DownStairEntity>(
+                        area.EmplaceEntity<DownStairEntity>(childNode->GetName()));
+                    
+                    if (downstairEnt) {
+                        downstairEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
+                        placedStair = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!placedStair) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
 void DungeonAreaGen::ConfigureGenSettings()
 {
     printf("DungeonAreaGen - ConfigureGenSettings(); node '%s' has random identifier %u and %u children.\n",
@@ -430,7 +508,7 @@ void DungeonAreaGen::ConfigureGenSettings()
 
     genSeed_ = rng();
     genIterations_ = 60;
-    genMaxRetries_ = 3;
+    genMaxRetries_ = 10;
 
     minStructureAmount_ = node_.GetChildrenCount() / 3;
     maxStructureAmount_ = std::min<int>(14, node_.GetChildrenCount());
@@ -485,8 +563,14 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
                 Helper::GenerateRandomInt<Rng, u32>(rng, firstRoomWidthMin_, firstRoomWidthMax_),
                 Helper::GenerateRandomInt<Rng, u32>(rng, firstRoomWidthMin_, firstRoomWidthMax_)
                 )) {
-                fprintf(stderr, "DungeonAreaGen: ERROR - could not generate starting room!!!\n");
+                fprintf(stderr, "DungeonAreaGen: WARN - could not generate starting room!!!\n");
                 assert(!"Failed to generate starting room!!!");
+                return false;
+            }
+
+            // Place start point
+            if (!AddPlayerStart(area)) {
+                fprintf(stderr, "DungeonAreaGen: WARN - could not add player start!\n");
                 return false;
             }
         }
@@ -521,6 +605,11 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
     if (currentStructureCount_ < targetStructureAmount_) {
         fprintf(stderr, "DungeonAreaGen: WARN - Target structure count wasn't met... (%d < %d)\n",
             currentStructureCount_, targetStructureAmount_);
+    }
+
+    // place down stairs
+    if (!PlaceDownStairs(area, rng)) {
+        return false;
     }
 
     return true;

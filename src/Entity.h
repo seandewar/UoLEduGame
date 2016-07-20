@@ -60,7 +60,8 @@ public:
     inline void SetSize(const sf::Vector2f& size) { rect_.width = size.x; rect_.height = size.y; }
     inline sf::Vector2f GetSize() const { return sf::Vector2f(rect_.width, rect_.height); }
 
-    inline sf::Vector2f GetCenterPosition() const { return GetPosition() + (GetSize() * 0.5f); }
+    inline void SetCenterPosition(const sf::Vector2f& pos) { SetPosition(pos - GetSize() * 0.5f); }
+    inline sf::Vector2f GetCenterPosition() const { return GetPosition() + GetSize() * 0.5f; }
 
     inline void Move(const sf::Vector2f& d) { rect_.left += d.x; rect_.top += d.y; }
     void MoveWithCollision(const sf::Vector2f& d);

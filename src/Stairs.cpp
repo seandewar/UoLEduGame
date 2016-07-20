@@ -9,7 +9,7 @@
 StairEntity::StairEntity() :
 UnitEntity()
 {
-    SetSize(sf::Vector2f(16.0f, 16.0f));
+    SetSize(BaseTile::TileSize);
 }
 
 
@@ -21,7 +21,7 @@ StairEntity::~StairEntity()
 UpStairEntity::UpStairEntity() :
 StairEntity()
 {
-    SetSize(sf::Vector2f(16.0f, 16.0f));
+    SetSize(BaseTile::TileSize);
 }
 
 
@@ -36,16 +36,16 @@ void UpStairEntity::Render(sf::RenderTarget& target)
     stairSprite.setPosition(GetPosition());
     target.draw(stairSprite);
 
-    auto stairTargetText = std::make_unique<sf::Text>("..", GameAssets::Get().gameFont);
-    stairTargetText->setScale(0.15f, 0.15f);
-    stairTargetText->setColor(sf::Color(255, 165, 0));
-
     auto area = GetAssignedArea();
+
     if (area) {
-        auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) - sf::Vector2f(
-            0.5f * stairTargetText->getGlobalBounds().width,
-            6.0f
-            );
+        auto stairTargetText = std::make_unique<sf::Text>("..", GameAssets::Get().gameFont, 18);
+        stairTargetText->setScale(0.15f, 0.15f);
+        stairTargetText->setColor(sf::Color(255, 255, 0));
+
+        auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
+            sf::Vector2f(0.5f * stairTargetText->getGlobalBounds().width, 4.0f);
+
         stairTargetText->setPosition(textPos);
 
         area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, sf::Vector2f(0.5f, 0.5f)));
@@ -66,8 +66,6 @@ void UpStairEntity::Use(EntityId playerId)
 
             if (targetFsNode) {
                 auto newFsNodePath = GameFilesystem::GetNodePathString(*targetFsNode);
-
-                // TODO player spawn at corrisponding stairs in new level
                 Game::Get().SetLevelChange(newFsNodePath);
             }
         }
@@ -94,16 +92,16 @@ void DownStairEntity::Render(sf::RenderTarget& target)
     target.draw(stairSprite);
 
     if (!destinationFsNodeName_.empty()) {
-        auto stairTargetText = std::make_unique<sf::Text>(destinationFsNodeName_, GameAssets::Get().gameFont);
-        stairTargetText->setScale(0.15f, 0.15f);
-        stairTargetText->setColor(sf::Color(255, 255, 0));
-
         auto area = GetAssignedArea();
+
         if (area) {
-            auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) - sf::Vector2f(
-                0.5f * stairTargetText->getGlobalBounds().width,
-                6.0f
-                );
+            auto stairTargetText = std::make_unique<sf::Text>(destinationFsNodeName_, GameAssets::Get().gameFont, 18);
+            stairTargetText->setScale(0.15f, 0.15f);
+            stairTargetText->setColor(sf::Color(255, 255, 0));
+
+            auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
+                sf::Vector2f(0.5f * stairTargetText->getGlobalBounds().width, 4.0f);
+
             stairTargetText->setPosition(textPos);
 
             area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, sf::Vector2f(0.5f, 0.5f)));
@@ -125,8 +123,6 @@ void DownStairEntity::Use(EntityId playerId)
 
             if (targetFsNode) {
                 auto newFsNodePath = GameFilesystem::GetNodePathString(*targetFsNode);
-
-                // TODO player spawn at root stairs in new level
                 Game::Get().SetLevelChange(newFsNodePath);
             }
         }

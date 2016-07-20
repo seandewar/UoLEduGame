@@ -181,7 +181,17 @@ public:
 	}
 
     bool CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const;
+
     bool CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const;
+    inline bool CheckEntRectangleWalkable(const sf::FloatRect& rect) const
+    {
+        u32 startX = static_cast<u32>(rect.left / BaseTile::TileSize.x);
+        u32 startY = static_cast<u32>(rect.top / BaseTile::TileSize.y);
+        u32 endX = static_cast<u32>(std::ceil((rect.left + rect.width) / BaseTile::TileSize.x));
+        u32 endY = static_cast<u32>(std::ceil((rect.top + rect.height) / BaseTile::TileSize.y));
+
+        return CheckRectangleWalkable(startX, startY, endX - startX, endY - startY);
+    }
 
     /**
     * Returns true if the rectangle r is able to move with displacement d without colliding
@@ -198,38 +208,6 @@ public:
     */
     bool TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f& d, sf::Vector2f* outEndPos,
         BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
-
-    /**
-    * Returns a vector of pairs containing EntityId in range along with their squared distance away
-    * from pos as a float.
-    */
-    template <typename T = WorldEntity>
-    std::vector<std::pair<EntityId, float>> GetWorldEntitiesInRange(const sf::Vector2f& pos, float maxDistance) const
-    {
-        std::vector<std::pair<EntityId, float>> result;
-        auto maxDistanceSq = maxDistance * maxDistance;
-
-        for (auto& entInfo : ents_) {
-            auto& ent = entInfo.second;
-            assert(ent);
-
-            auto worldEnt = dynamic_cast<T*>(ent.get());
-            
-            if (worldEnt) {
-                auto worldEntPos = worldEnt->GetCenterPosition();
-                
-                auto aSq = (worldEntPos.x - pos.x) * (worldEntPos.x - pos.x);
-                auto bSq = (worldEntPos.y - pos.y) * (worldEntPos.y - pos.y);
-
-                auto distanceSq = aSq + bSq;
-                if (distanceSq <= maxDistanceSq) {
-                    result.emplace_back(entInfo.first, distanceSq);
-                }
-            }
-        }
-
-        return result;
-    }
 
     template <typename T>
     EntityId AddEntity(std::unique_ptr<T>& ent)
@@ -303,6 +281,68 @@ public:
         return static_cast<const T*>(it->second.get());
     }
 
+    /**
+    * Returns a vector of pairs containing EntityId in range along with their squared distance away
+    * from pos as a float.
+    */
+    template <typename T = WorldEntity>
+    std::vector<std::pair<EntityId, float>> GetWorldEntitiesInRange(const sf::Vector2f& pos, float maxDistance) const
+    {
+        std::vector<std::pair<EntityId, float>> result;
+        auto maxDistanceSq = maxDistance * maxDistance;
+
+        for (auto& entInfo : ents_) {
+            auto& ent = entInfo.second;
+            assert(ent);
+
+            auto worldEnt = dynamic_cast<T*>(ent.get());
+
+            if (worldEnt) {
+                auto worldEntPos = worldEnt->GetCenterPosition();
+
+                auto aSq = (worldEntPos.x - pos.x) * (worldEntPos.x - pos.x);
+                auto bSq = (worldEntPos.y - pos.y) * (worldEntPos.y - pos.y);
+
+                auto distanceSq = aSq + bSq;
+                if (distanceSq <= maxDistanceSq) {
+                    result.emplace_back(entInfo.first, distanceSq);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    template <typename T = WorldEntity>
+    std::vector<EntityId> GetAllWorldEntsInRectangle(const sf::FloatRect& rect) const
+    {
+        std::vector<EntityId> result;
+
+        for (auto& entInfo : ents_) {
+            auto worldEnt = dynamic_cast<WorldEntity*>(entInfo.second.get());
+
+            if (worldEnt && rect.intersects(worldEnt->GetRectangle())) {
+                result.emplace(entInfo.first);
+            }
+        }
+
+        return result;
+    }
+
+    template <typename T = WorldEntity>
+    EntityId GetFirstWorldEntInRectangle(const sf::FloatRect& rect) const
+    {
+        for (auto& entInfo : ents_) {
+            auto worldEnt = dynamic_cast<WorldEntity*>(entInfo.second.get());
+
+            if (worldEnt && rect.intersects(worldEnt->GetRectangle())) {
+                return entInfo.first;
+            }
+        }
+
+        return Entity::InvalidId;
+    }
+
     template <typename T>
     std::vector<EntityId> GetAllEntitiesOfType() const
     {
@@ -312,10 +352,7 @@ public:
         std::vector<EntityId> result;
 
         for (auto& entInfo : ents_) {
-            auto& ent = entInfo.second;
-            assert(ent);
-
-            if (dynamic_cast<T*>(ent.get())) {
+            if (dynamic_cast<T*>(entInfo.second.get())) {
                 result.emplace_back(entInfo.first);
             }
         }
@@ -327,10 +364,7 @@ public:
     EntityId GetFirstEntityOfType() const
     {
         for (auto& entInfo : ents_) {
-            auto& ent = entInfo.second;
-            assert(ent);
-
-            if (dynamic_cast<T*>(ent.get())) {
+            if (dynamic_cast<T*>(entInfo.second.get())) {
                 return entInfo.first;
             }
         }

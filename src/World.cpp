@@ -294,7 +294,7 @@ bool WorldArea::CheckRectangleWalkable(u32 topX, u32 topY, u32 w, u32 h) const
         for (u32 x = topX; x < (topX + w) && x < w_; ++x) {
             auto tile = GetTile(x, y);
 
-            if (tile && !tile->IsWalkable()) {
+            if (!tile || !tile->IsWalkable()) {
                 return false;
             }
         }

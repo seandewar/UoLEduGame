@@ -52,7 +52,7 @@ public:
 	}
 
     static inline std::unique_ptr<sf::Drawable> GetTextDropShadow(const sf::Text& text,
-        const sf::Vector2f& offset = sf::Vector2f(5.0f, 5.0f), const sf::Color& color = sf::Color(0, 0, 0))
+        const sf::Vector2f& offset = sf::Vector2f(2.0f, 2.0f), const sf::Color& color = sf::Color(0, 0, 0))
     {
         auto textShadow = text;
         textShadow.move(offset);
@@ -62,7 +62,7 @@ public:
     }
 
     static inline void RenderTextWithDropShadow(sf::RenderTarget& target, const sf::Text& text, 
-        const sf::Vector2f& offset = sf::Vector2f(5.0f, 5.0f), const sf::Color& color = sf::Color(0, 0, 0))
+        const sf::Vector2f& offset = sf::Vector2f(2.0f, 2.0f), const sf::Color& color = sf::Color(0, 0, 0))
     {
         target.draw(*GetTextDropShadow(text, offset, color));
         target.draw(text);

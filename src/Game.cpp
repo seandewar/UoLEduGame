@@ -1,14 +1,15 @@
 #include "Game.h"
 
+#include <sstream>
+
 #include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
 
 #include "Helper.h"
 #include "GameFilesystemGen.h"
 #include "Player.h"
 #include "IPlayerUsable.h"
 #include "Stairs.h"
-
-#include "Chest.h" // TODO DEBUG DEBUG DEBUG DEBUG DEBUG
 
 
 #define LOAD_FROM_FILE(asset, assetPath) \
@@ -124,34 +125,6 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
     if (!world_->NavigateToFsArea(fsNodePath)) {
         return false;
     }
-
-    ///// TODO DEBUG CRAP - MAKE DUNGEON GEN SPAWN THESE CHESTS /////
-    auto center = 0.5f * sf::Vector2f(
-        BaseTile::TileSize.x * GetWorldArea()->GetWidth(),
-        BaseTile::TileSize.y * GetWorldArea()->GetHeight()
-        );
-
-    auto chest1 = GetWorldArea()->GetEntity<ChestEntity>(GetWorldArea()->EmplaceEntity<ChestEntity>(
-        ChestType::RedChest, "firefox"));
-    chest1->SetPosition(center);
-
-    auto chest2 = GetWorldArea()->GetEntity<ChestEntity>(GetWorldArea()->EmplaceEntity<ChestEntity>(
-        ChestType::BlueChest, "bash"));
-    chest2->SetPosition(center + sf::Vector2f(16.0f, 0.0f));
-
-    auto chest3 = GetWorldArea()->GetEntity<ChestEntity>(GetWorldArea()->EmplaceEntity<ChestEntity>(
-        ChestType::PurpleChest, "less"));
-    chest3->SetPosition(center + sf::Vector2f(-16.0f, 0.0f));
-
-    //std::string downstairTarget;
-    //auto child = GetWorldArea()->GetRelatedNode()->GetChildNode(0);
-    //if (child) {
-    //    downstairTarget = child->GetName();
-    //}
-
-    //auto downstair = GetWorldArea()->EmplaceEntity<DownStairEntity>(downstairTarget);
-    //GetWorldArea()->GetEntity<WorldEntity>(downstair)->SetPosition(center + sf::Vector2f(32.0f, 0.0f));
-    ///// TODO END OF DEBUG CRAP /////
 
     auto currentArea = GetWorldArea();
     auto currentFsNode = currentArea->GetRelatedNode();
@@ -272,7 +245,7 @@ void Game::Tick()
 void Game::RenderUILocation(sf::RenderTarget& target)
 {
     if (world_) {
-        sf::Text locationText("Location: " + world_->GetCurrentAreaFsPath(), GameAssets::Get().gameFont, 28);
+        sf::Text locationText("Location: " + world_->GetCurrentAreaFsPath(), GameAssets::Get().gameFont, 22);
         locationText.setPosition(5.0f, 5.0f);
         locationText.setColor(sf::Color(255, 255, 255));
 
@@ -290,12 +263,55 @@ void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
         auto useable = dynamic_cast<IPlayerUsable*>(area->GetEntity(player->GetTargettedUsableEntity()));
 
         if (useable) {
-            sf::Text targetUseText(std::string("Press E: ") + useable->GetUseText(), GameAssets::Get().gameFont, 22);
-            targetUseText.setPosition(5.0f, 50.0f);
+            sf::Text targetUseText(std::string("Press E: ") + useable->GetUseText(), GameAssets::Get().gameFont, 16);
+            targetUseText.setPosition(
+                sf::Vector2f(target.getView().getCenter().x, 0.8f * target.getView().getSize().y) -
+                0.5f * sf::Vector2f(targetUseText.getGlobalBounds().width, targetUseText.getGlobalBounds().height)
+                );
             targetUseText.setColor(sf::Color(255, 255, 0));
 
             Helper::RenderTextWithDropShadow(target, targetUseText);
         }
+    }
+}
+
+
+void Game::RenderUIPlayerHealth(sf::RenderTarget& target)
+{
+    auto player = GetPlayerEntity();
+
+    if (player) {
+        // render health bar bg
+        sf::RectangleShape healthBarBg(sf::Vector2f(300.0f, 20.0f));
+        healthBarBg.setFillColor(sf::Color(255, 0, 0));
+        healthBarBg.setPosition(sf::Vector2f(5.0f,
+            target.getView().getSize().y - 5.0f - healthBarBg.getSize().y));
+        healthBarBg.setOutlineThickness(2.0f);
+        healthBarBg.setOutlineColor(sf::Color(0, 0, 0));
+
+        target.draw(healthBarBg);
+
+        // render health bar fg
+        auto playerHealth = player->GetStats().GetHealth();
+        auto playerMaxHealth = player->GetStats().GetMaxHealth();
+        auto healthBarXSizeMul = std::min(1.0f, std::max(0.0f, static_cast<float>(playerHealth) / playerMaxHealth));
+
+        sf::RectangleShape healthBarFg(sf::Vector2f(300.0f * healthBarXSizeMul, 20.0f));
+        healthBarFg.setFillColor(sf::Color(0, 255, 0));
+        healthBarFg.setPosition(healthBarBg.getPosition());
+
+        target.draw(healthBarFg);
+
+        // render health text label
+        std::ostringstream oss;
+        oss << "H: " << playerHealth << " / " << playerMaxHealth;
+
+        sf::Text healthLabelText(oss.str(), GameAssets::Get().gameFont, 16);
+        healthLabelText.setPosition(healthBarBg.getPosition() + 0.5f * healthBarBg.getSize() - 0.5f *
+            sf::Vector2f(healthLabelText.getGlobalBounds().width, healthLabelText.getGlobalBounds().height));
+        healthLabelText.setColor(sf::Color(255, 255, 255));
+
+        Helper::RenderTextWithDropShadow(target, healthLabelText);
     }
 }
 
@@ -309,12 +325,14 @@ void Game::Render(sf::RenderTarget& target)
 
         RenderUILocation(target);
         RenderUIPlayerUseTargetText(target);
+        RenderUIPlayerHealth(target);
 
         if (!scheduledLevelChangeFsNodePath_.empty()) {
             // level will change next frame, so display loading UI message
-            sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 24);
+            sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 16);
             loadingText.setPosition(target.getView().getCenter() - 0.5f *
                 sf::Vector2f(loadingText.getGlobalBounds().width, loadingText.getGlobalBounds().height));
+
             Helper::RenderTextWithDropShadow(target, loadingText);
         }
     }

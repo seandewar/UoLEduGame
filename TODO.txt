@@ -17,7 +17,7 @@ UNITEMPS
 GameFilesystemGen finish
 [Chest entity and sprites] (work on Item class afterwards)
 Item class and Chest + Items
-DungeonGen spawn chests depending on files in game fs
+[DungeonGen spawn chests depending on files in game fs] & filetype
 Basic Enemy Entity that follows
 Collision with ents func
 

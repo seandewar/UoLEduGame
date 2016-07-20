@@ -72,6 +72,7 @@ class Game
 
     void RenderUILocation(sf::RenderTarget& target);
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
+    void RenderUIPlayerHealth(sf::RenderTarget& target);
 
     void Tick();
     void Render(sf::RenderTarget& target);

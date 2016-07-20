@@ -7,6 +7,7 @@
 #include "World.h"
 #include "Player.h"
 #include "Stairs.h"
+#include "Chest.h"
 
 
 DungeonAreaGen::DungeonAreaGen(const GameFilesystemNode& node) :
@@ -469,7 +470,7 @@ bool DungeonAreaGen::PlaceDownStairs(WorldArea& area, Rng& rng)
             bool placedStair = false;
             int tryCount = 0;
 
-            while (tryCount++ < 1000) {
+            while (tryCount++ < 10000) {
                 auto desiredArea = sf::FloatRect(
                     Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetWidth() - 1) * BaseTile::TileSize.x,
                     Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetHeight() - 1) * BaseTile::TileSize.y,
@@ -490,6 +491,65 @@ bool DungeonAreaGen::PlaceDownStairs(WorldArea& area, Rng& rng)
             }
 
             if (!placedStair) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
+{
+    for (std::size_t i = 0; i < node_.GetChildrenCount(); ++i) {
+        auto childNode = node_.GetChildNode(i);
+
+        if (childNode && !childNode->IsDirectory()) {
+            // try to create a chest for this node
+            // TODO less bruteforcey?!?!?!?
+            bool placedChest = false;
+            int tryCount = 0;
+
+            while (tryCount++ < 10000) {
+                auto desiredArea = sf::FloatRect(
+                    Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetWidth() - 1) * BaseTile::TileSize.x,
+                    Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetHeight() - 1) * BaseTile::TileSize.y,
+                    BaseTile::TileSize.x, BaseTile::TileSize.y
+                    );
+
+                if (area.CheckEntRectangleWalkable(desiredArea) &&
+                    area.GetFirstWorldEntInRectangle(desiredArea) == Entity::InvalidId) {
+                    ChestType chestType;
+                    switch (Helper::GenerateRandomInt(rng, 0, 2)) {
+                    default:
+                        assert(!"Unknown chest type!");
+                    case 0:
+                        chestType = ChestType::RedChest;
+                        break;
+
+                    case 1:
+                        chestType = ChestType::BlueChest;
+                        break;
+
+                    case 2:
+                        chestType = ChestType::PurpleChest;
+                        break;
+                    }
+
+                    auto chestEnt = area.GetEntity<ChestEntity>(
+                        area.EmplaceEntity<ChestEntity>(chestType, childNode->GetName()));
+
+                    if (chestEnt) {
+                        // TODO chests based on file type!!!
+                        chestEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
+                        placedChest = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!placedChest) {
                 return false;
             }
         }
@@ -607,8 +667,8 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
             currentStructureCount_, targetStructureAmount_);
     }
 
-    // place down stairs
-    if (!PlaceDownStairs(area, rng)) {
+    // place down stairs and chests
+    if (!PlaceDownStairs(area, rng) || !PlaceChests(area, rng)) {
         return false;
     }
 

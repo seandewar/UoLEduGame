@@ -81,6 +81,7 @@ class DungeonAreaGen
     bool GenerateArea(WorldArea& area, Rng& rng);
 
     bool PlaceDownStairs(WorldArea& area, Rng& rng);
+    bool PlaceChests(WorldArea& area, Rng& rng);
 
 public:
     DungeonAreaGen(const GameFilesystemNode& node);

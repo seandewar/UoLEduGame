@@ -2,6 +2,8 @@
 
 #include "Entity.h"
 
+#include "Item.h"
+
 /**
 * Entity where the player will be positioned if there are no other
 * spawns available (e.g. root dir floor w/o a staircase to parent floor)
@@ -23,6 +25,8 @@ class PlayerEntity : public AliveEntity
     float useRange_;
     EntityId targettedUsableEnt_;
 
+    ItemContainer* items_;
+
     void HandleMovement();
     void HandleUseNearbyObjects();
 
@@ -32,6 +36,11 @@ public:
 
     virtual void Tick() override;
     virtual void Render(sf::RenderTarget& target) override;
+
+    inline void SetItems(ItemContainer* items) { items_ = items; }
+
+    inline ItemContainer* GetItems() { return items_; }
+    inline const ItemContainer* GetItems() const { return items_; }
 
     virtual bool SetPositionToDefaultStart();
 

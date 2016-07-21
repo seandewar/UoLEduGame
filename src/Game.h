@@ -30,6 +30,7 @@ struct GameAssets
     sf::Texture stairsSpriteSheet;
     sf::Texture playerSpriteSheet;
     sf::Texture chestsSpriteSheet;
+    sf::Texture itemsSpriteSheet;
 
     bool LoadAssets();
 
@@ -51,6 +52,7 @@ class Game
 	std::unique_ptr<World> world_;
 
     AliveStats cachedPlayerStats_;
+    ItemContainer playerInv_;
     EntityId playerId_;
 
     std::string scheduledLevelChangeFsNodePath_;
@@ -72,8 +74,9 @@ class Game
 
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
+    void RenderUIPlayerStats(sf::RenderTarget& target);
+    void RenderUIPlayerInventory(sf::RenderTarget& target);
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
-    void RenderUIPlayerHealth(sf::RenderTarget& target);
 
     void Tick();
     void Render(sf::RenderTarget& target);

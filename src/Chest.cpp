@@ -24,10 +24,19 @@ ChestEntity::~ChestEntity()
 
 void ChestEntity::Use(EntityId playerId)
 {
-    // TODO: Give items
-
     if (!isOpened_) {
         isOpened_ = true;
+
+        // drop items in world using ItemEntity
+        auto area = GetAssignedArea();
+
+        for (auto& item : items_.GetItems()) {
+            auto itemEnt = area->GetEntity<ItemEntity>(area->EmplaceEntity<ItemEntity>());
+            itemEnt->SetItem(std::move(item));
+            itemEnt->SetPosition(GetPosition()); // TODO disperse around chest
+        }
+
+        items_.GetItems().clear();
     }
 }
 

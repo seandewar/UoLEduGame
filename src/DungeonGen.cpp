@@ -543,6 +543,7 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                     if (chestEnt) {
                         // TODO chests based on file type!!!
                         chestEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
+                        chestEnt->GetItems().AddItem(std::make_unique<PotionItem>(PotionItemType::Magic));
                         placedChest = true;
                         break;
                     }

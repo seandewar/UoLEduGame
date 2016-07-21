@@ -34,6 +34,8 @@ add_executable(UoLEduGame
     src/IPlayerUsable.h
     src/Player.h
     src/Player.cpp
+    src/Item.h
+    src/Item.cpp
     src/Chest.h
     src/Chest.cpp
     src/Stairs.h

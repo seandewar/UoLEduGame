@@ -3,6 +3,7 @@
 #include "Entity.h"
 
 #include "IPlayerUsable.h"
+#include "Item.h"
 
 /**
 * The type of appearance for ChestEntity.
@@ -22,6 +23,8 @@ class ChestEntity : public UnitEntity, public IPlayerUsable
     ChestType chestType_;
     std::string chestFsNodeName_;
 
+    ItemContainer items_;
+
     bool isOpened_;
 
 public:
@@ -36,6 +39,9 @@ public:
     inline virtual void SetChestType(ChestType chestType) { chestType_ = chestType; }
 
     inline std::string GetChestFsNodeName() const { return chestFsNodeName_; }
+
+    inline ItemContainer& GetItems() { return items_; }
+    inline const ItemContainer& GetItems() const { return items_; }
 
     inline virtual bool IsOpened() const { return isOpened_; }
     inline virtual void SetOpened(bool open) { isOpened_ = open; }

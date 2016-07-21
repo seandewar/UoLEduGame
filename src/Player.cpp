@@ -24,7 +24,8 @@ PlayerDefaultStartEntity::~PlayerDefaultStartEntity()
 PlayerEntity::PlayerEntity() :
 AliveEntity(),
 useRange_(25.0f),
-targettedUsableEnt_(InvalidId)
+targettedUsableEnt_(InvalidId),
+items_(nullptr)
 {
     SetSize(sf::Vector2f(12.0f, 12.0f));
 }

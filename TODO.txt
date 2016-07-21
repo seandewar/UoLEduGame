@@ -1,3 +1,8 @@
+[todo] = finished
+>todo  = in progress
+todo   = scheduled
+
+
 17th, 18th
 ----
 
@@ -13,20 +18,21 @@
 19th, 20th, 21st
 ----
 
-UNITEMPS
+[UNITEMPS]
 GameFilesystemGen finish
-[Chest entity and sprites] (work on Item class afterwards)
-Item class and Chest + Items
+[Chest entity and sprites (work on Item class afterwards)]
+[Item class and Chest + Items]
 [DungeonGen spawn chests depending on files in game fs] & filetype
 Basic Enemy Entity that follows
 Collision with ents func
 
-21st, 22nd, 23rd, 24th, 25th?
+21st, 22nd, 23rd, 24th, 25th, 26th, 27th?
 ----
 
 Different Enemy Ents
 Objective system + [floor nav]
 Procedural Item gen
+[Inventory] with moveable & selectable items
 Procedural ent alivestats based on objective and seed
 Questions for each item
 Boss?

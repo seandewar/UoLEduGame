@@ -31,6 +31,7 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(stairsSpriteSheet, "assets/StairSprites.png");
     LOAD_FROM_FILE(playerSpriteSheet, "assets/PlayerSprites.png");
     LOAD_FROM_FILE(chestsSpriteSheet, "assets/ChestSprites.png");
+    LOAD_FROM_FILE(itemsSpriteSheet, "assets/ItemSprites.png");
     return true;
 }
 
@@ -72,6 +73,7 @@ bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
     // get spawned player & restore stats to our cached copy
     auto player = GetPlayerEntity();
     player->SetStats(cachedPlayerStats_);
+    player->SetItems(&playerInv_);
     
     // set player location to a default start or start pos if provided
     if (!optionalStartPos) {
@@ -276,16 +278,16 @@ void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
 }
 
 
-void Game::RenderUIPlayerHealth(sf::RenderTarget& target)
+void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 {
     auto player = GetPlayerEntity();
 
     if (player) {
         // render health bar bg
         sf::RectangleShape healthBarBg(sf::Vector2f(300.0f, 20.0f));
-        healthBarBg.setFillColor(sf::Color(255, 0, 0));
-        healthBarBg.setPosition(sf::Vector2f(5.0f,
-            target.getView().getSize().y - 5.0f - healthBarBg.getSize().y));
+        healthBarBg.setFillColor(sf::Color(80, 80, 80));
+        healthBarBg.setPosition(target.getView().getSize().x - healthBarBg.getSize().x - 5.0f,
+            target.getView().getSize().y - 5.0f - healthBarBg.getSize().y);
         healthBarBg.setOutlineThickness(2.0f);
         healthBarBg.setOutlineColor(sf::Color(0, 0, 0));
 
@@ -297,7 +299,7 @@ void Game::RenderUIPlayerHealth(sf::RenderTarget& target)
         auto healthBarXSizeMul = std::min(1.0f, std::max(0.0f, static_cast<float>(playerHealth) / playerMaxHealth));
 
         sf::RectangleShape healthBarFg(sf::Vector2f(300.0f * healthBarXSizeMul, 20.0f));
-        healthBarFg.setFillColor(sf::Color(0, 255, 0));
+        healthBarFg.setFillColor(sf::Color(255, 0, 0));
         healthBarFg.setPosition(healthBarBg.getPosition());
 
         target.draw(healthBarFg);
@@ -326,6 +328,55 @@ void Game::RenderUILoadingArea(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
+{
+    auto player = GetPlayerEntity();
+
+    if (player) {
+        auto playerInv = player->GetItems();
+
+        if (playerInv && playerInv->GetMaxItems() > 0) {
+            for (std::size_t i = 0; i < std::min<std::size_t>(10, playerInv->GetMaxItems()); ++i) {
+                // render inv item bg and border TODO highlight if selected
+                sf::RectangleShape invItemBg(sf::Vector2f(50.0f, 50.0f));
+                invItemBg.setFillColor(sf::Color(20, 20, 20, 215));
+                invItemBg.setOutlineColor(sf::Color(0, 0, 0));
+                invItemBg.setOutlineThickness(2.0f);
+                invItemBg.setPosition(5.0f + (invItemBg.getSize().x + 5.0f) * i,
+                    target.getView().getSize().y - invItemBg.getSize().y - 5.0f);
+
+                target.draw(invItemBg);
+
+                // render inv item sprite TODO support repositioning of items!!!!
+                if (i < playerInv->GetItems().size()) {
+                    auto itemSprite = playerInv->GetItems()[i]->GetSprite();
+                    itemSprite.setScale(3.0f, 3.0f);
+                    itemSprite.setPosition(invItemBg.getPosition());
+
+                    target.draw(itemSprite);
+                }
+
+                // render inv text label
+                sf::Text invItemKeyText(std::to_string(i < 9 ? i + 1 : 0), GameAssets::Get().gameFont, 8);
+                invItemKeyText.setPosition(invItemBg.getPosition() + sf::Vector2f(2.0f, 2.0f));
+                invItemKeyText.setColor(sf::Color(255, 255, 255));
+
+                Helper::RenderTextWithDropShadow(target, invItemKeyText);
+
+            }
+
+            // render inv text label
+            sf::Text invLabelText("Inventory:", GameAssets::Get().gameFont, 12);
+            invLabelText.setPosition(5.0f,
+                target.getView().getSize().y - 62.0f - invLabelText.getGlobalBounds().height);
+            invLabelText.setColor(sf::Color(255, 255, 255));
+
+            Helper::RenderTextWithDropShadow(target, invLabelText);
+        }
+    }
+}
+
+
 void Game::Render(sf::RenderTarget& target)
 {
     target.clear();
@@ -335,7 +386,8 @@ void Game::Render(sf::RenderTarget& target)
 
         RenderUILocation(target);
         RenderUIPlayerUseTargetText(target);
-        RenderUIPlayerHealth(target);
+        RenderUIPlayerStats(target);
+        RenderUIPlayerInventory(target);
 
         // if level is going to change next frame, display loading text
         if (!scheduledLevelChangeFsNodePath_.empty()) {

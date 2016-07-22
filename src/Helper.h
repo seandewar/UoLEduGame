@@ -23,18 +23,34 @@ public:
 	/**
 	* Generate random int using an std::uniform_int_distribution.
 	*/
-	template <typename RngT, typename IntType = RngInt>
+	template <typename RngT, typename IntType = int>
 	static IntType GenerateRandomInt(RngT& rng, IntType min, IntType max)
 	{
 		std::uniform_int_distribution<IntType> dist(min, max);
 		return dist(rng);
 	}
 	
-	template <typename IntType = RngInt>
+	template <typename IntType = int>
 	static inline IntType GenerateRandomInt(IntType min, IntType max)
 	{
 		return GenerateRandomInt<decltype(rng_), IntType>(rng_, min, max);
 	}
+
+    /**
+    * Generate random real using an std::uniform_real_distribution.
+    */
+    template <typename RngT, typename RealType = float>
+    static RealType GenerateRandomReal(RngT& rng, RealType min, RealType max)
+    {
+        std::uniform_real_distribution<RealType> dist(min, max);
+        return dist(rng);
+    }
+
+    template <typename RealType = float>
+    static inline RealType GenerateRandomReal(RealType min, RealType max)
+    {
+        return GenerateRandomReal<decltype(rng_), RealType>(rng_, min, max);
+    }
 
 	/**
 	* Generate random boolean value using an std::bernoulli_distribution.

@@ -21,7 +21,7 @@ public:
     StairEntity();
     virtual ~StairEntity();
 
-    inline virtual bool IsUsable() const override { return true; }
+    inline virtual bool IsUsable(EntityId playerId) const override { return true; }
 
     virtual StairEntityType GetStairType() const = 0;
 };
@@ -62,7 +62,7 @@ public:
 
     inline std::string GetDestinationFsNodeName() const { return destinationFsNodeName_; }
 
-    inline virtual bool IsUsable() const override { return !destinationFsNodeName_.empty(); }
+    inline virtual bool IsUsable(EntityId playerId) const override { return !destinationFsNodeName_.empty(); }
     inline virtual void Use(EntityId playerId) override;
 
     inline virtual std::string GetUseText() const override { return "Descend to " + destinationFsNodeName_; }

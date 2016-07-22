@@ -23,7 +23,7 @@ class ChestEntity : public UnitEntity, public IPlayerUsable
     ChestType chestType_;
     std::string chestFsNodeName_;
 
-    ItemContainer items_;
+    std::vector<std::unique_ptr<Item>> items_;
 
     bool isOpened_;
 
@@ -40,13 +40,13 @@ public:
 
     inline std::string GetChestFsNodeName() const { return chestFsNodeName_; }
 
-    inline ItemContainer& GetItems() { return items_; }
-    inline const ItemContainer& GetItems() const { return items_; }
+    inline std::vector<std::unique_ptr<Item>>& GetItems() { return items_; }
+    inline const std::vector<std::unique_ptr<Item>>& GetItems() const { return items_; }
 
     inline virtual bool IsOpened() const { return isOpened_; }
     inline virtual void SetOpened(bool open) { isOpened_ = open; }
 
-    inline virtual bool IsUsable() const override { return !isOpened_; }
+    inline virtual bool IsUsable(EntityId playerId) const override { return !isOpened_; }
     inline virtual std::string GetUseText() const
     { 
         if (chestFsNodeName_.empty()) {

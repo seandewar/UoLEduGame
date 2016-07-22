@@ -53,6 +53,8 @@ UnitEntity::~UnitEntity()
 AliveStats::AliveStats() :
 maxHealth_(1),
 health_(1),
+maxMana_(1),
+mana_(1),
 moveSpeed_(60.0f)
 {
 }

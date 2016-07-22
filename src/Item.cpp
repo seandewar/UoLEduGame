@@ -3,8 +3,10 @@
 #include "Game.h"
 
 
-Item::Item()
+Item::Item(int maxAmount, int amount)
 {
+    SetMaxAmount(maxAmount);
+    SetAmount(amount);
 }
 
 
@@ -13,10 +15,14 @@ Item::~Item()
 }
 
 
-PotionItem::PotionItem(PotionItemType potionType) :
-Item(),
+PotionItem::PotionItem(ItemType potionType, int amount) :
+Item(10, amount),
 potionType_(potionType)
 {
+    if (potionType_ != ItemType::HealthPotion &&
+        potionType != ItemType::MagicPotion) {
+        throw std::runtime_error("Bad potion ItemType!");
+    }
 }
 
 
@@ -30,11 +36,11 @@ sf::Sprite PotionItem::GetSprite() const
     sf::Sprite potionSprite(GameAssets::Get().itemsSpriteSheet);
 
     switch (potionType_) {
-    case PotionItemType::Health:
+    case ItemType::HealthPotion:
         potionSprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
         break;
 
-    case PotionItemType::Magic:
+    case ItemType::MagicPotion:
         potionSprite.setTextureRect(sf::IntRect(0, 16, 16, 16));
         break;
 
@@ -49,33 +55,15 @@ sf::Sprite PotionItem::GetSprite() const
 std::string PotionItem::GetItemName() const
 {
     switch (potionType_) {
-    case PotionItemType::Health:
+    case ItemType::HealthPotion:
         return "Health Potion";
 
-    case PotionItemType::Magic:
+    case ItemType::MagicPotion:
         return "Magic Potion";
 
     default:
         return "Potion";
     }
-}
-
-
-ItemContainer::ItemContainer() :
-maxItems_(1000)
-{
-}
-
-
-ItemContainer::ItemContainer(ItemContainer&& other) :
-maxItems_(other.maxItems_),
-items_(std::move(other.maxItems_))
-{
-}
-
-
-ItemContainer::~ItemContainer()
-{
 }
 
 
@@ -93,7 +81,7 @@ ItemEntity::~ItemEntity()
 
 void ItemEntity::Render(sf::RenderTarget& target)
 {
-    if (item_) {
+    if (item_ && item_->GetAmount() > 0) {
         auto itemSprite = item_->GetSprite();
         itemSprite.setPosition(GetPosition());
 
@@ -107,10 +95,28 @@ void ItemEntity::Use(EntityId playerId)
     if (item_) {
         auto playerEnt = GetAssignedArea()->GetEntity<PlayerEntity>(playerId);
         
-        if (playerEnt && playerEnt->GetItems()) {
-            playerEnt->GetItems()->AddItem(item_);
+        if (playerEnt && playerEnt->GetInventory()) {
+            playerEnt->GetInventory()->GiveItem(item_.get());
         }
 
-        MarkForDeletion();
+        if (item_->GetAmount() <= 0) {
+            MarkForDeletion();
+        }
     }
+}
+
+
+bool ItemEntity::IsUsable(EntityId playerId) const
+{
+    auto area = GetAssignedArea();
+    if (!area) {
+        return false;
+    }
+
+    auto playerEnt = area->GetEntity<PlayerEntity>(playerId);
+    if (!playerEnt || !playerEnt->GetInventory()) {
+        return false;
+    }
+
+    return item_ && item_->GetAmount() > 0 && playerEnt->GetInventory()->CanGiveItem(item_.get());
 }

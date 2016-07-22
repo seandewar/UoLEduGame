@@ -14,6 +14,6 @@ public:
 
     virtual void Use(EntityId playerId) = 0;
 
-    virtual bool IsUsable() const = 0;
+    virtual bool IsUsable(EntityId playerId) const = 0;
     virtual std::string GetUseText() const = 0;
 };

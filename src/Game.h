@@ -51,13 +51,13 @@ class Game
     std::unique_ptr<GameFilesystem> worldFs_;
 	std::unique_ptr<World> world_;
 
-    AliveStats cachedPlayerStats_;
-    ItemContainer playerInv_;
+    AliveStats playerStats_;
+    PlayerInventory playerInv_;
     EntityId playerId_;
 
     std::string scheduledLevelChangeFsNodePath_;
 
-    inline WorldArea* GetWorldArea() { return (world_ ? world_->GetCurrentArea() : nullptr); }
+    inline WorldArea* GetWorldArea() { return world_ ? world_->GetCurrentArea() : nullptr; }
 
     inline PlayerEntity* GetPlayerEntity()
     { 
@@ -65,6 +65,8 @@ class Game
         return area ? area->GetEntity<PlayerEntity>(playerId_) : nullptr;
     }
     
+    void ResetPlayerStats();
+
     bool SpawnPlayer(const sf::Vector2f* optionalStartPos = nullptr);
     bool RemovePlayer();
 
@@ -75,7 +77,11 @@ class Game
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
     void RenderUIPlayerStats(sf::RenderTarget& target);
+
+    void RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, const std::string& label,
+        Item* item, bool isHighlighted = false);
     void RenderUIPlayerInventory(sf::RenderTarget& target);
+
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
 
     void Tick();

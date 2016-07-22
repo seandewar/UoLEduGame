@@ -1,7 +1,5 @@
 #include "Game.h"
 
-#include <sstream>
-
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
@@ -57,6 +55,18 @@ bool Game::Init()
 }
 
 
+void Game::ResetPlayerStats()
+{
+    playerStats_.SetMaxHealth(1000);
+    playerStats_.SetHealth(1000);
+
+    playerStats_.SetMaxMana(1000);
+    playerStats_.SetMana(1000);
+
+    playerStats_.SetMoveSpeed(65.0f);
+}
+
+
 bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
 {
     auto area = GetWorldArea();
@@ -72,8 +82,8 @@ bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
 
     // get spawned player & restore stats to our cached copy
     auto player = GetPlayerEntity();
-    player->SetStats(cachedPlayerStats_);
-    player->SetItems(&playerInv_);
+    player->SetStats(&playerStats_);
+    player->SetInventory(&playerInv_);
     
     // set player location to a default start or start pos if provided
     if (!optionalStartPos) {
@@ -112,10 +122,8 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
     auto oldArea = GetWorldArea();
     auto oldPlayer = oldArea ? GetPlayerEntity() : nullptr;
 
-    // remove the old player ent and cache it's stats so we can restore them
-    // on the new player ent
+    // remove the old player ent
     if (oldPlayer) {
-        cachedPlayerStats_ = oldPlayer->GetStats();
         RemovePlayer();
     }
 
@@ -194,6 +202,7 @@ bool Game::NewGame()
         return false;
     }
 
+    ResetPlayerStats();
     return true;
 }
 
@@ -282,38 +291,70 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 {
     auto player = GetPlayerEntity();
 
-    if (player) {
+    if (player && player->GetStats()) {
         // render health bar bg
         sf::RectangleShape healthBarBg(sf::Vector2f(300.0f, 20.0f));
         healthBarBg.setFillColor(sf::Color(80, 80, 80));
         healthBarBg.setPosition(target.getView().getSize().x - healthBarBg.getSize().x - 5.0f,
-            target.getView().getSize().y - 5.0f - healthBarBg.getSize().y);
+            target.getView().getSize().y - 32.5f - healthBarBg.getSize().y);
         healthBarBg.setOutlineThickness(2.0f);
         healthBarBg.setOutlineColor(sf::Color(0, 0, 0));
 
         target.draw(healthBarBg);
 
         // render health bar fg
-        auto playerHealth = player->GetStats().GetHealth();
-        auto playerMaxHealth = player->GetStats().GetMaxHealth();
-        auto healthBarXSizeMul = std::min(1.0f, std::max(0.0f, static_cast<float>(playerHealth) / playerMaxHealth));
+        auto playerHealth = player->GetStats()->GetHealth();
+        auto playerMaxHealth = player->GetStats()->GetMaxHealth();
 
-        sf::RectangleShape healthBarFg(sf::Vector2f(300.0f * healthBarXSizeMul, 20.0f));
-        healthBarFg.setFillColor(sf::Color(255, 0, 0));
-        healthBarFg.setPosition(healthBarBg.getPosition());
+        if (playerMaxHealth > 0) {
+            auto healthBarXSizeMul = std::min(1.0f, std::max(0.0f, static_cast<float>(playerHealth) / playerMaxHealth));
 
-        target.draw(healthBarFg);
+            sf::RectangleShape healthBarFg(sf::Vector2f(300.0f * healthBarXSizeMul, 20.0f));
+            healthBarFg.setFillColor(sf::Color(255, 0, 0));
+            healthBarFg.setPosition(healthBarBg.getPosition());
+
+            target.draw(healthBarFg);
+        }
 
         // render health text label
-        std::ostringstream oss;
-        oss << "H: " << playerHealth << " / " << playerMaxHealth;
-
-        sf::Text healthLabelText(oss.str(), GameAssets::Get().gameFont, 16);
+        sf::Text healthLabelText(std::string("H: ") + std::to_string(playerHealth), GameAssets::Get().gameFont, 16);
         healthLabelText.setPosition(healthBarBg.getPosition() + 0.5f * healthBarBg.getSize() - 0.5f *
             sf::Vector2f(healthLabelText.getGlobalBounds().width, healthLabelText.getGlobalBounds().height));
         healthLabelText.setColor(sf::Color(255, 255, 255));
 
         Helper::RenderTextWithDropShadow(target, healthLabelText);
+
+        // render mana bar bg
+        sf::RectangleShape manaBarBg(sf::Vector2f(300.0f, 20.0f));
+        manaBarBg.setFillColor(sf::Color(80, 80, 80));
+        manaBarBg.setPosition(target.getView().getSize().x - manaBarBg.getSize().x - 5.0f,
+            target.getView().getSize().y - 5.0f - manaBarBg.getSize().y);
+        manaBarBg.setOutlineThickness(2.0f);
+        manaBarBg.setOutlineColor(sf::Color(0, 0, 0));
+
+        target.draw(manaBarBg);
+
+        // render mana bar fg
+        auto playerMana = player->GetStats()->GetMana();
+        auto playerMaxMana = player->GetStats()->GetMaxMana();
+
+        if (playerMaxMana > 0) {
+            auto manaBarXSizeMul = std::min(1.0f, std::max(0.0f, static_cast<float>(playerMana) / playerMaxMana));
+
+            sf::RectangleShape manaBarFg(sf::Vector2f(300.0f * manaBarXSizeMul, 20.0f));
+            manaBarFg.setFillColor(sf::Color(0, 0, 255));
+            manaBarFg.setPosition(manaBarBg.getPosition());
+
+            target.draw(manaBarFg);
+        }
+
+        // render mana text label
+        sf::Text manaLabelText(std::string("M: ") + std::to_string(playerMana), GameAssets::Get().gameFont, 16);
+        manaLabelText.setPosition(manaBarBg.getPosition() + 0.5f * manaBarBg.getSize() - 0.5f *
+            sf::Vector2f(manaLabelText.getGlobalBounds().width, manaLabelText.getGlobalBounds().height));
+        manaLabelText.setColor(sf::Color(255, 255, 255));
+
+        Helper::RenderTextWithDropShadow(target, manaLabelText);
     }
 }
 
@@ -328,50 +369,99 @@ void Game::RenderUILoadingArea(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, const std::string& label,
+    Item* item, bool isHighlighted)
+{
+    // render inv item bg and border
+    sf::RectangleShape invItemBg(sf::Vector2f(50.0f, 50.0f));
+    invItemBg.setFillColor(isHighlighted ? sf::Color(40, 40, 40, 215) : sf::Color(20, 20, 20, 215));
+    invItemBg.setOutlineColor(isHighlighted ? sf::Color(255, 255, 255) : sf::Color(0, 0, 0));
+    invItemBg.setOutlineThickness(2.0f);
+    invItemBg.setPosition(position);
+
+    target.draw(invItemBg);
+
+    // render inv item sprite
+    if (item && item->GetAmount() > 0) {
+        auto invItemSprite = item->GetSprite();
+        invItemSprite.setScale(3.0f, 3.0f);
+        invItemSprite.setPosition(invItemBg.getPosition());
+
+        target.draw(invItemSprite);
+
+        // render item amount
+        if (item->GetAmount() > 1) {
+            sf::Text invItemAmountText(std::to_string(item->GetAmount()), GameAssets::Get().gameFont, 8);
+            invItemAmountText.setPosition(
+                invItemBg.getPosition().x + invItemBg.getSize().x - invItemAmountText.getGlobalBounds().width - 2.0f,
+                invItemBg.getPosition().y + 2.0f
+                );
+            invItemAmountText.setColor(sf::Color(255, 255, 0));
+
+            Helper::RenderTextWithDropShadow(target, invItemAmountText);
+        }
+    }
+
+    // render inv text label
+    sf::Text invItemKeyText(label, GameAssets::Get().gameFont, 8);
+    invItemKeyText.setPosition(invItemBg.getPosition() + sf::Vector2f(2.0f, 2.0f));
+    invItemKeyText.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, invItemKeyText);
+}
+
+
 void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 {
     auto player = GetPlayerEntity();
 
     if (player) {
-        auto playerInv = player->GetItems();
+        auto playerInv = player->GetInventory();
 
-        if (playerInv && playerInv->GetMaxItems() > 0) {
-            for (std::size_t i = 0; i < std::min<std::size_t>(10, playerInv->GetMaxItems()); ++i) {
-                // render inv item bg and border TODO highlight if selected
-                sf::RectangleShape invItemBg(sf::Vector2f(50.0f, 50.0f));
-                invItemBg.setFillColor(sf::Color(20, 20, 20, 215));
-                invItemBg.setOutlineColor(sf::Color(0, 0, 0));
-                invItemBg.setOutlineThickness(2.0f);
-                invItemBg.setPosition(5.0f + (invItemBg.getSize().x + 5.0f) * i,
-                    target.getView().getSize().y - invItemBg.getSize().y - 5.0f);
+        if (playerInv) {
+            // render weapons inv text label
+            sf::Text invWeaponsLabelText("Weapons", GameAssets::Get().gameFont, 8);
+            invWeaponsLabelText.setPosition(5.0f,
+                target.getView().getSize().y - 60.0f - invWeaponsLabelText.getGlobalBounds().height);
+            invWeaponsLabelText.setColor(sf::Color(255, 255, 255));
 
-                target.draw(invItemBg);
+            Helper::RenderTextWithDropShadow(target, invWeaponsLabelText);
 
-                // render inv item sprite TODO support repositioning of items!!!!
-                if (i < playerInv->GetItems().size()) {
-                    auto itemSprite = playerInv->GetItems()[i]->GetSprite();
-                    itemSprite.setScale(3.0f, 3.0f);
-                    itemSprite.setPosition(invItemBg.getPosition());
+            // TODO render melee wep item
+            RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 55.0f),
+                "1", nullptr, false);
 
-                    target.draw(itemSprite);
-                }
+            // TODO render magic wep item
+            RenderUIItem(target, sf::Vector2f(62.5f, target.getView().getSize().y - 55.0f),
+                "2", nullptr);
 
-                // render inv text label
-                sf::Text invItemKeyText(std::to_string(i < 9 ? i + 1 : 0), GameAssets::Get().gameFont, 8);
-                invItemKeyText.setPosition(invItemBg.getPosition() + sf::Vector2f(2.0f, 2.0f));
-                invItemKeyText.setColor(sf::Color(255, 255, 255));
+            // render potions inv text label
+            sf::Text invPotionsLabelText("Potions", GameAssets::Get().gameFont, 8);
+            invPotionsLabelText.setPosition(122.5f,
+                target.getView().getSize().y - 60.0f - invPotionsLabelText.getGlobalBounds().height);
+            invPotionsLabelText.setColor(sf::Color(255, 255, 255));
 
-                Helper::RenderTextWithDropShadow(target, invItemKeyText);
+            Helper::RenderTextWithDropShadow(target, invPotionsLabelText);
 
-            }
+            // render health potion item
+            RenderUIItem(target, sf::Vector2f(122.5f, target.getView().getSize().y - 55.0f),
+                "3", playerInv->GetHealthPotions());
 
-            // render inv text label
-            sf::Text invLabelText("Inventory:", GameAssets::Get().gameFont, 12);
-            invLabelText.setPosition(5.0f,
-                target.getView().getSize().y - 62.0f - invLabelText.getGlobalBounds().height);
-            invLabelText.setColor(sf::Color(255, 255, 255));
+            // render magic potion item
+            RenderUIItem(target, sf::Vector2f(180.0f, target.getView().getSize().y - 55.0f),
+                "4", playerInv->GetMagicPotions());
 
-            Helper::RenderTextWithDropShadow(target, invLabelText);
+            // render special inv text label
+            sf::Text invSpecLabelText("Special", GameAssets::Get().gameFont, 8);
+            invSpecLabelText.setPosition(241.0f,
+                target.getView().getSize().y - 60.0f - invSpecLabelText.getGlobalBounds().height);
+            invSpecLabelText.setColor(sf::Color(255, 255, 255));
+
+            Helper::RenderTextWithDropShadow(target, invSpecLabelText);
+
+            // TODO render special item
+            RenderUIItem(target, sf::Vector2f(241.0f, target.getView().getSize().y - 55.0f),
+                "5", nullptr);
         }
     }
 }

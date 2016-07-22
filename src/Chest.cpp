@@ -30,13 +30,14 @@ void ChestEntity::Use(EntityId playerId)
         // drop items in world using ItemEntity
         auto area = GetAssignedArea();
 
-        for (auto& item : items_.GetItems()) {
+        for (auto& item : items_) {
             auto itemEnt = area->GetEntity<ItemEntity>(area->EmplaceEntity<ItemEntity>());
             itemEnt->SetItem(std::move(item));
-            itemEnt->SetPosition(GetPosition()); // TODO disperse around chest
+            itemEnt->SetCenterPosition(GetCenterPosition() +
+                sf::Vector2f(Helper::GenerateRandomReal(-5.0f, 5.0f), 0.0f));
         }
 
-        items_.GetItems().clear();
+        items_.clear();
     }
 }
 

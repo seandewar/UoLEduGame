@@ -14,7 +14,8 @@
 */
 enum class ItemType
 {
-    Potion,
+    HealthPotion,
+    MagicPotion,
     Weapon
 };
 
@@ -23,9 +24,43 @@ enum class ItemType
 */
 class Item
 {
+    int amount_, maxAmount_;
+
 public:
-    Item();
+    Item(int maxAmount = 1, int amount = 0);
     virtual ~Item();
+
+    /**
+    * Returns the amount of items actually added
+    */
+    inline int AddAmount(int addAmount)
+    {
+        amount_ += (addAmount = std::max(0, std::min(maxAmount_ - amount_, addAmount)));
+        return addAmount;
+    }
+
+    /**
+    * Returns the amount of items actually removed
+    */
+    inline int RemoveAmount(int removeAmount)
+    {
+        amount_ -= (removeAmount = std::max(0, std::min(amount_, removeAmount)));
+        return removeAmount;
+    }
+
+    /**
+    * Returns the actual amount of items set to
+    */
+    inline int SetAmount(int amount) { return amount_ = std::max(0, std::min(maxAmount_, amount)); }
+    inline int GetAmount() const { return amount_; }
+
+    /**
+    * Returns the actual max amount set to
+    */
+    inline int SetMaxAmount(int maxAmount) { return maxAmount_ = std::max(0, maxAmount); }
+    inline int GetMaxAmount() const { return maxAmount_; }
+
+    inline bool IsMaxStack() const { return amount_ >= maxAmount_; }
 
     inline virtual sf::Sprite GetSprite() const { return sf::Sprite(); }
 
@@ -34,71 +69,20 @@ public:
 };
 
 /**
-* The type of potion
-*/
-enum class PotionItemType
-{
-    Health,
-    Magic
-};
-
-/**
 * Potion item class
 */
 class PotionItem : public Item
 {
-    PotionItemType potionType_;
+    ItemType potionType_;
 
 public:
-    PotionItem(PotionItemType potionType);
+    PotionItem(ItemType potionType, int amount = 0);
     virtual ~PotionItem();
 
     sf::Sprite GetSprite() const override;
 
     std::string GetItemName() const override;
-    inline ItemType GetItemType() const { return ItemType::Potion; }
-
-    inline PotionItemType GetPotionType() const { return potionType_; }
-};
-
-/**
-* Class for containing items.
-*/
-class ItemContainer
-{
-    std::vector<std::unique_ptr<Item>> items_;
-    std::size_t maxItems_;
-
-public:
-    ItemContainer();
-    ItemContainer(ItemContainer&& other);
-    ~ItemContainer();
-
-    inline ItemContainer& operator=(ItemContainer&& other)
-    {
-        maxItems_ = other.maxItems_;
-        items_ = std::move(other.items_);
-        return *this;
-    }
-
-    template <typename T = Item>
-    inline bool AddItem(std::unique_ptr<T>& item)
-    {
-        if (items_.size() >= maxItems_) {
-            return false;
-        }
-
-        items_.emplace_back(std::move(item));
-        return true;
-    }
-
-    inline void SetMaxItems(std::size_t maxItems) { maxItems_ = maxItems; }
-    inline std::size_t GetMaxItems() const { return maxItems_; }
-
-    inline std::vector<std::unique_ptr<Item>>& GetItems() { return items_; }
-    inline const std::vector<std::unique_ptr<Item>>& GetItems() const { return items_; }
-
-    inline std::size_t GetItemCount() const { return items_.size(); }
+    inline ItemType GetItemType() const { return potionType_; }
 };
 
 /**
@@ -116,11 +100,22 @@ public:
 
     virtual void Use(EntityId playerId) override;
 
-    inline virtual bool IsUsable() const override { return item_ != nullptr; }
+    virtual bool IsUsable(EntityId playerId) const override;
 
     inline virtual std::string GetUseText() const override
     {
-        return item_ ? "Pick up " + item_->GetItemName() : std::string();
+        if (item_ && item_->GetAmount() > 0) {
+            std::string useText = "Pick up " + item_->GetItemName();
+
+            if (item_->GetAmount() > 1) {
+                useText += " x " + std::to_string(item_->GetAmount());
+            }
+
+            return useText;
+        }
+        else {
+            return std::string();
+        }
     }
 
     inline void SetItem(std::unique_ptr<Item>& item) { item_ = std::move(item); }

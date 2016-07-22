@@ -29,6 +29,8 @@ add_executable(UoLEduGame
 	src/GameFilesystem.cpp
     src/Collision.h
     src/Collision.cpp
+    src/Animation.h
+    src/Animation.cpp
     src/Entity.h
     src/Entity.cpp
     src/IPlayerUsable.h

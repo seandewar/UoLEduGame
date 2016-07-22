@@ -19,11 +19,14 @@ todo   = scheduled
 ----
 
 [UNITEMPS]
+[Inventory] change to simpler system where 1 melee & 1 magic item, [potions are stored by amount value instead]
 GameFilesystemGen finish
 [Chest entity and sprites (work on Item class afterwards)]
 [Item class and Chest + Items]
-[DungeonGen spawn chests depending on files in game fs] & filetype
+[DungeonGen spawn chests depending on files in game fs]
+[anim]
 Basic Enemy Entity that follows
+
 Collision with ents func
 
 21st, 22nd, 23rd, 24th, 25th, 26th, 27th?
@@ -32,7 +35,6 @@ Collision with ents func
 Different Enemy Ents
 Objective system + [floor nav]
 Procedural Item gen
-[Inventory] with moveable & selectable items
 Procedural ent alivestats based on objective and seed
 Questions for each item
 Boss?

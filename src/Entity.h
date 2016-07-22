@@ -85,6 +85,7 @@ public:
 class AliveStats
 {
     u32 maxHealth_, health_;
+    u32 maxMana_, mana_;
     float moveSpeed_;
 
 public:
@@ -98,6 +99,12 @@ public:
 
     inline virtual void SetMaxHealth(u32 maxHealth) { maxHealth_ = maxHealth; health_ = std::min(maxHealth_, health_); }
     inline virtual u32 GetMaxHealth() const { return maxHealth_; }
+
+    inline virtual void SetMana(u32 mana) { mana_ = std::min(maxMana_, mana); }
+    inline virtual u32 GetMana() const { return mana_; }
+
+    inline virtual void SetMaxMana(u32 maxMana) { maxMana_ = maxMana; mana_ = std::min(maxMana_, mana_); }
+    inline virtual u32 GetMaxMana() const { return maxMana_; }
 
     inline virtual void ApplyDamage(u32 damage) { health_ -= std::min(damage, health_); }
 
@@ -116,14 +123,14 @@ public:
 */
 class AliveEntity : public UnitEntity
 {
-    AliveStats stats_;
+    AliveStats* stats_;
 
 public:
     AliveEntity();
     virtual ~AliveEntity();
 
-    inline void SetStats(AliveStats& newStats) { stats_ = newStats; }
+    inline void SetStats(AliveStats* newStats) { stats_ = newStats; }
 
-    inline AliveStats& GetStats() { return stats_; }
-    inline const AliveStats& GetStats() const { return stats_; }
+    inline AliveStats* GetStats() { return stats_; }
+    inline const AliveStats* GetStats() const { return stats_; }
 };

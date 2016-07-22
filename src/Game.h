@@ -74,6 +74,8 @@ class Game
 
     void ViewFollowPlayer();
 
+    void HandleUseInventory();
+
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
     void RenderUIPlayerStats(sf::RenderTarget& target);

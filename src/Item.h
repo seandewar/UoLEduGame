@@ -19,6 +19,8 @@ enum class ItemType
     Weapon
 };
 
+class PlayerEntity;
+
 /**
 * Base item class
 */
@@ -62,6 +64,9 @@ public:
 
     inline bool IsMaxStack() const { return amount_ >= maxAmount_; }
 
+    inline virtual void Use(PlayerEntity* player) = 0;
+    inline virtual std::string GetUseText() const = 0;
+
     inline virtual sf::Sprite GetSprite() const { return sf::Sprite(); }
 
     virtual std::string GetItemName() const = 0;
@@ -78,6 +83,22 @@ class PotionItem : public Item
 public:
     PotionItem(ItemType potionType, int amount = 0);
     virtual ~PotionItem();
+
+    void Use(PlayerEntity* player) override;
+
+    inline std::string GetUseText() const override
+    {
+        switch (potionType_) {
+        case ItemType::HealthPotion:
+            return "Drink Health Potion (Restores 250 Health)";
+
+        case ItemType::MagicPotion:
+            return "Drink Magic Potion (Restores 250 Mana)";
+
+        default:
+            return std::string();
+        }
+    }
 
     sf::Sprite GetSprite() const override;
 

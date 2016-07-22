@@ -97,6 +97,14 @@ public:
 
     inline virtual bool IsAlive() const { return health_ > 0; }
 
+    inline virtual void ApplyDamage(u32 damage) { health_ -= std::min(damage, health_); }
+    inline virtual void ApplyHealing(u32 healAmount)
+    {
+        health_ += std::min(healAmount, UINT32_MAX - health_);
+        health_ = std::min(maxHealth_, health_);
+    }
+
+
     inline virtual void SetMaxHealth(u32 maxHealth) { maxHealth_ = maxHealth; health_ = std::min(maxHealth_, health_); }
     inline virtual u32 GetMaxHealth() const { return maxHealth_; }
 
@@ -105,14 +113,6 @@ public:
 
     inline virtual void SetMaxMana(u32 maxMana) { maxMana_ = maxMana; mana_ = std::min(maxMana_, mana_); }
     inline virtual u32 GetMaxMana() const { return maxMana_; }
-
-    inline virtual void ApplyDamage(u32 damage) { health_ -= std::min(damage, health_); }
-
-    inline virtual void ApplyHealing(u32 healAmount)
-    {
-        health_ += std::min(healAmount, UINT32_MAX - health_);
-        health_ = std::min(maxHealth_, health_);
-    }
 
     inline virtual void SetMoveSpeed(float speed) { moveSpeed_ = speed; }
     inline virtual float GetMoveSpeed() const { return moveSpeed_; }

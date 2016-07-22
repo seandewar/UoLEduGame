@@ -58,10 +58,10 @@ bool Game::Init()
 void Game::ResetPlayerStats()
 {
     playerStats_.SetMaxHealth(1000);
-    playerStats_.SetHealth(1000);
+    playerStats_.SetHealth(100);
 
     playerStats_.SetMaxMana(1000);
-    playerStats_.SetMana(1000);
+    playerStats_.SetMana(100);
 
     playerStats_.SetMoveSpeed(65.0f);
 }
@@ -218,6 +218,31 @@ void Game::ViewFollowPlayer()
 }
 
 
+void Game::HandleUseInventory()
+{
+    auto player = GetPlayerEntity();
+
+    if (player) {
+        Item* itemToUse = nullptr;
+
+        // find out what item we want to use
+        // TODO Use weapons & special
+
+        if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {
+            itemToUse = playerInv_.GetHealthPotions();
+        }
+        else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num4)) {
+            itemToUse = playerInv_.GetMagicPotions();
+        }
+
+        // use chosen item
+        if (itemToUse && itemToUse->GetAmount()) {
+            itemToUse->Use(player);
+        }
+    }
+}
+
+
 void Game::Tick()
 {
     if (world_) {
@@ -229,6 +254,8 @@ void Game::Tick()
 
         world_->SetDebugMode(debugMode_);
         world_->Tick();
+
+        HandleUseInventory();
 
         // focus view on player (unless in debug mode & zooming out the map)
         if (debugMode_ && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
@@ -429,7 +456,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 
             // TODO render melee wep item
             RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 55.0f),
-                "1", nullptr, false);
+                "1", nullptr, true);
 
             // TODO render magic wep item
             RenderUIItem(target, sf::Vector2f(62.5f, target.getView().getSize().y - 55.0f),

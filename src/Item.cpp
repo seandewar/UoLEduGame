@@ -1,6 +1,7 @@
 #include "Item.h"
 
 #include "Game.h"
+#include "Player.h"
 
 
 Item::Item(int maxAmount, int amount)
@@ -28,6 +29,32 @@ potionType_(potionType)
 
 PotionItem::~PotionItem()
 {
+}
+
+
+void PotionItem::Use(PlayerEntity* player)
+{
+    if (!player || !player->GetStats() || GetAmount() <= 0) {
+        return;
+    }
+
+    auto stats = player->GetStats();
+
+    switch (potionType_) {
+    case ItemType::HealthPotion:
+        if (stats->GetHealth() < stats->GetMaxHealth()) {
+            stats->ApplyHealing(250);
+            RemoveAmount(1);
+        }
+        break;
+
+    case ItemType::MagicPotion:
+        if (stats->GetMana() < stats->GetMaxMana()) {
+            stats->SetMana(std::min(stats->GetMaxMana(), stats->GetMana() + 250));
+            RemoveAmount(1);
+        }
+        break;
+    }
 }
 
 

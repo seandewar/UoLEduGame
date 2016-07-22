@@ -45,6 +45,11 @@ void PotionItem::Use(PlayerEntity* player)
         if (stats->GetHealth() < stats->GetMaxHealth()) {
             stats->ApplyHealing(250);
             RemoveAmount(1);
+
+            Game::Get().AddMessage("You drink a Health Potion.", sf::Color(255, 100, 100));
+        }
+        else {
+            Game::Get().AddMessage("You are already at full Health.");
         }
         break;
 
@@ -52,6 +57,11 @@ void PotionItem::Use(PlayerEntity* player)
         if (stats->GetMana() < stats->GetMaxMana()) {
             stats->SetMana(std::min(stats->GetMaxMana(), stats->GetMana() + 250));
             RemoveAmount(1);
+
+            Game::Get().AddMessage("You drink a Magic Potion.", sf::Color(100, 100, 255));
+        }
+        else {
+            Game::Get().AddMessage("You are already have full Mana.");
         }
         break;
     }

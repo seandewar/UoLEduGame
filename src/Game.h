@@ -44,9 +44,25 @@ private:
 */
 class Game
 {
+    struct GameMessage {
+        sf::Color color;
+        std::string message;
+
+        GameMessage(const std::string& message, const sf::Color& color) :
+            color(color),
+            message(message)
+        { }
+
+        ~GameMessage() { }
+    };
+
+    static const std::size_t MaxMessages = 8;
+
     bool debugMode_;
 
     std::vector<sf::Keyboard::Key> eventKeysPressed_;
+
+    std::vector<GameMessage> messages_;
 
     std::unique_ptr<GameFilesystem> worldFs_;
 	std::unique_ptr<World> world_;
@@ -64,7 +80,7 @@ class Game
         auto area = GetWorldArea();
         return area ? area->GetEntity<PlayerEntity>(playerId_) : nullptr;
     }
-    
+
     void ResetPlayerStats();
 
     bool SpawnPlayer(const sf::Vector2f* optionalStartPos = nullptr);
@@ -75,6 +91,8 @@ class Game
     void ViewFollowPlayer();
 
     void HandleUseInventory();
+
+    void RenderUIMessages(sf::RenderTarget& target);
 
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
@@ -112,6 +130,15 @@ public:
     inline bool IsKeyPressedFromEvent(sf::Keyboard::Key key)
     {
         return std::find(eventKeysPressed_.begin(), eventKeysPressed_.end(), key) != eventKeysPressed_.end();
+    }
+
+    inline void AddMessage(const std::string& message, const sf::Color& color = sf::Color(255, 255, 255))
+    {
+        if (messages_.size() >= MaxMessages) {
+            messages_.erase(messages_.begin());
+        }
+
+        messages_.emplace_back(message, color);
     }
 
     void RunFrame(sf::RenderTarget& target);

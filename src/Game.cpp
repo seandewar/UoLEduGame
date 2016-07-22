@@ -185,12 +185,17 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         }
     }
 
+    AddMessage("You are on floor " + GameFilesystem::GetNodePathString(*currentFsNode),
+        sf::Color(255, 255, 0));
     return true;
 }
 
 
 bool Game::NewGame()
 {
+    messages_.clear();
+    AddMessage("Welcome to the File System Dungeon!", sf::Color(173, 216, 230));
+
     GameFilesystemGen gen;
     if (!(worldFs_ = std::move(gen.GenerateNewFilesystem()))) {
         return false;
@@ -203,6 +208,7 @@ bool Game::NewGame()
     }
 
     ResetPlayerStats();
+
     return true;
 }
 
@@ -417,7 +423,7 @@ void Game::RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, 
         target.draw(invItemSprite);
 
         // render item amount
-        if (item->GetAmount() > 1) {
+        if (item->GetMaxAmount() > 1) {
             sf::Text invItemAmountText(std::to_string(item->GetAmount()), GameAssets::Get().gameFont, 8);
             invItemAmountText.setPosition(
                 invItemBg.getPosition().x + invItemBg.getSize().x - invItemAmountText.getGlobalBounds().width - 2.0f,
@@ -494,6 +500,22 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIMessages(sf::RenderTarget& target)
+{
+    for (auto it = messages_.rbegin(); it != messages_.rend(); ++it) {
+        auto msg = *it;
+        auto i = it - messages_.rbegin();
+
+        sf::Text msgText(msg.message, GameAssets::Get().gameFont, 8);
+        msgText.setColor(sf::Color(msg.color.r, msg.color.g, msg.color.b, 
+            255 * (1.0f - (static_cast<float>(i) / MaxMessages))));
+        msgText.setPosition(5.0f, target.getView().getSize().y - 250.0f - 15.0f * i);
+
+        Helper::RenderTextWithDropShadow(target, msgText);
+    }
+}
+
+
 void Game::Render(sf::RenderTarget& target)
 {
     target.clear();
@@ -511,6 +533,8 @@ void Game::Render(sf::RenderTarget& target)
             RenderUILoadingArea(target);
         }
     }
+
+    RenderUIMessages(target);
 }
 
 

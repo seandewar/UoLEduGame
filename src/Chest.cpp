@@ -38,6 +38,8 @@ void ChestEntity::Use(EntityId playerId)
         }
 
         items_.clear();
+
+        Game::Get().AddMessage("You open the " + chestFsNodeName_ + " chest.", sf::Color(255, 165, 0));
     }
 }
 

@@ -57,14 +57,22 @@ void PlayerInventory::GiveItem(Item* item)
         return;
     }
 
+    int receivedAmount;
     if (item->GetItemType() == ItemType::HealthPotion) {
-        item->RemoveAmount(healthPotions_->AddAmount(item->GetAmount()));
+        item->RemoveAmount(receivedAmount = healthPotions_->AddAmount(item->GetAmount()));
     }
     else if (item->GetItemType() == ItemType::MagicPotion) {
-        item->RemoveAmount(magicPotions_->AddAmount(item->GetAmount()));
+        item->RemoveAmount(receivedAmount = magicPotions_->AddAmount(item->GetAmount()));
     }
 
     // TODO weapons (melee & magic) & specials
+
+    if (receivedAmount > 0) {
+        Game::Get().AddMessage("You received " + item->GetItemName() + " x " + std::to_string(receivedAmount));
+    }
+    else if (receivedAmount == 0) {
+        Game::Get().AddMessage("You cannot carry another " + item->GetItemName() + ".");
+    }
 }
 
 

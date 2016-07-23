@@ -572,9 +572,9 @@ void DungeonAreaGen::ConfigureGenSettings()
     genIterations_ = 60;
     genMaxRetries_ = 10;
 
-    minStructureAmount_ = node_.GetChildrenCount() / 3;
-    maxStructureAmount_ = std::min<int>(14, node_.GetChildrenCount());
+    maxStructureAmount_ = std::min<int>(10, node_.GetChildrenCount() / 2);
     targetStructureAmount_ = std::max(1, std::min<int>(node_.GetChildrenCount() / 2, maxStructureAmount_));
+    minStructureAmount_ = std::max(0, targetStructureAmount_ - 2);
     structureChanceAfterTargetMet_ = 0.3;
 
     otherRoomsWidthMin_ = firstRoomWidthMin_ = 8;
@@ -612,7 +612,16 @@ void DungeonAreaGen::ConfigureGenSettings()
 bool DungeonAreaGen::GenerateFallbackArea(WorldArea& area, Rng& rng)
 {
     fprintf(stderr, "DungeonAreaGen: WARN - Generating fallback area!!!\n");
-    return GenerateCenterRoom(area, rng, fallbackRoomWidth_, fallbackRoomHeight_);
+    if (!GenerateCenterRoom(area, rng, fallbackRoomWidth_, fallbackRoomHeight_)) {
+        return false;
+    }
+
+    // place down stairs and chests
+    if (!PlaceDownStairs(area, rng) || !PlaceChests(area, rng)) {
+        return false;
+    }
+
+    return true;
 }
 
 

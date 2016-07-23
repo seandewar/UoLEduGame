@@ -45,8 +45,13 @@ public:
 */
 enum class GameFilesystemNodeType
 {
-	RootDirectory,
-	Directory,
+    RootDirectory,
+    Directory,
+    Device,
+    NullDevice,
+    FullDevice,
+    ZeroDevice,
+    RandomDevice,
 	OtherFile,
     ExecutableFile,
     ShellScriptFile,

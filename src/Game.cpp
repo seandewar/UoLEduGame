@@ -508,7 +508,7 @@ void Game::RenderUIMessages(sf::RenderTarget& target)
 
         sf::Text msgText(msg.message, GameAssets::Get().gameFont, 8);
         msgText.setColor(sf::Color(msg.color.r, msg.color.g, msg.color.b, 
-            255 * (1.0f - (static_cast<float>(i) / MaxMessages))));
+            static_cast<sf::Uint8>(255 * (1.0f - (static_cast<float>(i) / MaxMessages)))));
         msgText.setPosition(5.0f, target.getView().getSize().y - 250.0f - 15.0f * i);
 
         Helper::RenderTextWithDropShadow(target, msgText);

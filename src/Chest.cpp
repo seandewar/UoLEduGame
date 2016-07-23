@@ -37,9 +37,15 @@ void ChestEntity::Use(EntityId playerId)
                 sf::Vector2f(Helper::GenerateRandomReal(-5.0f, 5.0f), 0.0f));
         }
 
-        items_.clear();
+        if (items_.size() > 0) {
+            Game::Get().AddMessage("You open the " + chestFsNodeName_ + " chest.", sf::Color(255, 165, 0));
+        }
+        else {
+            Game::Get().AddMessage("You open the " + chestFsNodeName_ + " chest... and find nothing!",
+                sf::Color(255, 165, 0));
+        }
 
-        Game::Get().AddMessage("You open the " + chestFsNodeName_ + " chest.", sf::Color(255, 165, 0));
+        items_.clear();
     }
 }
 

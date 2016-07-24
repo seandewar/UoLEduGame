@@ -19,12 +19,24 @@ public:
 };
 
 /**
-* The weapon slot currently selected
+* The inv slots of the player
+*/
+enum class PlayerInventorySlot
+{
+    MeleeWeapon,
+    MagicWeapon,
+    HealthPotions,
+    MagicPotions,
+    Special
+};
+
+/**
+* The type of selected weapon
 */
 enum class PlayerSelectedWeapon
 {
-    MeleeWeapon,
-    MagicWeapon
+    Melee,
+    Magic
 };
 
 /**
@@ -32,7 +44,7 @@ enum class PlayerSelectedWeapon
 */
 class PlayerInventory
 {
-    PlayerEntity* player_;
+    friend class PlayerEntity;
 
     PlayerSelectedWeapon selectedWeapon_;
 
@@ -46,16 +58,28 @@ public:
     PlayerInventory();
     ~PlayerInventory();
 
-    inline void SetPlayer(PlayerEntity* player) { player_ = player; }
-
-    inline PlayerEntity* GetPlayer() { return player_; }
-    inline const PlayerEntity* GetPlayer() const { return player_; }
-
     inline void SetSelectedWeapon(PlayerSelectedWeapon selected) { selectedWeapon_ = selected; }
     inline PlayerSelectedWeapon GetSelectedWeapon() const { return selectedWeapon_; }
 
-    bool CanGiveItem(Item* item) const;
+    inline BaseWeaponItem* GetWeaponItem(PlayerSelectedWeapon weapon)
+    {
+        switch (weapon) {
+        case PlayerSelectedWeapon::Melee:
+            return meleeWeapon_.get();
+
+        case PlayerSelectedWeapon::Magic:
+            return magicWeapon_.get();
+
+        default:
+            return nullptr;
+        }
+    }
+
+    inline BaseWeaponItem* GetSelectedWeaponItem() { return GetWeaponItem(selectedWeapon_); }
+
     void GiveItem(Item* item);
+
+    void TickUseDelays();
 
     inline MeleeWeapon* GetMeleeWeapon() { return meleeWeapon_.get(); }
     inline const MeleeWeapon* GetMeleeWeapon() const { return meleeWeapon_.get(); }
@@ -86,6 +110,8 @@ enum class PlayerFacingDirection
 */
 class PlayerEntity : public AliveEntity
 {
+    static const sf::Time attackAnimDuration_;
+
     float useRange_;
     EntityId targettedUsableEnt_;
 
@@ -97,6 +123,9 @@ class PlayerEntity : public AliveEntity
     Animation downAnim_;
     Animation leftAnim_;
     Animation rightAnim_;
+
+    PlayerSelectedWeapon attackAnimWeapon_;
+    sf::Time attackAnimTimeLeft_;
 
     void InitAnimations();
 
@@ -115,7 +144,20 @@ public:
 
     virtual bool SetPositionToDefaultStart();
 
-    inline void SetInventory(PlayerInventory* inv) { if (inv) { inv_->SetPlayer(this); } inv_ = inv; }
+    inline void SetInventory(PlayerInventory* inv) { inv_ = inv; }
+
+    inline void ResetAttackAnimation() { attackAnimTimeLeft_ = sf::Time::Zero; }
+    inline void PlayAttackAnimation(PlayerSelectedWeapon weapon)
+    { 
+        attackAnimWeapon_ = weapon;
+        attackAnimTimeLeft_ = attackAnimDuration_;
+    }
+
+    void TickAttackAnimation();
+
+    void UseInventorySlot(PlayerInventorySlot slot);
+    bool CanPickupItem(Item* item) const;
+    bool PickupItem(Item* item);
 
     inline PlayerInventory* GetInventory() { return inv_; }
     inline const PlayerInventory* GetInventory() const { return inv_; }

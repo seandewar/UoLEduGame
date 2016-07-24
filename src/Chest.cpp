@@ -74,6 +74,8 @@ void ChestEntity::Render(sf::RenderTarget& target)
     }
     else {
         // open chest sprites
+        chestSprite.setColor(sf::Color(255, 255, 255, 100));
+
         switch (chestType_) {
         default:
         case ChestType::RedChest:
@@ -98,14 +100,15 @@ void ChestEntity::Render(sf::RenderTarget& target)
         if (area) {
             auto chestText = std::make_unique<sf::Text>(chestFsNodeName_, GameAssets::Get().gameFont, 18);
             chestText->setScale(0.15f, 0.15f);
-            chestText->setColor(isOpened_ ? sf::Color(150, 150, 150) : sf::Color(255, 165, 0));
+            chestText->setColor(isOpened_ ? sf::Color(150, 150, 150, 150) : sf::Color(255, 165, 0, 255));
 
             auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
                 sf::Vector2f(0.5f * chestText->getGlobalBounds().width, 3.0f);
 
             chestText->setPosition(textPos);
 
-            area->AddFrameUIRenderable(Helper::GetTextDropShadow(*chestText, sf::Vector2f(0.5f, 0.5f)));
+            area->AddFrameUIRenderable(Helper::GetTextDropShadow(*chestText, sf::Vector2f(0.5f, 0.5f),
+                isOpened_ ? sf::Color(0, 0, 0, 150) : sf::Color(0, 0, 0, 255)));
             area->AddFrameUIRenderable(chestText);
         }
     }

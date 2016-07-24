@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 
+#include <SFML/System/Time.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 
@@ -28,6 +29,7 @@ class PlayerEntity;
 class Item
 {
     int amount_, maxAmount_;
+    sf::Time useDelayLeft_;
 
 public:
     Item(int maxAmount = 1, int amount = 0);
@@ -65,8 +67,24 @@ public:
 
     inline bool IsMaxStack() const { return amount_ >= maxAmount_; }
 
-    inline virtual void Use(PlayerEntity* player) = 0;
-    inline virtual std::string GetUseText() const = 0;
+    inline virtual sf::Time GetUseDelay() const { return sf::seconds(0.25f); }
+
+    void TickDelayTimeLeft();
+
+    inline void SetUseDelayTimeLeft(const sf::Time& delayTimeLeft) { useDelayLeft_ = delayTimeLeft; }
+    inline sf::Time GetUseDelayTimeLeft() const { return useDelayLeft_; }
+
+    virtual void Use(PlayerEntity* player) = 0;
+
+    inline virtual void UseWithDelay(PlayerEntity* player)
+    {
+        if (useDelayLeft_ <= sf::Time::Zero) {
+            Use(player);
+            useDelayLeft_ = GetUseDelay();
+        }
+    }
+
+    virtual std::string GetUseText() const = 0;
 
     inline virtual sf::Sprite GetSprite() const { return sf::Sprite(); }
 
@@ -118,7 +136,7 @@ public:
     BaseWeaponItem(const std::string& itemName = std::string());
     virtual ~BaseWeaponItem();
 
-    virtual bool Attack(PlayerEntity& player, WorldArea& area) = 0;
+    inline virtual std::string GetUseText() const override { return "Attack using " + itemName_; }
 
     inline void SetItemName(const std::string& itemName) { itemName_ = itemName; }
     inline std::string GetItemName() const override { return itemName_; }
@@ -143,7 +161,7 @@ public:
     MeleeWeapon(MeleeWeaponType meleeWeaponType);
     virtual ~MeleeWeapon();
 
-    virtual bool Attack(PlayerEntity& player, WorldArea& area) override;
+    virtual void Use(PlayerEntity* player) override;
 
     sf::Sprite GetSprite() const override;
 
@@ -170,7 +188,7 @@ public:
     MagicWeapon(MagicWeaponType magicWeaponType);
     virtual ~MagicWeapon();
 
-    virtual bool Attack(PlayerEntity& player, WorldArea& area) override;
+    virtual void Use(PlayerEntity* player) override;
 
     sf::Sprite GetSprite() const override;
 

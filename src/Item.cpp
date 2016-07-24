@@ -16,6 +16,14 @@ Item::~Item()
 }
 
 
+void Item::TickDelayTimeLeft()
+{
+    if (useDelayLeft_ > sf::Time::Zero) {
+        useDelayLeft_ -= Game::FrameTimeStep;
+    }
+}
+
+
 PotionItem::PotionItem(ItemType potionType, int amount) :
 Item(10, amount),
 potionType_(potionType)
@@ -105,7 +113,7 @@ std::string PotionItem::GetItemName() const
 
 
 BaseWeaponItem::BaseWeaponItem(const std::string& itemName) :
-Item(1),
+Item(1, 1),
 itemName_(itemName)
 {
 }
@@ -130,14 +138,14 @@ MeleeWeapon::~MeleeWeapon()
 }
 
 
-bool MeleeWeapon::Attack(PlayerEntity& player, WorldArea& area)
+void MeleeWeapon::Use(PlayerEntity* player)
 {
-    if (GetAmount() <= 0) {
-        return false;
+    if (!player || GetAmount() <= 0) {
+        return;
     }
 
     // TODO
-    return true;
+    player->PlayAttackAnimation(PlayerSelectedWeapon::Melee);
 }
 
 
@@ -172,14 +180,14 @@ MagicWeapon::~MagicWeapon()
 }
 
 
-bool MagicWeapon::Attack(PlayerEntity& player, WorldArea& area)
+void MagicWeapon::Use(PlayerEntity* player)
 {
-    if (GetAmount() <= 0) {
-        return false;
+    if (!player || GetAmount() <= 0) {
+        return;
     }
 
     // TODO
-    return true;
+    player->PlayAttackAnimation(PlayerSelectedWeapon::Magic);
 }
 
 
@@ -229,7 +237,7 @@ void ItemEntity::Use(EntityId playerId)
         auto playerEnt = GetAssignedArea()->GetEntity<PlayerEntity>(playerId);
         
         if (playerEnt && playerEnt->GetInventory()) {
-            playerEnt->GetInventory()->GiveItem(item_.get());
+            playerEnt->PickupItem(item_.get());
         }
 
         if (item_->GetAmount() <= 0) {
@@ -251,5 +259,5 @@ bool ItemEntity::IsUsable(EntityId playerId) const
         return false;
     }
 
-    return item_ && item_->GetAmount() > 0 && playerEnt->GetInventory()->CanGiveItem(item_.get());
+    return item_ && item_->GetAmount() > 0 && playerEnt->CanPickupItem(item_.get());
 }

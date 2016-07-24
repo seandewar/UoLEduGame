@@ -524,6 +524,8 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                     switch (Helper::GenerateRandomInt(rng, 0, 2)) {
                     default:
                         assert(!"Unknown chest type!");
+                        break;
+
                     case 0:
                         chestType = ChestType::RedChest;
                         break;
@@ -545,6 +547,8 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                         chestEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
                         chestEnt->GetItems().emplace_back(std::make_unique<PotionItem>(ItemType::MagicPotion, 1));
                         chestEnt->GetItems().emplace_back(std::make_unique<PotionItem>(ItemType::HealthPotion, 1));
+                        chestEnt->GetItems().emplace_back(std::make_unique<MeleeWeapon>(MeleeWeaponType::BasicSword));
+                        chestEnt->GetItems().emplace_back(std::make_unique<MagicWeapon>(MagicWeaponType::ZeroStaff));
                         placedChest = true;
                         break;
                     }

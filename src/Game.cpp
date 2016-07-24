@@ -228,23 +228,21 @@ void Game::HandleUseInventory()
 {
     auto player = GetPlayerEntity();
 
-    if (player) {
-        Item* itemToUse = nullptr;
+    if (!player) {
+        return;
+    }
 
-        // find out what item we want to use
-        // TODO Use weapons & special
-
-        if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {
-            itemToUse = playerInv_.GetHealthPotions();
-        }
-        else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num4)) {
-            itemToUse = playerInv_.GetMagicPotions();
-        }
-
-        // use chosen item
-        if (itemToUse && itemToUse->GetAmount()) {
-            itemToUse->Use(player);
-        }
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num1)) {
+        player->UseInventorySlot(PlayerInventorySlot::MeleeWeapon);
+    }
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num2)) {
+        player->UseInventorySlot(PlayerInventorySlot::MagicWeapon);
+    }
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {
+        player->UseInventorySlot(PlayerInventorySlot::HealthPotions);
+    }
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num4)) {
+        player->UseInventorySlot(PlayerInventorySlot::MagicPotions);
     }
 }
 
@@ -419,6 +417,10 @@ void Game::RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, 
         auto invItemSprite = item->GetSprite();
         invItemSprite.setScale(3.0f, 3.0f);
         invItemSprite.setPosition(invItemBg.getPosition());
+        
+        if (item->GetUseDelayTimeLeft() > sf::Time::Zero) {
+            invItemSprite.setColor(sf::Color(255, 255, 255, 100));
+        }
 
         target.draw(invItemSprite);
 
@@ -462,11 +464,11 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 
             // TODO render melee wep item
             RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 55.0f),
-                "1", nullptr, true);
+                "1", playerInv->GetMeleeWeapon(), playerInv->GetSelectedWeapon() == PlayerSelectedWeapon::Melee);
 
             // TODO render magic wep item
             RenderUIItem(target, sf::Vector2f(62.5f, target.getView().getSize().y - 55.0f),
-                "2", nullptr);
+                "2", playerInv->GetMagicWeapon(), playerInv->GetSelectedWeapon() == PlayerSelectedWeapon::Magic);
 
             // render potions inv text label
             sf::Text invPotionsLabelText("Potions", GameAssets::Get().gameFont, 8);

@@ -19,20 +19,21 @@ todo   = scheduled
 ----
 
 [UNITEMPS]
-[Inventory] change to simpler system where 1 melee & 1 magic item, [potions are stored by amount value instead]
-[GameFilesystemGen] finish usr
+[Inventory change to simpler system where 1 melee & 1 magic item, potions are stored by amount value instead]
+[GameFilesystemGen]
 [Chest entity and sprites (work on Item class afterwards)]
 [Item class and Chest + Items]
 [DungeonGen spawn chests depending on files in game fs]
 [anim]
 
-Collision with ents func
-
-21st, 22nd, 23rd, 24th, 25th, 26th, 27th?
+21st, 22nd, 23rd, 24th, 25th, 26th, 27th, 28th?
 ----
 
+[weapon base & attack]
+Collision with ents func
 Basic Enemy Entity that follows
 Different Enemy Ents
+projectiles
 Objective system + [floor nav]
 Procedural Item gen
 GameFilesystemGen usr & lib & mnt

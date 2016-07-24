@@ -16,7 +16,8 @@ enum class ItemType
 {
     HealthPotion,
     MagicPotion,
-    Weapon
+    MeleeWeapon,
+    MagicWeapon
 };
 
 class PlayerEntity;
@@ -105,6 +106,78 @@ public:
     std::string GetItemName() const override;
     inline ItemType GetItemType() const { return potionType_; }
 };
+
+/**
+* Base weapon class
+*/
+class BaseWeaponItem : public Item
+{
+    std::string itemName_;
+
+public:
+    BaseWeaponItem(const std::string& itemName = std::string());
+    virtual ~BaseWeaponItem();
+
+    virtual bool Attack(PlayerEntity& player, WorldArea& area) = 0;
+
+    inline void SetItemName(const std::string& itemName) { itemName_ = itemName; }
+    inline std::string GetItemName() const override { return itemName_; }
+};
+
+/**
+* Melee wep type
+*/
+enum class MeleeWeaponType
+{
+    BasicSword
+};
+
+/**
+* Melee weapons
+*/
+class MeleeWeapon : public BaseWeaponItem
+{
+    MeleeWeaponType meleeWeaponType_;
+
+public:
+    MeleeWeapon(MeleeWeaponType meleeWeaponType);
+    virtual ~MeleeWeapon();
+
+    virtual bool Attack(PlayerEntity& player, WorldArea& area) override;
+
+    sf::Sprite GetSprite() const override;
+
+    inline ItemType GetItemType() const override { return ItemType::MeleeWeapon; }
+    inline MeleeWeaponType GetMeleeWeaponType() const { return meleeWeaponType_; }
+};
+
+/**
+* Magic wep type
+*/
+enum class MagicWeaponType
+{
+    ZeroStaff
+};
+
+/**
+* Magic weapons
+*/
+class MagicWeapon : public BaseWeaponItem
+{
+    MagicWeaponType magicWeaponType_;
+
+public:
+    MagicWeapon(MagicWeaponType magicWeaponType);
+    virtual ~MagicWeapon();
+
+    virtual bool Attack(PlayerEntity& player, WorldArea& area) override;
+
+    sf::Sprite GetSprite() const override;
+
+    inline ItemType GetItemType() const override { return ItemType::MagicWeapon; }
+    inline MagicWeaponType GetMagicWeaponType() const { return magicWeaponType_; }
+};
+
 
 /**
 * Item entity

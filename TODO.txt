@@ -20,7 +20,7 @@ todo   = scheduled
 
 [UNITEMPS]
 [Inventory] change to simpler system where 1 melee & 1 magic item, [potions are stored by amount value instead]
->[GameFilesystemGen] finish usr
+[GameFilesystemGen] finish usr
 [Chest entity and sprites (work on Item class afterwards)]
 [Item class and Chest + Items]
 [DungeonGen spawn chests depending on files in game fs]
@@ -35,7 +35,7 @@ Basic Enemy Entity that follows
 Different Enemy Ents
 Objective system + [floor nav]
 Procedural Item gen
-GameFilesystemGen lib & mnt
+GameFilesystemGen usr & lib & mnt
 Procedural ent alivestats based on objective and seed
 Questions for each item
 Boss?

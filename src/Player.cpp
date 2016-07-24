@@ -22,6 +22,8 @@ PlayerDefaultStartEntity::~PlayerDefaultStartEntity()
 
 
 PlayerInventory::PlayerInventory() :
+player_(nullptr),
+selectedWeapon_(PlayerSelectedWeapon::MeleeWeapon),
 healthPotions_(std::make_unique<PotionItem>(ItemType::HealthPotion)),
 magicPotions_(std::make_unique<PotionItem>(ItemType::MagicPotion))
 {
@@ -63,6 +65,14 @@ void PlayerInventory::GiveItem(Item* item)
     }
     else if (item->GetItemType() == ItemType::MagicPotion) {
         item->RemoveAmount(receivedAmount = magicPotions_->AddAmount(item->GetAmount()));
+    }
+    else if (item->GetItemType() == ItemType::MeleeWeapon) {
+        if (item) {
+
+        }
+    }
+    else if (item->GetItemType() == ItemType::MagicWeapon) {
+
     }
 
     // TODO weapons (melee & magic) & specials
@@ -265,5 +275,12 @@ void PlayerEntity::Render(sf::RenderTarget& target)
     }
 
     playerSprite.setPosition(GetCenterPosition() - sf::Vector2f(8.0f, 8.0f));
+
+    // render weapon
+    if (inv_) {
+        BaseWeaponItem* weapon = nullptr;
+
+        //switch 
+    }
     target.draw(playerSprite);
 }

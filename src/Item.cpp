@@ -104,6 +104,102 @@ std::string PotionItem::GetItemName() const
 }
 
 
+BaseWeaponItem::BaseWeaponItem(const std::string& itemName) :
+Item(1),
+itemName_(itemName)
+{
+}
+
+
+BaseWeaponItem::~BaseWeaponItem()
+{
+}
+
+
+MeleeWeapon::MeleeWeapon(MeleeWeaponType meleeWeaponType) :
+meleeWeaponType_(meleeWeaponType)
+{
+    if (meleeWeaponType_ == MeleeWeaponType::BasicSword) {
+        SetItemName("Basic Sword");
+    }
+}
+
+
+MeleeWeapon::~MeleeWeapon()
+{
+}
+
+
+bool MeleeWeapon::Attack(PlayerEntity& player, WorldArea& area)
+{
+    if (GetAmount() <= 0) {
+        return false;
+    }
+
+    // TODO
+    return true;
+}
+
+
+sf::Sprite MeleeWeapon::GetSprite() const
+{
+    sf::Sprite weaponSprite(GameAssets::Get().itemsSpriteSheet);
+
+    switch (meleeWeaponType_) {
+    case MeleeWeaponType::BasicSword:
+        weaponSprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
+        break;
+
+    default:
+        return sf::Sprite();
+    }
+
+    return weaponSprite;
+}
+
+
+MagicWeapon::MagicWeapon(MagicWeaponType magicWeaponType) :
+magicWeaponType_(magicWeaponType)
+{
+    if (magicWeaponType_ == MagicWeaponType::ZeroStaff) {
+        SetItemName("Zero Staff");
+    }
+}
+
+
+MagicWeapon::~MagicWeapon()
+{
+}
+
+
+bool MagicWeapon::Attack(PlayerEntity& player, WorldArea& area)
+{
+    if (GetAmount() <= 0) {
+        return false;
+    }
+
+    // TODO
+    return true;
+}
+
+
+sf::Sprite MagicWeapon::GetSprite() const
+{
+    sf::Sprite weaponSprite(GameAssets::Get().itemsSpriteSheet);
+
+    switch (magicWeaponType_) {
+    case MagicWeaponType::ZeroStaff:
+        weaponSprite.setTextureRect(sf::IntRect(16, 16, 16, 16));
+        break;
+
+    default:
+        return sf::Sprite();
+    }
+
+    return weaponSprite;
+}
+
+
 ItemEntity::ItemEntity() :
 UnitEntity()
 {

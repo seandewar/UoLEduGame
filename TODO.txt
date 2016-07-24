@@ -30,6 +30,7 @@ todo   = scheduled
 ----
 
 [weapon base & attack]
+UNITEMPS
 Collision with ents func
 Basic Enemy Entity that follows
 Different Enemy Ents

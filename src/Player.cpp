@@ -194,8 +194,15 @@ bool PlayerEntity::PickupItem(Item* item)
             break;
         }
 
-        if (droppedItem) {
-            Game::Get().AddMessage("You drop your " + droppedItem->GetItemName() + ".");
+        if (droppedItem && droppedItem->GetAmount() > 0) {
+            if (droppedItem->GetAmount() > 1) {
+                Game::Get().AddMessage("You drop your " + droppedItem->GetItemName() + " x " +
+                    std::to_string(droppedItem->GetAmount()));
+            }
+            else {
+                Game::Get().AddMessage("You drop your " + droppedItem->GetItemName() + ".");
+            }
+
             itemEnt->SetItem(std::unique_ptr<Item>(droppedItem));
         }
     }

@@ -467,7 +467,8 @@ void Game::RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, 
                 invItemBg.getPosition().x + invItemBg.getSize().x - invItemAmountText.getGlobalBounds().width - 2.0f,
                 invItemBg.getPosition().y + 2.0f
                 );
-            invItemAmountText.setColor(sf::Color(255, 255, 0));
+
+            invItemAmountText.setColor(item->GetAmount() < item->GetMaxAmount() ? sf::Color(255, 255, 0) : sf::Color(255, 0, 0));
 
             Helper::RenderTextWithDropShadow(target, invItemAmountText);
         }

@@ -151,6 +151,8 @@ public:
     bool NewGame();
     inline void SetLevelChange(const std::string& fsNodePath) { scheduledLevelChangeFsNodePath_ = fsNodePath; }
 
+    inline GameDirector& GetDirector() { return director_; }
+
     inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
     inline bool IsInDebugMode() const { return debugMode_; }
 };

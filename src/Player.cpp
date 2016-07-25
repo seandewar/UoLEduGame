@@ -206,6 +206,12 @@ bool PlayerEntity::PickupItem(Item* item)
             itemEnt->SetItem(std::unique_ptr<Item>(droppedItem));
         }
     }
+    else if (item->GetItemType() == ItemType::ArtefactPiece) {
+        // artefact piece collected!
+        Game::Get().AddMessage("Congratulations - you've found an artefact piece!");
+        Game::Get().GetDirector().FoundArtefact(GetAssignedArea());
+        item->SetAmount(0);
+    }
 
     inv_->GiveItem(item);
     return true;

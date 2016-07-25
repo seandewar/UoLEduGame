@@ -544,7 +544,14 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                         area.EmplaceEntity<ChestEntity>(chestType, ChestDropTableType::Normal, childNode->GetName()));
 
                     if (chestEnt) {
-                        // TODO chests based on file type!!!
+                        // unique loot spawns
+                        switch (childNode->GetType()) {
+                        case GameFilesystemNodeType::ZeroDevice:
+                            // spawn the Zero Staff in this chest.
+                            chestEnt->GetItems().emplace_back(std::make_unique<MagicWeapon>(MagicWeaponType::ZeroStaff));
+                            break;
+                        }
+
                         chestEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
                         placedChest = true;
                         break;

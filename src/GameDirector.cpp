@@ -93,7 +93,9 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
                 assert(chestEnt);
 
                 if (chestEnt->GetChestFsNodeName() == objectiveFsNode_->GetName()) {
-                    // found the chest - place artefact inside!
+                    // found the chest - place artefact inside and close it if it's already open
+                    chestEnt->SetOpened(false);
+
                     ArtefactType artefactType;
 
                     switch (Helper::GenerateRandomInt(1, 5)) {
@@ -200,16 +202,20 @@ void GameDirector::FoundArtefact(WorldArea* currentArea)
     ++numArtefacts_;
 
     if (objective_ == GameObjectiveType::CollectArtefact) {
+        NewObjective(objectiveDifficultyMul_ + 1.0f);
+
         if (numArtefacts_ < maxArtefacts_) {
             ChooseNewArtefactLocation(currentArea);
         }
         else {
             // all artefacts found, next objective is altar in /
             objective_ = GameObjectiveType::RootArtefactAltar;
-            printf("GameDirector - ALL ARTEFACTS FOUND!\n");
-        }
 
-        NewObjective(objectiveDifficultyMul_ + 1.0f);
+            printf("GameDirector - ALL ARTEFACTS FOUND!\n");
+            Game::Get().AddMessage("Well done! You have found all " + std::to_string(maxArtefacts_) + " artefact pieces!",
+                sf::Color(255, 150, 0));
+            Game::Get().AddMessage("Return to / and place your artefact pieces on the altar.", sf::Color(255, 150, 0));
+        }
     }
 }
 

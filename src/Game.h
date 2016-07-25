@@ -105,6 +105,7 @@ class Game
     void RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, const std::string& label,
         Item* item, bool isHighlighted = false);
     void RenderUIPlayerInventory(sf::RenderTarget& target);
+    void RenderUIArtefactCount(sf::RenderTarget& target);
 
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
 

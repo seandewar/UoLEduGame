@@ -38,7 +38,7 @@ class GameDirector
     */
     std::pair<GameFilesystemNode*, std::size_t> ChooseRandomNodeRecurse(GameFilesystemNode* node, std::size_t n = 1);
 
-    void ChooseNewArtefactLocation();
+    void ChooseNewArtefactLocation(WorldArea* newArea);
 
     void NewObjective(float newDifficultyMul);
 
@@ -46,10 +46,10 @@ public:
     GameDirector();
     ~GameDirector();
 
-    void StartNewSession(int maxArtefacts, GameFilesystem* fs);
-    void FoundArtefact();
+    void StartNewSession(int maxArtefacts, WorldArea* currentArea, GameFilesystem* fs);
+    void FoundArtefact(WorldArea* currentArea);
 
-    void PlayerChangedArea(WorldArea* newArea);
+    void PlayerChangedArea(WorldArea* newArea, bool updateEnemies = true);
 
     inline int GetNumArtefacts() const { return numArtefacts_; }
     inline int GetMaxArtefacts() const { return maxArtefacts_; }

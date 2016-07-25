@@ -24,6 +24,51 @@ void Item::TickDelayTimeLeft()
 }
 
 
+ArtefactItem::ArtefactItem(ArtefactType artefactType) :
+Item(1, 1),
+artefactType_(artefactType)
+{
+}
+
+
+ArtefactItem::~ArtefactItem()
+{
+}
+
+
+sf::Sprite ArtefactItem::GetSprite() const
+{
+    sf::Sprite artefactSprite(GameAssets::Get().itemsSpriteSheet);
+
+    switch (artefactType_) {
+    case ArtefactType::Appearance1:
+        artefactSprite.setTextureRect(sf::IntRect(0, 32, 16, 16));
+        break;
+
+    case ArtefactType::Appearance2:
+        artefactSprite.setTextureRect(sf::IntRect(0, 48, 16, 16));
+        break;
+
+    case ArtefactType::Appearance3:
+        artefactSprite.setTextureRect(sf::IntRect(0, 64, 16, 16));
+        break;
+
+    case ArtefactType::Appearance4:
+        artefactSprite.setTextureRect(sf::IntRect(0, 80, 16, 16));
+        break;
+
+    case ArtefactType::Appearance5:
+        artefactSprite.setTextureRect(sf::IntRect(0, 96, 16, 16));
+        break;
+
+    default:
+        return sf::Sprite();
+    }
+
+    return artefactSprite;
+}
+
+
 PotionItem::PotionItem(ItemType potionType, int amount) :
 Item(10, amount),
 potionType_(potionType)

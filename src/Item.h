@@ -18,7 +18,8 @@ enum class ItemType
     HealthPotion,
     MagicPotion,
     MeleeWeapon,
-    MagicWeapon
+    MagicWeapon,
+    ArtefactPiece
 };
 
 class PlayerEntity;
@@ -91,6 +92,41 @@ public:
     virtual std::string GetItemName() const = 0;
     virtual ItemType GetItemType() const = 0;
 };
+
+/**
+* Different artefact types
+*/
+enum class ArtefactType
+{
+    Appearance1,
+    Appearance2,
+    Appearance3,
+    Appearance4,
+    Appearance5
+};
+
+/**
+* Artefact item class
+*/
+class ArtefactItem : public Item
+{
+    ArtefactType artefactType_;
+
+public:
+    ArtefactItem(ArtefactType artefactType);
+    virtual ~ArtefactItem();
+
+    inline virtual void Use(PlayerEntity* player) override { }
+    inline std::string GetUseText() const override { return std::string(); }
+
+    sf::Sprite GetSprite() const override;
+
+    inline std::string GetItemName() const override { return "Artefact Piece"; }
+    inline virtual ItemType GetItemType() const override { return ItemType::ArtefactPiece; }
+
+    inline ArtefactType GetArtefactType() const { return artefactType_; }
+};
+
 
 /**
 * Potion item class

@@ -204,7 +204,7 @@ bool Game::NewGame()
     }
 
     world_ = std::make_unique<World>(*worldFs_);
-    director_.StartNewSession(10, worldFs_.get());
+    director_.StartNewSession(10, nullptr, worldFs_.get());
 
     if (!ChangeLevel("/")) {
         return false;
@@ -305,9 +305,29 @@ void Game::RenderUIObjective(sf::RenderTarget& target)
         director_.GetCurrentObjectiveType() != GameObjectiveType::Complete) {
         sf::Text objText("Objective: " + director_.GetObjectiveText(), GameAssets::Get().gameFont, 8);
         objText.setPosition(5.0f, 35.0f);
-        objText.setColor(sf::Color(255, 150, 0));
+        objText.setColor(sf::Color(255, 255, 255));
 
         Helper::RenderTextWithDropShadow(target, objText);
+    }
+}
+
+
+void Game::RenderUIArtefactCount(sf::RenderTarget& target)
+{
+    if (world_ &&
+        director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted &&
+        director_.GetCurrentObjectiveType() != GameObjectiveType::Complete) {
+        sf::Sprite artefactSprite(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 32, 16, 16));
+        artefactSprite.setPosition(sf::Vector2f(5.0f, 100.0f));
+
+        target.draw(artefactSprite);
+
+        sf::Text artefactCountText(" x " + std::to_string(director_.GetNumArtefacts()),
+            GameAssets::Get().gameFont, 8);
+        artefactCountText.setPosition(21.0f, 100.0f);
+        artefactCountText.setColor(sf::Color(255, 255, 255));
+
+        Helper::RenderTextWithDropShadow(target, artefactCountText);
     }
 }
 
@@ -524,12 +544,14 @@ void Game::RenderUIMessages(sf::RenderTarget& target)
         auto msg = *it;
         auto i = it - messages_.rbegin();
 
+        auto alpha = static_cast<sf::Uint8>(255 * (1.0f - (static_cast<float>(i) / MaxMessages)));
+
         sf::Text msgText(msg.message, GameAssets::Get().gameFont, 8);
-        msgText.setColor(sf::Color(msg.color.r, msg.color.g, msg.color.b, 
-            static_cast<sf::Uint8>(255 * (1.0f - (static_cast<float>(i) / MaxMessages)))));
+        msgText.setColor(sf::Color(msg.color.r, msg.color.g, msg.color.b, alpha));
         msgText.setPosition(5.0f, target.getView().getSize().y - 250.0f - 15.0f * i);
 
-        Helper::RenderTextWithDropShadow(target, msgText);
+        Helper::RenderTextWithDropShadow(target, msgText, sf::Vector2f(2.0f, 2.0f),
+            sf::Color(0, 0, 0, alpha));
     }
 }
 
@@ -543,6 +565,7 @@ void Game::Render(sf::RenderTarget& target)
 
         RenderUILocation(target);
         RenderUIObjective(target);
+        //RenderUIArtefactCount(target);
         RenderUIPlayerUseTargetText(target);
         RenderUIPlayerStats(target);
         RenderUIPlayerInventory(target);

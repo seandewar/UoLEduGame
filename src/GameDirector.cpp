@@ -3,6 +3,7 @@
 #include "Helper.h"
 #include "World.h"
 #include "Game.h"
+#include "Chest.h"
 
 
 GameDirector::GameDirector() :
@@ -19,7 +20,7 @@ GameDirector::~GameDirector()
 }
 
 
-void GameDirector::StartNewSession(int maxArtefacts, GameFilesystem* fs)
+void GameDirector::StartNewSession(int maxArtefacts, WorldArea* currentArea, GameFilesystem* fs)
 {
     printf("GameDirector - Creating new session!\n");
 
@@ -29,7 +30,7 @@ void GameDirector::StartNewSession(int maxArtefacts, GameFilesystem* fs)
     objective_ = GameObjectiveType::CollectArtefact;
     objectiveDifficultyMul_ = 1.0f;
 
-    ChooseNewArtefactLocation();
+    ChooseNewArtefactLocation(currentArea);
 }
 
 
@@ -69,7 +70,7 @@ std::pair<GameFilesystemNode*, std::size_t> GameDirector::ChooseRandomNodeRecurs
 }
 
 
-void GameDirector::PlayerChangedArea(WorldArea* newArea)
+void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
 {
     if (!newArea || !newArea->GetRelatedNode()) {
         return;
@@ -77,8 +78,54 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea)
 
     if (std::find(objectiveUpdatedAreas_.begin(), objectiveUpdatedAreas_.end(), newArea) ==
         objectiveUpdatedAreas_.end()) {
-        // TODO clear monsters & update area monster difficulty & 
-        // place artefact in chest if objective node associated
+        if (updateEnemies) {
+            // TODO update enemies & clear or whatever
+        }
+
+        if (objective_ == GameObjectiveType::CollectArtefact &&
+            objectiveFsNode_->GetParent() == newArea->GetRelatedNode()) {
+            // TODO update artefact chest with artefact
+            auto chests = newArea->GetAllEntitiesOfType<ChestEntity>();
+
+            bool artefactPlaced = false;
+            for (auto chestId : chests) {
+                auto chestEnt = newArea->GetEntity<ChestEntity>(chestId);
+                assert(chestEnt);
+
+                if (chestEnt->GetChestFsNodeName() == objectiveFsNode_->GetName()) {
+                    // found the chest - place artefact inside!
+                    ArtefactType artefactType;
+
+                    switch (Helper::GenerateRandomInt(1, 5)) {
+                    default:
+                    case 1:
+                        artefactType = ArtefactType::Appearance1;
+                        break;
+
+                    case 2:
+                        artefactType = ArtefactType::Appearance2;
+                        break;
+
+                    case 3:
+                        artefactType = ArtefactType::Appearance3;
+                        break;
+
+                    case 4:
+                        artefactType = ArtefactType::Appearance4;
+                        break;
+
+                    case 5:
+                        artefactType = ArtefactType::Appearance5;
+                        break;
+                    }
+
+                    chestEnt->GetItems().emplace_back(std::make_unique<ArtefactItem>(artefactType));
+                    artefactPlaced = true;
+                }
+            }
+
+            assert(artefactPlaced);
+        }
 
         printf("GameDirector - Updated area to reflect the current difficulty of %f\n", objectiveDifficultyMul_);
         objectiveUpdatedAreas_.emplace_back(newArea);
@@ -86,7 +133,7 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea)
 }
 
 
-void GameDirector::ChooseNewArtefactLocation()
+void GameDirector::ChooseNewArtefactLocation(WorldArea* newArea)
 {
     if (objective_ != GameObjectiveType::CollectArtefact || !objectiveFs_ || !objectiveFs_->GetRootNode()) {
         return;
@@ -101,6 +148,8 @@ void GameDirector::ChooseNewArtefactLocation()
     printf("GameDirector - NEW ARTEFACT LOCATION: '%s'\n", objectiveFsNodePath_.c_str());
     Game::Get().AddMessage("An artefact piece is in the " + objectiveFsNodePath_ + " chest!",
         sf::Color(255, 150, 0));
+
+    PlayerChangedArea(newArea, false);
 }
 
 
@@ -146,13 +195,13 @@ void GameDirector::NewObjective(float newDifficultyMul)
 }
 
 
-void GameDirector::FoundArtefact()
+void GameDirector::FoundArtefact(WorldArea* currentArea)
 {
     ++numArtefacts_;
 
     if (objective_ == GameObjectiveType::CollectArtefact) {
         if (numArtefacts_ < maxArtefacts_) {
-            ChooseNewArtefactLocation();
+            ChooseNewArtefactLocation(currentArea);
         }
         else {
             // all artefacts found, next objective is altar in /

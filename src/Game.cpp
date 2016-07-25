@@ -185,6 +185,8 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         }
     }
 
+    director_.PlayerChangedArea(currentArea);
+
     AddMessage("You are on floor " + GameFilesystem::GetNodePathString(*currentFsNode),
         sf::Color(255, 255, 0));
     return true;
@@ -202,13 +204,13 @@ bool Game::NewGame()
     }
 
     world_ = std::make_unique<World>(*worldFs_);
+    director_.StartNewSession(10, worldFs_.get());
 
     if (!ChangeLevel("/")) {
         return false;
     }
 
     ResetPlayerStats();
-
     return true;
 }
 
@@ -287,11 +289,25 @@ void Game::Tick()
 void Game::RenderUILocation(sf::RenderTarget& target)
 {
     if (world_) {
-        sf::Text locationText("Location: " + world_->GetCurrentAreaFsPath(), GameAssets::Get().gameFont, 22);
+        sf::Text locationText(world_->GetCurrentAreaFsPath(), GameAssets::Get().gameFont, 22);
         locationText.setPosition(5.0f, 5.0f);
         locationText.setColor(sf::Color(255, 255, 255));
 
         Helper::RenderTextWithDropShadow(target, locationText);
+    }
+}
+
+
+void Game::RenderUIObjective(sf::RenderTarget& target)
+{
+    if (world_ &&
+        director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted &&
+        director_.GetCurrentObjectiveType() != GameObjectiveType::Complete) {
+        sf::Text objText("Objective: " + director_.GetObjectiveText(), GameAssets::Get().gameFont, 8);
+        objText.setPosition(5.0f, 35.0f);
+        objText.setColor(sf::Color(255, 150, 0));
+
+        Helper::RenderTextWithDropShadow(target, objText);
     }
 }
 
@@ -526,6 +542,7 @@ void Game::Render(sf::RenderTarget& target)
         world_->Render(target);
 
         RenderUILocation(target);
+        RenderUIObjective(target);
         RenderUIPlayerUseTargetText(target);
         RenderUIPlayerStats(target);
         RenderUIPlayerInventory(target);
@@ -544,6 +561,6 @@ void Game::RunFrame(sf::RenderTarget& target)
 {
     Tick();
     Render(target);
-    
+
     eventKeysPressed_.clear();
 }

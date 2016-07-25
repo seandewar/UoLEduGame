@@ -16,11 +16,23 @@ enum class ChestType
 };
 
 /**
+* The type of drop table the chest may have.
+* These drops are rolled for and are in addition
+* dropped wit any items stored in the chest's items_ vector.
+*/
+enum class ChestDropTableType
+{
+    StoredItemsOnly,
+    Normal
+};
+
+/**
 * Chest entity class.
 */
 class ChestEntity : public UnitEntity, public IPlayerUsable
 {
     ChestType chestType_;
+    ChestDropTableType chestDropTable_;
     std::string chestFsNodeName_;
 
     std::vector<std::unique_ptr<Item>> items_;
@@ -28,7 +40,9 @@ class ChestEntity : public UnitEntity, public IPlayerUsable
     bool isOpened_;
 
 public:
-    ChestEntity(ChestType chestType = ChestType::RedChest, const std::string& chestFsNodeName = std::string());
+    ChestEntity(ChestType chestType = ChestType::RedChest,
+        ChestDropTableType dropTable = ChestDropTableType::StoredItemsOnly,
+        const std::string& chestFsNodeName = std::string());
     virtual ~ChestEntity();
 
     virtual void Render(sf::RenderTarget& target) override;
@@ -37,6 +51,9 @@ public:
 
     inline virtual ChestType GetChestType() const { return chestType_; }
     inline virtual void SetChestType(ChestType chestType) { chestType_ = chestType; }
+
+    inline virtual ChestDropTableType GetChestDropTable() const { return chestDropTable_; }
+    inline virtual void SetChestDropTable(ChestDropTableType dropTable) { chestDropTable_ = dropTable; }
 
     inline std::string GetChestFsNodeName() const { return chestFsNodeName_; }
 

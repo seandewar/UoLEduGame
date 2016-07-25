@@ -521,6 +521,7 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                 if (area.CheckEntRectangleWalkable(desiredArea) &&
                     area.GetFirstWorldEntInRectangle(desiredArea) == Entity::InvalidId) {
                     ChestType chestType;
+
                     switch (Helper::GenerateRandomInt(rng, 0, 2)) {
                     default:
                         assert(!"Unknown chest type!");
@@ -540,15 +541,11 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                     }
 
                     auto chestEnt = area.GetEntity<ChestEntity>(
-                        area.EmplaceEntity<ChestEntity>(chestType, childNode->GetName()));
+                        area.EmplaceEntity<ChestEntity>(chestType, ChestDropTableType::Normal, childNode->GetName()));
 
                     if (chestEnt) {
                         // TODO chests based on file type!!!
                         chestEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
-                        chestEnt->GetItems().emplace_back(std::make_unique<PotionItem>(ItemType::MagicPotion, 1));
-                        chestEnt->GetItems().emplace_back(std::make_unique<PotionItem>(ItemType::HealthPotion, 1));
-                        chestEnt->GetItems().emplace_back(std::make_unique<MeleeWeapon>(MeleeWeaponType::BasicSword));
-                        chestEnt->GetItems().emplace_back(std::make_unique<MagicWeapon>(MagicWeaponType::ZeroStaff));
                         placedChest = true;
                         break;
                     }

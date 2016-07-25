@@ -50,6 +50,8 @@ add_executable(UoLEduGame
 	src/DungeonGen.cpp
 	src/Game.h
 	src/Game.cpp
+    src/GameDirector.h
+    src/GameDirector.cpp
 	src/main.cpp
 	)
 

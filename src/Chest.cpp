@@ -7,9 +7,11 @@
 #include "Helper.h"
 
 
-ChestEntity::ChestEntity(ChestType chestType, const std::string& chestFsNodeName) :
+ChestEntity::ChestEntity(ChestType chestType, ChestDropTableType dropTable,
+    const std::string& chestFsNodeName) :
 UnitEntity(),
 chestType_(chestType),
+chestDropTable_(dropTable),
 isOpened_(false),
 chestFsNodeName_(chestFsNodeName)
 {
@@ -26,6 +28,25 @@ void ChestEntity::Use(EntityId playerId)
 {
     if (!isOpened_) {
         isOpened_ = true;
+
+        // roll drop tables
+        switch (chestDropTable_) {
+        case ChestDropTableType::StoredItemsOnly:
+        default:
+            break;
+
+        case ChestDropTableType::Normal:
+            // roll for health pot
+            if (Helper::GenerateRandomBool(1 / 8.0f)) {
+                items_.emplace_back(std::make_unique<PotionItem>(ItemType::HealthPotion, 1));
+            }
+
+            // roll for magic pot
+            if (Helper::GenerateRandomBool(1 / 8.0f)) {
+                items_.emplace_back(std::make_unique<PotionItem>(ItemType::MagicPotion, 1));
+            }
+            break;
+        }
 
         // drop items in world using ItemEntity
         auto area = GetAssignedArea();

@@ -9,6 +9,7 @@
 #include <SFML/Window/Keyboard.hpp>
 
 #include "GameFilesystem.h"
+#include "GameDirector.h"
 #include "World.h"
 #include "Player.h"
 
@@ -67,6 +68,8 @@ class Game
     std::unique_ptr<GameFilesystem> worldFs_;
 	std::unique_ptr<World> world_;
 
+    GameDirector director_;
+
     AliveStats playerStats_;
     PlayerInventory playerInv_;
     EntityId playerId_;
@@ -96,6 +99,7 @@ class Game
 
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
+    void RenderUIObjective(sf::RenderTarget& target);
     void RenderUIPlayerStats(sf::RenderTarget& target);
 
     void RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, const std::string& label,

@@ -40,6 +40,8 @@ add_executable(UoLEduGame
     src/Item.cpp
     src/Chest.h
     src/Chest.cpp
+    src/Altar.h
+    src/Altar.cpp
     src/Stairs.h
     src/Stairs.cpp
 	src/World.h

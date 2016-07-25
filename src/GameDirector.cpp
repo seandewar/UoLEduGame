@@ -38,19 +38,25 @@ std::pair<GameFilesystemNode*, std::size_t> GameDirector::ChooseRandomNodeRecurs
     std::size_t n)
 {
     if (!node) {
-        // error - null node; recurse down with an invalid n (n <= 0)
         return std::make_pair(nullptr, 0);
     }
 
-    auto result = std::make_pair(!node->IsDirectory() && Helper::GenerateRandomBool(1.0f / n) ? node : nullptr, n);
+    std::pair<GameFilesystemNode*, std::size_t> result = std::make_pair(nullptr, n);
+    if (!node->IsDirectory()) {
+        // if this is a file node, consider it
+        result.second = n + 1;
+
+        // now roll with probability 1/n to have this node as a candidate to return
+        // - this is mathematically proven to consider all nodes in the tree in a
+        // uniform random manner.
+        if (Helper::GenerateRandomBool(1.0f / result.second)) {
+            result.first = node;
+        }
+    }
 
     for (std::size_t iNode = 0; iNode < node->GetChildrenCount(); ++iNode) {
-        auto nodeResult = ChooseRandomNodeRecurse(node->GetChildNode(iNode), ++result.second);
-
-        if (nodeResult.second <= 0) {
-            // error - recurse down with an invalid n (n <= 0)
-            return std::make_pair(nullptr, 0);
-        }
+        auto childNode = node->GetChildNode(iNode);
+        auto nodeResult = ChooseRandomNodeRecurse(childNode, result.second);
 
         // check if any node down this branch was selected
         if (nodeResult.first) {
@@ -59,11 +65,6 @@ std::pair<GameFilesystemNode*, std::size_t> GameDirector::ChooseRandomNodeRecurs
 
         // update current n
         result.second = nodeResult.second;
-    }
-
-    // if this is the bottom-most recursive call, print dbg
-    if (n == 1) {
-        printf("GameDirector - ChooseRandomNodeRecurse(): Reservoir Sampling; %u nodes considered.\n", result.second);
     }
 
     return result;
@@ -142,8 +143,11 @@ void GameDirector::ChooseNewArtefactLocation(WorldArea* newArea)
     }
 
     // pick a random node in the fs
-    objectiveFsNode_ = ChooseRandomNodeRecurse(objectiveFs_->GetRootNode()).first;
+    auto result = ChooseRandomNodeRecurse(objectiveFs_->GetRootNode());
+    objectiveFsNode_ = result.first;
     assert(objectiveFsNode_);
+
+    printf("GameDirector - Reservoir Sampling; %u file nodes considered.\n", result.second);
 
     objectiveFsNodePath_ = GameFilesystem::GetNodePathString(*objectiveFsNode_);
 
@@ -159,7 +163,7 @@ void GameDirector::NewObjective(float newDifficultyMul)
 {
     // spoop the player
     if (newDifficultyMul > objectiveDifficultyMul_) {
-        switch (Helper::GenerateRandomInt(0, 6)) {
+        switch (Helper::GenerateRandomInt(0, 7)) {
         case 0:
             Game::Get().AddMessage("You feel like you are being watched...", sf::Color(255, 0, 0));
             break;
@@ -186,6 +190,10 @@ void GameDirector::NewObjective(float newDifficultyMul)
 
         case 6:
             Game::Get().AddMessage("That couldn't have been good...", sf::Color(255, 0, 0));
+            break;
+
+        case 7:
+            Game::Get().AddMessage("You have a bad feeling about this...", sf::Color(255, 0, 0));
             break;
         }
     }

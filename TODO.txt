@@ -35,10 +35,11 @@ Collision with ents func
 Basic Enemy Entity that follows
 Different Enemy Ents
 projectiles
->[Objective system] finished [+ floor nav] 
-[Chest class rolls items when opened] (dungeon gen only spawns special items in chest)
+[Objective system finished + floor nav] 
+[Chest class rolls items when opened (dungeon gen only spawns special items in chest)]
 GameFilesystemGen usr & lib & mnt
 Procedural ent alivestats based on objective and seed
-Questions for each item
+>Questions for each item
+altar
 Boss?
 AUDIO

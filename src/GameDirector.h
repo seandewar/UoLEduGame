@@ -36,7 +36,7 @@ class GameDirector
     /**
     * Uses the Reservoir Sampling algorithm to pick a random node from the tree.
     */
-    std::pair<GameFilesystemNode*, std::size_t> ChooseRandomNodeRecurse(GameFilesystemNode* node, std::size_t n = 1);
+    std::pair<GameFilesystemNode*, std::size_t> ChooseRandomNodeRecurse(GameFilesystemNode* node, std::size_t n = 0);
 
     void ChooseNewArtefactLocation(WorldArea* newArea);
 

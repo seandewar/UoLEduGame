@@ -5,6 +5,61 @@
 #include "GameFilesystem.h"
 
 /**
+* Answer choice number for GameQuestion
+*/
+enum class GameQuestionAnswerChoice
+{
+    CorrectChoice,
+    WrongChoice1,
+    WrongChoice2
+};
+
+/**
+* Question class for collecting artefacts
+*/
+class IGameQuestion
+{
+public:
+    IGameQuestion() { }
+    virtual ~IGameQuestion() { }
+
+    virtual std::string GetQuestion() const = 0;
+    virtual std::string GetAnswerChoice(GameQuestionAnswerChoice choice) const = 0;
+};
+
+/**
+* Type of GenericGameQuestion
+*/
+enum class GenericGameQuestionType
+{
+    RootDirectoryName,
+    FilesystemGraph,
+    TmpDirectory,
+    DevDirectory,
+    BinDirectory,
+    HomeDirectory,
+    DoubleDot,
+    SingleDot
+};
+
+/**
+* Generic game questions that do not rely on current world state
+*/
+class GenericGameQuestion : public IGameQuestion
+{
+    GenericGameQuestionType questionType_;
+
+public:
+    GenericGameQuestion(GenericGameQuestionType questionType);
+    virtual ~GenericGameQuestion();
+
+    inline GenericGameQuestionType GetGenericQuestionType() const { return questionType_; }
+
+    virtual std::string GetQuestion() const override;
+    virtual std::string GetAnswerChoice(GameQuestionAnswerChoice choice) const override;
+};
+
+/**
 * Objective types.
 */
 enum class GameObjectiveType
@@ -14,6 +69,16 @@ enum class GameObjectiveType
     RootArtefactAltar,
     BossFight,
     Complete
+};
+
+/**
+* The result of the player answering the current question.
+*/
+enum class GameQuestionAnswerResult
+{
+    Unanswered,
+    Correct,
+    Wrong
 };
 
 class WorldArea;
@@ -33,14 +98,20 @@ class GameDirector
 
     std::vector<WorldArea*> objectiveUpdatedAreas_;
 
+    std::vector<std::unique_ptr<IGameQuestion>> unusedQuestions_;
+    std::size_t iActiveQuestion_;
+    GameQuestionAnswerResult activeQuestionResult_;
+
     /**
     * Uses the Reservoir Sampling algorithm to pick a random node from the tree.
     */
     std::pair<GameFilesystemNode*, std::size_t> ChooseRandomNodeRecurse(GameFilesystemNode* node, std::size_t n = 0);
 
-    void ChooseNewArtefactLocation(WorldArea* newArea);
-
     void NewObjective(float newDifficultyMul);
+    inline void ResetObjective() { NewObjective(objectiveDifficultyMul_); }
+
+    void ResetUnusedQuestionsList();
+    void SelectNewQuestion();
 
 public:
     GameDirector();
@@ -48,6 +119,20 @@ public:
 
     void StartNewSession(int maxArtefacts, WorldArea* currentArea, GameFilesystem* fs);
     void FoundArtefact(WorldArea* currentArea);
+    void ChooseNewArtefactLocation(WorldArea* newArea);
+
+    inline GameFilesystemNode* GetCurrentArtefactNode()
+    { 
+        return objective_ == GameObjectiveType::CollectArtefact ? objectiveFsNode_ : nullptr;
+    }
+
+    inline GameQuestionAnswerResult GetQuestionAnswerResult() const { return activeQuestionResult_; }
+    void AnswerQuestionResult(GameQuestionAnswerResult result, WorldArea* area);
+
+    inline const IGameQuestion* GetCurrentQuestion() const
+    { 
+        return iActiveQuestion_ < unusedQuestions_.size() ? unusedQuestions_[iActiveQuestion_].get() : nullptr;
+    }
 
     void PlayerChangedArea(WorldArea* newArea, bool updateEnemies = true);
 

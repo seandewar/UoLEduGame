@@ -12,6 +12,8 @@ public:
     AltarEntity();
     virtual ~AltarEntity();
 
+    virtual void Render(sf::RenderTarget& target) override;
+
     virtual void Use(EntityId playerId) override;
     inline virtual std::string GetUseText() const override { return "Use Artefact Altar"; }
 

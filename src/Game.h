@@ -32,6 +32,7 @@ struct GameAssets
     sf::Texture playerSpriteSheet;
     sf::Texture chestsSpriteSheet;
     sf::Texture itemsSpriteSheet;
+    sf::Texture altarSpriteSheet;
 
     bool LoadAssets();
 
@@ -76,10 +77,14 @@ class Game
 
     std::string scheduledLevelChangeFsNodePath_;
 
+    const IGameQuestion* displayedQuestion_;
+    std::vector<GameQuestionAnswerChoice> displayedQuestionShuffledChoices_;
+    int displayedQuestionSelectedChoice_;
+
     inline WorldArea* GetWorldArea() { return world_ ? world_->GetCurrentArea() : nullptr; }
 
     inline PlayerEntity* GetPlayerEntity()
-    { 
+    {
         auto area = GetWorldArea();
         return area ? area->GetEntity<PlayerEntity>(playerId_) : nullptr;
     }
@@ -88,11 +93,13 @@ class Game
 
     bool SpawnPlayer(const sf::Vector2f* optionalStartPos = nullptr);
     bool RemovePlayer();
+    bool TeleportPlayerToObjective();
 
     bool ChangeLevel(const std::string& fsNodePath);
 
-    void ViewFollowPlayer();
+    void ViewFollowPlayer(sf::RenderTarget& target);
 
+    void HandleDisplayedQuestionInput();
     void HandleUseInventory();
 
     void RenderUIMessages(sf::RenderTarget& target);
@@ -106,6 +113,7 @@ class Game
         Item* item, bool isHighlighted = false);
     void RenderUIPlayerInventory(sf::RenderTarget& target);
     void RenderUIArtefactCount(sf::RenderTarget& target);
+    void RenderUIDisplayedQuestion(sf::RenderTarget& target);
 
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
 
@@ -145,6 +153,10 @@ public:
 
         messages_.emplace_back(message, color);
     }
+
+    inline const IGameQuestion* GetDisplayedQuestion() const { return displayedQuestion_; }
+    void ResetDisplayedQuestion();
+    void SetDisplayedQuestion(const IGameQuestion* question);
 
     void RunFrame(sf::RenderTarget& target);
 

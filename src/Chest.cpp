@@ -27,6 +27,53 @@ ChestEntity::~ChestEntity()
 void ChestEntity::Use(EntityId playerId)
 {
     if (!isOpened_) {
+        // check if chest is the artefact chest
+        auto parentNode = GetAssignedArea()->GetRelatedNode();
+
+        if (Game::Get().GetDirector().GetCurrentObjectiveType() == GameObjectiveType::CollectArtefact &&
+            parentNode && !chestFsNodeName_.empty()) {
+            auto artefactNode = Game::Get().GetDirector().GetCurrentArtefactNode();
+
+            if (artefactNode && parentNode->GetChildNode(chestFsNodeName_) == artefactNode) {
+                switch (Game::Get().GetDirector().GetQuestionAnswerResult()) {
+                case GameQuestionAnswerResult::Unanswered:
+                case GameQuestionAnswerResult::Wrong:
+                    Game::Get().SetDisplayedQuestion(Game::Get().GetDirector().GetCurrentQuestion());
+                    return;
+
+                case GameQuestionAnswerResult::Correct:
+                    // add artefact to drops!
+                    ArtefactType artefactType;
+
+                    switch (Helper::GenerateRandomInt(1, 5)) {
+                    default:
+                    case 1:
+                        artefactType = ArtefactType::Appearance1;
+                        break;
+
+                    case 2:
+                        artefactType = ArtefactType::Appearance2;
+                        break;
+
+                    case 3:
+                        artefactType = ArtefactType::Appearance3;
+                        break;
+
+                    case 4:
+                        artefactType = ArtefactType::Appearance4;
+                        break;
+
+                    case 5:
+                        artefactType = ArtefactType::Appearance5;
+                        break;
+                    }
+
+                    items_.emplace_back(std::make_unique<ArtefactItem>(artefactType));
+                    break;
+                }
+            }
+        }
+
         isOpened_ = true;
 
         // roll drop tables

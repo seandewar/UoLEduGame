@@ -35,12 +35,15 @@ int main(int argc, char* argv[])
 				break;
 
             case sf::Event::KeyPressed:
+#ifndef NDEBUG
                 // F1 debug mode toggle
                 if (event.key.code == sf::Keyboard::F1) {
                     Game::Get().SetDebugMode(!Game::Get().IsInDebugMode());
                 }
+#endif
 
                 Game::Get().AddPressedEventKey(event.key.code);
+                break;
 			}
 		}
 

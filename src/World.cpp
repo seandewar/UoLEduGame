@@ -195,7 +195,7 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
                 if (renderDebug && worldEnt) {
                     auto worldEntRectDbg = std::make_unique<sf::RectangleShape>(worldEnt->GetSize());
                     worldEntRectDbg->setPosition(worldEnt->GetPosition());
-                    worldEntRectDbg->setFillColor(sf::Color(255, 192, 203));
+                    worldEntRectDbg->setFillColor(sf::Color(255, 192, 203, 100));
                     worldEntRectDbg->setOutlineColor(sf::Color(255, 100, 100));
                     worldEntRectDbg->setOutlineThickness(-1.0f);
 
@@ -212,7 +212,7 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
     }
 
     // render vignette
-    target.setView(target.getDefaultView());
+    Helper::ResetTargetView(target);
     RenderVignette(target);
 
     // render frame ui renderables and clear list when done
@@ -242,7 +242,7 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
         }
     }
 
-    target.setView(target.getDefaultView());
+    Helper::ResetTargetView(target);
 }
 
 

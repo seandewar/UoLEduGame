@@ -8,6 +8,7 @@
 #include "Player.h"
 #include "IPlayerUsable.h"
 #include "Stairs.h"
+#include "Chest.h"
 
 
 #define LOAD_FROM_FILE(asset, assetPath) \
@@ -30,6 +31,7 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(playerSpriteSheet, "assets/PlayerSprites.png");
     LOAD_FROM_FILE(chestsSpriteSheet, "assets/ChestSprites.png");
     LOAD_FROM_FILE(itemsSpriteSheet, "assets/ItemSprites.png");
+    LOAD_FROM_FILE(altarSpriteSheet, "assets/AltarSprites.png");
     return true;
 }
 
@@ -41,6 +43,12 @@ Game::Game() :
 debugMode_(false),
 playerId_(Entity::InvalidId)
 {
+    // add these so that they can be shuffled when the display question UI is invoked.
+    displayedQuestionShuffledChoices_.emplace_back(GameQuestionAnswerChoice::CorrectChoice);
+    displayedQuestionShuffledChoices_.emplace_back(GameQuestionAnswerChoice::WrongChoice1);
+    displayedQuestionShuffledChoices_.emplace_back(GameQuestionAnswerChoice::WrongChoice2);
+
+    ResetDisplayedQuestion();
 }
 
 
@@ -52,6 +60,13 @@ Game::~Game()
 bool Game::Init()
 {
     return NewGame();
+}
+
+
+void Game::ResetDisplayedQuestion()
+{
+    displayedQuestion_ = nullptr;
+    displayedQuestionSelectedChoice_ = 0;
 }
 
 
@@ -185,11 +200,64 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         }
     }
 
+    ResetDisplayedQuestion();
     director_.PlayerChangedArea(currentArea);
 
     AddMessage("You are on floor " + GameFilesystem::GetNodePathString(*currentFsNode),
         sf::Color(255, 255, 0));
     return true;
+}
+
+
+bool Game::TeleportPlayerToObjective()
+{
+    switch (director_.GetCurrentObjectiveType()) {
+    default:
+        return true;
+
+    case GameObjectiveType::CollectArtefact:
+        if (director_.GetCurrentArtefactNode()) {
+            auto levelNode = director_.GetCurrentArtefactNode()->GetParent();
+
+            if (!levelNode) {
+                return false;
+            }
+
+            if (!ChangeLevel(GameFilesystem::GetNodePathString(*levelNode)) || !GetWorldArea()) {
+                return false;
+            }
+
+            auto chestIds = GetWorldArea()->GetAllEntitiesOfType<ChestEntity>();
+
+            for (auto id : chestIds) {
+                auto chestEnt = GetWorldArea()->GetEntity<ChestEntity>(id);
+                assert(chestEnt);
+
+                if (director_.GetCurrentArtefactNode()->GetName() == chestEnt->GetChestFsNodeName()) {
+                    // tp player to artefact chest
+                    if (GetPlayerEntity()) {
+                        printf("Teleported player to artefact chest.\n");
+                        GetPlayerEntity()->SetCenterPosition(chestEnt->GetCenterPosition());
+                    }
+
+                    break;
+                }
+            }
+        }
+        return true;
+
+    case GameObjectiveType::RootArtefactAltar:
+        if (!ChangeLevel("/")) {
+            return false;
+        }
+
+        if (GetPlayerEntity()) {
+            printf("Teleported player to default start in root.\n");
+            return GetPlayerEntity()->SetPositionToDefaultStart();
+        }
+
+        return true;
+    }
 }
 
 
@@ -204,7 +272,9 @@ bool Game::NewGame()
     }
 
     world_ = std::make_unique<World>(*worldFs_);
-    director_.StartNewSession(10, nullptr, worldFs_.get());
+    director_.StartNewSession(8, nullptr, worldFs_.get());
+
+    ResetDisplayedQuestion();
 
     if (!ChangeLevel("/")) {
         return false;
@@ -215,13 +285,75 @@ bool Game::NewGame()
 }
 
 
-void Game::ViewFollowPlayer()
+void Game::ViewFollowPlayer(sf::RenderTarget& target)
 {
     auto area = GetWorldArea();
 
     if (area && playerId_ != Entity::InvalidId) {
-        area->GetRenderView().setSize(250.0f, 187.5f);
+        area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 275.0f));
         area->CenterViewOnWorldEntity(playerId_);
+    }
+}
+
+
+void Game::SetDisplayedQuestion(const IGameQuestion* question)
+{
+    displayedQuestion_ = question;
+    displayedQuestionSelectedChoice_ = 0;
+
+    // shuffle choices
+    std::random_shuffle(displayedQuestionShuffledChoices_.begin(), displayedQuestionShuffledChoices_.end());
+}
+
+
+void Game::HandleDisplayedQuestionInput()
+{
+    if (!displayedQuestion_ && GetWorldArea()) {
+        return;
+    }
+
+    // ESC to close
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Escape)) {
+        ResetDisplayedQuestion();
+        return;
+    }
+
+    // arrow keys
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Up)) {
+        if (displayedQuestionSelectedChoice_-- <= 0) {
+            displayedQuestionSelectedChoice_ = 2;
+        }
+    }
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Down)) {
+        if (++displayedQuestionSelectedChoice_ > 2) {
+            displayedQuestionSelectedChoice_ = 0;
+        }
+    }
+
+    // number keys
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num1)) {
+        displayedQuestionSelectedChoice_ = 0;
+    }
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num2)) {
+        displayedQuestionSelectedChoice_ = 1;
+    }
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {
+        displayedQuestionSelectedChoice_ = 2;
+    }
+
+    // ENTER to select
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+        auto selectedChoice = displayedQuestionShuffledChoices_[displayedQuestionSelectedChoice_];
+        
+        if (selectedChoice == GameQuestionAnswerChoice::CorrectChoice) {
+            director_.AnswerQuestionResult(GameQuestionAnswerResult::Correct, GetWorldArea());
+        }
+        else {
+            director_.AnswerQuestionResult(GameQuestionAnswerResult::Wrong, GetWorldArea());
+        }
+
+        ResetDisplayedQuestion();
+        return;
     }
 }
 
@@ -261,26 +393,20 @@ void Game::Tick()
         world_->SetDebugMode(debugMode_);
         world_->Tick();
 
-        HandleUseInventory();
-
-        // focus view on player (unless in debug mode & zooming out the map)
-        if (debugMode_ && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
-            auto area = GetWorldArea();
-            if (area) {
-                // center on map and zoom out
-                area->GetRenderView().setCenter(
-                    0.5f * area->GetWidth() * BaseTile::TileSize.x, 
-                    0.5f * area->GetHeight() * BaseTile::TileSize.y
-                    );
-
-                area->GetRenderView().setSize(
-                    area->GetWidth() * BaseTile::TileSize.x,
-                    area->GetHeight() * BaseTile::TileSize.y
-                    );
-            }
+        // handle input for question interface or inventory if no question interface
+        if (displayedQuestion_) {
+            HandleDisplayedQuestionInput();
         }
         else {
-            ViewFollowPlayer();
+            HandleUseInventory();
+        }
+
+        // debug mode
+        if (debugMode_) {
+            if (Game::IsKeyPressedFromEvent(sf::Keyboard::F2)) {
+                // tp to objective
+                TeleportPlayerToObjective();
+            }
         }
     }
 }
@@ -361,7 +487,7 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
     if (player && player->GetStats()) {
         // render health bar bg
         sf::RectangleShape healthBarBg(sf::Vector2f(300.0f, 20.0f));
-        healthBarBg.setFillColor(sf::Color(80, 80, 80));
+        healthBarBg.setFillColor(sf::Color(20, 20, 20));
         healthBarBg.setPosition(target.getView().getSize().x - healthBarBg.getSize().x - 5.0f,
             target.getView().getSize().y - 32.5f - healthBarBg.getSize().y);
         healthBarBg.setOutlineThickness(2.0f);
@@ -393,7 +519,7 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 
         // render mana bar bg
         sf::RectangleShape manaBarBg(sf::Vector2f(300.0f, 20.0f));
-        manaBarBg.setFillColor(sf::Color(80, 80, 80));
+        manaBarBg.setFillColor(sf::Color(20, 20, 20));
         manaBarBg.setPosition(target.getView().getSize().x - manaBarBg.getSize().x - 5.0f,
             target.getView().getSize().y - 5.0f - manaBarBg.getSize().y);
         manaBarBg.setOutlineThickness(2.0f);
@@ -557,27 +683,124 @@ void Game::RenderUIMessages(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
+{
+    if (!displayedQuestion_) {
+        return;
+    }
+
+    // render window bg
+    sf::RectangleShape uiBg(sf::Vector2f(765.0f, 250.0f));
+    uiBg.setFillColor(sf::Color(20, 20, 20, 250));
+    uiBg.setOutlineColor(sf::Color(0, 0, 0));
+    uiBg.setOutlineThickness(-2.0f);
+    uiBg.setPosition(0.5f * (target.getView().getSize() - uiBg.getSize()));
+
+    target.draw(uiBg);
+
+    // render window label
+    sf::Text uiLabel("Answer this question correctly to unlock the chest:", GameAssets::Get().gameFont, 8);
+    uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width), 20.0f));
+    uiLabel.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiLabel);
+
+    // render question text
+    sf::Text uiQuestion(displayedQuestion_->GetQuestion(), GameAssets::Get().gameFont, 10);
+    uiQuestion.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiQuestion.getGlobalBounds().width), 50.0f));
+    uiQuestion.setColor(sf::Color(255, 145, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiQuestion);
+
+    // render choice a
+    sf::Text uiChoiceA("Press 1: " + displayedQuestion_->GetAnswerChoice(displayedQuestionShuffledChoices_[0]),
+        GameAssets::Get().gameFont, 10);
+    uiChoiceA.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiChoiceA.getGlobalBounds().width), 100.0f));
+    uiChoiceA.setColor(displayedQuestionSelectedChoice_ == 0 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
+    uiChoiceA.setStyle(displayedQuestionSelectedChoice_ == 0 ? sf::Text::Underlined : sf::Text::Regular);
+
+    Helper::RenderTextWithDropShadow(target, uiChoiceA);
+
+    // render choice b
+    sf::Text uiChoiceB("Press 2: " + displayedQuestion_->GetAnswerChoice(displayedQuestionShuffledChoices_[1]),
+        GameAssets::Get().gameFont, 10);
+    uiChoiceB.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiChoiceB.getGlobalBounds().width), 130.0f));
+    uiChoiceB.setColor(displayedQuestionSelectedChoice_ == 1 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
+    uiChoiceB.setStyle(displayedQuestionSelectedChoice_ == 1 ? sf::Text::Underlined : sf::Text::Regular);
+
+    Helper::RenderTextWithDropShadow(target, uiChoiceB);
+
+    // render choice c
+    sf::Text uiChoiceC("Press 3: " + displayedQuestion_->GetAnswerChoice(displayedQuestionShuffledChoices_[2]),
+        GameAssets::Get().gameFont, 10);
+    uiChoiceC.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiChoiceC.getGlobalBounds().width), 160.0f));
+    uiChoiceC.setColor(displayedQuestionSelectedChoice_ == 2 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
+    uiChoiceC.setStyle(displayedQuestionSelectedChoice_ == 2 ? sf::Text::Underlined : sf::Text::Regular);
+
+    Helper::RenderTextWithDropShadow(target, uiChoiceC);
+
+    // render confirm label
+    sf::Text uiConfirmLabel("Press ENTER to confirm your answer.", GameAssets::Get().gameFont, 8);
+    uiConfirmLabel.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiConfirmLabel.getGlobalBounds().width), 220.0f));
+    uiConfirmLabel.setColor(sf::Color(255, 255, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
+}
+
+
 void Game::Render(sf::RenderTarget& target)
 {
     target.clear();
 
     if (world_) {
+        ViewFollowPlayer(target);
+
+        // debug mode
+        if (debugMode_) {
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+                auto area = GetWorldArea();
+
+                if (area) {
+                    // center on map and zoom out
+                    area->GetRenderView().setCenter(
+                        0.5f * area->GetWidth() * BaseTile::TileSize.x,
+                        0.5f * area->GetHeight() * BaseTile::TileSize.y
+                        );
+
+                    area->GetRenderView().setSize(
+                        area->GetWidth() * BaseTile::TileSize.x,
+                        area->GetHeight() * BaseTile::TileSize.y
+                        );
+                }
+            }
+        }
+
         world_->Render(target);
 
         RenderUILocation(target);
         RenderUIObjective(target);
         //RenderUIArtefactCount(target);
-        RenderUIPlayerUseTargetText(target);
         RenderUIPlayerStats(target);
         RenderUIPlayerInventory(target);
+        RenderUIMessages(target);
+
+        if (displayedQuestion_) {
+            RenderUIDisplayedQuestion(target);
+        }
+        else {
+            RenderUIPlayerUseTargetText(target);
+        }
 
         // if level is going to change next frame, display loading text
         if (!scheduledLevelChangeFsNodePath_.empty()) {
             RenderUILoadingArea(target);
         }
     }
-
-    RenderUIMessages(target);
 }
 
 

@@ -83,4 +83,22 @@ public:
         target.draw(*GetTextDropShadow(text, offset, color));
         target.draw(text);
     }
+
+    static inline sf::Vector2f ComputeGoodAspectSize(sf::RenderTarget& target, float size)
+    {
+        auto aspectVertMul = static_cast<float>(target.getSize().y) / target.getSize().x;
+
+        if (aspectVertMul <= 1.0f) {
+            return sf::Vector2f(size, size * aspectVertMul);
+        }
+        else {
+            return sf::Vector2f(size / aspectVertMul, size);
+        }
+    }
+
+    static inline void ResetTargetView(sf::RenderTarget& target)
+    {
+        target.setView(sf::View(sf::FloatRect(0.0f, 0.0f,
+            static_cast<float>(target.getSize().x), static_cast<float>(target.getSize().y))));
+    }
 };

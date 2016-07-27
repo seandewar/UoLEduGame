@@ -8,6 +8,7 @@
 #include "Player.h"
 #include "Stairs.h"
 #include "Chest.h"
+#include "Altar.h"
 
 
 DungeonAreaGen::DungeonAreaGen(const GameFilesystemNode& node) :
@@ -30,19 +31,38 @@ bool DungeonAreaGen::AddPlayerStart(WorldArea& area)
         return false;
     }
 
-    auto areaCenter = 0.5f * 
+    auto areaCenter = 0.5f *
         sf::Vector2f(area.GetWidth() * BaseTile::TileSize.x, area.GetHeight() * BaseTile::TileSize.y);
 
     defaultStartEnt->SetPosition(areaCenter);
 
-    // spawn the upstair if the fs node has a parent that the stairs can navigate to
-    if (node_.GetParent()) {
+    if (node_.IsRootDirectoryNode()) {
+        // spawn altar
+        auto altarEnt = area.GetEntity<AltarEntity>(area.EmplaceEntity<AltarEntity>());
+        if (!altarEnt) {
+            return false;
+        }
+
+        if (!area.CheckEntRectangleWalkable(sf::FloatRect(
+            areaCenter.x - altarEnt->GetSize().x * 0.5f, areaCenter.y - altarEnt->GetSize().y * 0.5f,
+            altarEnt->GetSize().x, altarEnt->GetSize().y))) {
+            fprintf(stderr, "ERR - DungeonAreaGen - No room to place AltarEntity at player start!\n");
+
+            area.RemoveEntity(altarEnt->GetAssignedId());
+            return false;
+        }
+
+        altarEnt->SetCenterPosition(areaCenter);
+    }
+    else if (node_.GetParent()) {
+        // spawn the upstair if the fs node has a parent that the stairs can navigate to
         auto upstairEnt = area.GetEntity<UpStairEntity>(area.EmplaceEntity<UpStairEntity>());
         if (!upstairEnt) {
             return false;
         }
 
-        if (!area.CheckEntRectangleWalkable(sf::FloatRect(areaCenter.x, areaCenter.y,
+        if (!area.CheckEntRectangleWalkable(sf::FloatRect(
+            areaCenter.x - upstairEnt->GetSize().x * 0.5f, areaCenter.y - upstairEnt->GetSize().x * 0.5f,
             upstairEnt->GetSize().x, upstairEnt->GetSize().y))) {
             fprintf(stderr, "ERR - DungeonAreaGen - No room to place UpStairEntity for player start!\n");
 
@@ -540,8 +560,20 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                         break;
                     }
 
-                    auto chestEnt = area.GetEntity<ChestEntity>(
-                        area.EmplaceEntity<ChestEntity>(chestType, ChestDropTableType::Normal, childNode->GetName()));
+                    // choose drop table type
+                    ChestDropTableType chestDropTable;
+
+                    switch (childNode->GetType()) {
+                    case GameFilesystemNodeType::NullDevice:
+                        chestDropTable = ChestDropTableType::StoredItemsOnly;
+                        break;
+
+                    default:
+                        chestDropTable = ChestDropTableType::Normal;
+                    }
+
+                    auto chestEnt = area.GetEntity<ChestEntity>(area.EmplaceEntity<ChestEntity>(
+                        chestType, chestDropTable, childNode->GetName()));
 
                     if (chestEnt) {
                         // unique loot spawns

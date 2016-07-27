@@ -294,19 +294,19 @@ void PlayerEntity::HandleMovement()
     sf::Vector2f moveDir;
     PlayerFacingDirection faceDir = dir_;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
         moveDir.y -= 1.0f;
         faceDir = PlayerFacingDirection::Up;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
         moveDir.y += 1.0f;
         faceDir = PlayerFacingDirection::Down;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         moveDir.x -= 1.0f;
         faceDir = PlayerFacingDirection::Left;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
         moveDir.x += 1.0f;
         faceDir = PlayerFacingDirection::Right;
     }
@@ -315,6 +315,7 @@ void PlayerEntity::HandleMovement()
         RestartAnimations();
     }
     else {
+        Game::Get().ResetDisplayedQuestion(); // reset question interface if we moved and it's on
         TickAnimations();
     }
 
@@ -328,7 +329,7 @@ void PlayerEntity::HandleUseNearbyObjects()
 {
     auto area = GetAssignedArea();
 
-    if (!area) {
+    if (!area || Game::Get().GetDisplayedQuestion()) {
         return;
     }
 

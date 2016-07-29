@@ -115,12 +115,17 @@ void WorldArea::Tick()
 	}
 
     // tick ents
-    for (auto& entEntry : ents_) {
-        auto& ent = entEntry.second;
+    for (auto it = ents_.begin(); it != ents_.end();) {
+        auto& ent = it->second;
         assert(ent);
 
         if (!ent->IsMarkedForDeletion()) {
             ent->Tick();
+            ++it;
+        }
+        else {
+            auto isRemoved = RemoveEntity(it++->first);
+            assert(isRemoved);
         }
     }
 }

@@ -4,6 +4,7 @@
 #include "World.h"
 #include "Game.h"
 #include "Chest.h"
+#include "Enemy.h"
 
 
 GenericGameQuestion::GenericGameQuestion(GenericGameQuestionType questionType) :
@@ -246,6 +247,76 @@ std::pair<GameFilesystemNode*, std::size_t> GameDirector::ChooseRandomNodeRecurs
 }
 
 
+void GameDirector::RemoveAllEnemies(WorldArea* area)
+{
+    if (area) {
+        auto enemies = area->GetAllEntitiesOfType<Enemy>();
+
+        for (auto id : enemies) {
+            area->RemoveEntity(id);
+        }
+    }
+}
+
+
+void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
+{
+    if (area && area->GetRelatedNode()) {
+        int targetEnemies = Helper::GenerateRandomInt(0, std::max<int>(3, area->GetRelatedNode()->GetChildrenCount() + 2));
+        printf("Target enemies for floor: %d\n", targetEnemies);
+
+        for (int i = 0; i < targetEnemies; ++i) {
+            int tryCount = 0;
+
+            while (tryCount++ < 10000) {
+                auto desiredArea = sf::FloatRect(
+                    Helper::GenerateRandomInt<u32>(0, area->GetWidth() - 1) * BaseTile::TileSize.x,
+                    Helper::GenerateRandomInt<u32>(0, area->GetHeight() - 1) * BaseTile::TileSize.y,
+                    16.0f, 16.0f
+                    );
+
+                if (area->CheckEntRectangleWalkable(desiredArea)) {
+                    EnemyType enemyType;
+
+                    switch (Helper::GenerateRandomInt(0, 4)) {
+                    default:
+                        assert(!"Bad enemy type chosen!");
+                        break;
+
+                    case 0:
+                        enemyType = EnemyType::SkeletonBasic;
+                        break;
+
+                    case 1:
+                        enemyType = EnemyType::GreenBlobBasic;
+                        break;
+
+                    case 2:
+                        enemyType = EnemyType::BlueBlobBasic;
+                        break;
+
+                    case 3:
+                        enemyType = EnemyType::RedBlobBasic;
+                        break;
+
+                    case 4:
+                        enemyType = EnemyType::PinkBlobBasic;
+                        break;
+                    }
+
+                    auto enemyEnt = area->GetEntity<Enemy>(area->EmplaceEntity<BasicEnemy>(enemyType));
+
+                    if (enemyEnt) {
+                        enemyEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
 {
     if (!newArea || !newArea->GetRelatedNode()) {
@@ -276,7 +347,8 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
         }
 
         if (updateEnemies) {
-            // TODO update enemies & clear or whatever
+            RemoveAllEnemies(newArea);
+            PopulateWithEnemies(newArea);
         }
 
         printf("GameDirector - Updated area to reflect the current difficulty of %f\n", objectiveDifficultyMul_);

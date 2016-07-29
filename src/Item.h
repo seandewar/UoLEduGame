@@ -172,6 +172,9 @@ public:
     BaseWeaponItem(const std::string& itemName = std::string());
     virtual ~BaseWeaponItem();
 
+    inline virtual u32 GetAttack() const { return 0; }
+    inline virtual float GetAttackRange() const { return 12.0f; }
+
     inline virtual std::string GetUseText() const override { return "Attack using " + itemName_; }
 
     inline void SetItemName(const std::string& itemName) { itemName_ = itemName; }
@@ -198,6 +201,10 @@ public:
     virtual ~MeleeWeapon();
 
     virtual void Use(PlayerEntity* player) override;
+
+    virtual u32 GetAttack() const override;
+    virtual float GetAttackRange() const override;
+    virtual sf::Time GetUseDelay() const override;
 
     sf::Sprite GetSprite() const override;
 

@@ -2,6 +2,8 @@
 
 #include "Game.h"
 #include "Player.h"
+#include "Enemy.h"
+#include "Helper.h"
 
 
 Item::Item(int maxAmount, int amount)
@@ -74,7 +76,7 @@ Item(10, amount),
 potionType_(potionType)
 {
     if (potionType_ != ItemType::HealthPotion &&
-        potionType != ItemType::MagicPotion) {
+        potionType_ != ItemType::MagicPotion) {
         throw std::runtime_error("Bad potion ItemType!");
     }
 }
@@ -96,7 +98,7 @@ void PotionItem::Use(PlayerEntity* player)
     switch (potionType_) {
     case ItemType::HealthPotion:
         if (stats->GetHealth() < stats->GetMaxHealth()) {
-            stats->ApplyHealing(250);
+            player->Heal(250);
             RemoveAmount(1);
 
             Game::Get().AddMessage("You drink a Health Potion.", sf::Color(255, 100, 100));
@@ -183,13 +185,83 @@ MeleeWeapon::~MeleeWeapon()
 }
 
 
+u32 MeleeWeapon::GetAttack() const
+{
+    switch (meleeWeaponType_) {
+    default:
+        return 0;
+
+    case MeleeWeaponType::BasicSword:
+        return 100;
+    }
+}
+
+
+float MeleeWeapon::GetAttackRange() const
+{
+    switch (meleeWeaponType_) {
+    default:
+    case MeleeWeaponType::BasicSword:
+        return 16.0f;
+    }
+}
+
+
+sf::Time MeleeWeapon::GetUseDelay() const
+{
+    switch (meleeWeaponType_) {
+    default:
+    case MeleeWeaponType::BasicSword:
+        return sf::seconds(0.3f);
+    }
+}
+
+
 void MeleeWeapon::Use(PlayerEntity* player)
 {
-    if (!player || GetAmount() <= 0) {
+    if (!player || !player->GetAssignedArea() || GetAmount() <= 0) {
         return;
     }
 
-    // TODO
+    // decide hit area
+    auto ppos = player->GetPosition();
+    auto psize = player->GetSize();
+    sf::FloatRect hitRect;
+
+    switch (player->GetFacingDirection()) {
+    case PlayerFacingDirection::Up:
+        hitRect = sf::FloatRect(ppos.x, ppos.y - GetAttackRange(), psize.x, GetAttackRange());
+        break;
+
+    case PlayerFacingDirection::Down:
+        hitRect = sf::FloatRect(ppos.x, ppos.y + psize.y, psize.x, GetAttackRange());
+        break;
+
+    case PlayerFacingDirection::Left:
+        hitRect = sf::FloatRect(ppos.x - GetAttackRange(), ppos.y, GetAttackRange(), psize.y);
+        break;
+
+    case PlayerFacingDirection::Right:
+        hitRect = sf::FloatRect(ppos.x + psize.x, ppos.y, GetAttackRange(), psize.y);
+        break;
+    }
+
+    // get hit ents
+    auto hitEntIds = player->GetAssignedArea()->GetAllWorldEntsInRectangle<Enemy>(hitRect);
+
+    // decide weapon action
+    for (auto id : hitEntIds) {
+        auto ent = player->GetAssignedArea()->GetEntity<Enemy>(id);
+        assert(ent);
+
+        switch (meleeWeaponType_) {
+        default:
+        case MeleeWeaponType::BasicSword:
+            ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            break;
+        }
+    }
+
     player->PlayAttackAnimation(PlayerSelectedWeapon::Melee);
 }
 

@@ -3,6 +3,7 @@
 #include <string>
 
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Time.hpp>
 
 #include "Types.h"
 
@@ -86,6 +87,8 @@ class AliveStats
 {
     u32 maxHealth_, health_;
     u32 maxMana_, mana_;
+    u32 meleeAttack_, magicAttack_;
+    u32 meleeDefence_, magicDefence_;
     float moveSpeed_;
 
 public:
@@ -104,7 +107,6 @@ public:
         health_ = std::min(maxHealth_, health_);
     }
 
-
     inline virtual void SetMaxHealth(u32 maxHealth) { maxHealth_ = maxHealth; health_ = std::min(maxHealth_, health_); }
     inline virtual u32 GetMaxHealth() const { return maxHealth_; }
 
@@ -114,8 +116,55 @@ public:
     inline virtual void SetMaxMana(u32 maxMana) { maxMana_ = maxMana; mana_ = std::min(maxMana_, mana_); }
     inline virtual u32 GetMaxMana() const { return maxMana_; }
 
+    inline virtual void SetMeleeAttack(u32 attack) { meleeAttack_ = attack; }
+    inline virtual u32 GetMeleeAttack() const { return meleeAttack_; }
+
+    inline virtual void SetMagicAttack(u32 attack) { magicAttack_ = attack; }
+    inline virtual u32 GetMagicAttack() const { return magicAttack_; }
+
+    inline virtual void SetMeleeDefence(u32 defence) { meleeDefence_ = defence; }
+    inline virtual u32 GetMeleeDefence() const { return meleeDefence_; }
+
+    inline virtual void SetMagicDefence(u32 defence) { magicDefence_ = defence; }
+    inline virtual u32 GetMagicDefence() const { return magicDefence_; }
+
     inline virtual void SetMoveSpeed(float speed) { moveSpeed_ = speed; }
     inline virtual float GetMoveSpeed() const { return moveSpeed_; }
+};
+
+/**
+* Different damage types
+*/
+enum class DamageType
+{
+    Melee,
+    Magic,
+    Other
+};
+
+/**
+* Damage text ent
+*/
+class DamageTextEntity : public WorldEntity
+{
+    DamageType type_;
+    u32 damage_;
+    sf::Vector2f velo_;
+    sf::Time timeLeft_;
+
+public:
+    DamageTextEntity(DamageType type, u32 damage, const sf::Vector2f& velo = sf::Vector2f(0.0f, -15.0f),
+        const sf::Time& displayTime = sf::seconds(1.0f));
+    virtual ~DamageTextEntity();
+
+    virtual void Tick() override;
+    virtual void Render(sf::RenderTarget& target) override;
+
+    inline DamageType GetDamageType() const { return type_; }
+    inline u32 GetDamageAmount() const { return damage_; }
+    inline sf::Vector2f GetVelocity() const { return velo_; }
+
+    inline virtual std::string GetName() const override { return "DamageTextEntity"; }
 };
 
 /**
@@ -133,4 +182,8 @@ public:
 
     inline AliveStats* GetStats() { return stats_; }
     inline const AliveStats* GetStats() const { return stats_; }
+
+    virtual void Attack(u32 initialDamage, DamageType source = DamageType::Other);
+    virtual void Damage(u32 amount, DamageType source = DamageType::Other);
+    virtual void Heal(u32 amount);
 };

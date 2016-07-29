@@ -494,7 +494,7 @@ bool DungeonAreaGen::PlaceDownStairs(WorldArea& area, Rng& rng)
                 auto desiredArea = sf::FloatRect(
                     Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetWidth() - 1) * BaseTile::TileSize.x,
                     Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetHeight() - 1) * BaseTile::TileSize.y,
-                    BaseTile::TileSize.x, BaseTile::TileSize.y
+                    16.0f, 16.0f
                     );
 
                 if (area.CheckEntRectangleWalkable(desiredArea) &&
@@ -535,7 +535,7 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                 auto desiredArea = sf::FloatRect(
                     Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetWidth() - 1) * BaseTile::TileSize.x,
                     Helper::GenerateRandomInt<Rng, u32>(rng, 0, area.GetHeight() - 1) * BaseTile::TileSize.y,
-                    BaseTile::TileSize.x, BaseTile::TileSize.y
+                    16.0f, 16.0f
                     );
 
                 if (area.CheckEntRectangleWalkable(desiredArea) &&

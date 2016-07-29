@@ -319,10 +319,10 @@ public:
         std::vector<EntityId> result;
 
         for (auto& entInfo : ents_) {
-            auto worldEnt = dynamic_cast<WorldEntity*>(entInfo.second.get());
+            auto worldEnt = dynamic_cast<T*>(entInfo.second.get());
 
             if (worldEnt && rect.intersects(worldEnt->GetRectangle())) {
-                result.emplace(entInfo.first);
+                result.emplace_back(entInfo.first);
             }
         }
 
@@ -333,7 +333,7 @@ public:
     EntityId GetFirstWorldEntInRectangle(const sf::FloatRect& rect) const
     {
         for (auto& entInfo : ents_) {
-            auto worldEnt = dynamic_cast<WorldEntity*>(entInfo.second.get());
+            auto worldEnt = dynamic_cast<T*>(entInfo.second.get());
 
             if (worldEnt && rect.intersects(worldEnt->GetRectangle())) {
                 return entInfo.first;

@@ -33,6 +33,8 @@ struct GameAssets
     sf::Texture chestsSpriteSheet;
     sf::Texture itemsSpriteSheet;
     sf::Texture altarSpriteSheet;
+    sf::Texture enemySpriteSheet;
+    sf::Texture damageTypesSpriteSheet;
 
     bool LoadAssets();
 

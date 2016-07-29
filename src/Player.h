@@ -162,6 +162,8 @@ public:
     inline PlayerInventory* GetInventory() { return inv_; }
     inline const PlayerInventory* GetInventory() const { return inv_; }
 
+    inline PlayerFacingDirection GetFacingDirection() const { return dir_; }
+
     inline void SetUseRange(float useRange) { useRange_ = useRange; }
     inline float GetUseRange() const { return useRange_; }
 

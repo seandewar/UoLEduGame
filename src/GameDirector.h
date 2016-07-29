@@ -117,6 +117,10 @@ public:
     GameDirector();
     ~GameDirector();
 
+    void RemoveAllEnemies(WorldArea* area);
+    void PopulateWithEnemies(WorldArea* area, float difficultyMul);
+    inline void PopulateWithEnemies(WorldArea* area) { PopulateWithEnemies(area, objectiveDifficultyMul_); }
+
     void StartNewSession(int maxArtefacts, WorldArea* currentArea, GameFilesystem* fs);
     void FoundArtefact(WorldArea* currentArea);
     void ChooseNewArtefactLocation(WorldArea* newArea);

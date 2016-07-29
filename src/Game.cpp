@@ -1,5 +1,6 @@
 #include "Game.h"
 
+#include <SFML/Window/Mouse.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
@@ -23,8 +24,10 @@ bool GameAssets::LoadAssets()
 {
     printf("Loading game assets...\n");
 
+    // fonts
     LOAD_FROM_FILE(gameFont, "assets/PressStart2P.ttf");
 
+    // textures
     LOAD_FROM_FILE(viewVignette, "assets/DarknessVignette.png");
     LOAD_FROM_FILE(genericTilesSheet, "assets/GenericTiles.png");
     LOAD_FROM_FILE(stairsSpriteSheet, "assets/StairSprites.png");
@@ -32,6 +35,9 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(chestsSpriteSheet, "assets/ChestSprites.png");
     LOAD_FROM_FILE(itemsSpriteSheet, "assets/ItemSprites.png");
     LOAD_FROM_FILE(altarSpriteSheet, "assets/AltarSprites.png");
+    LOAD_FROM_FILE(enemySpriteSheet, "assets/EnemySprites.png");
+    LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/DamageTypeSprites.png");
+
     return true;
 }
 
@@ -73,10 +79,10 @@ void Game::ResetDisplayedQuestion()
 void Game::ResetPlayerStats()
 {
     playerStats_.SetMaxHealth(1000);
-    playerStats_.SetHealth(100);
+    playerStats_.SetHealth(1000);
 
     playerStats_.SetMaxMana(1000);
-    playerStats_.SetMana(100);
+    playerStats_.SetMana(1000);
 
     playerStats_.SetMoveSpeed(65.0f);
 }
@@ -366,10 +372,10 @@ void Game::HandleUseInventory()
         return;
     }
 
-    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num1)) {
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num1) || sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
         player->UseInventorySlot(PlayerInventorySlot::MeleeWeapon);
     }
-    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num2)) {
+    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num2) || sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
         player->UseInventorySlot(PlayerInventorySlot::MagicWeapon);
     }
     else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {

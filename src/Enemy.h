@@ -15,7 +15,9 @@ enum class EnemyType
     GreenBlobBasic,
     BlueBlobBasic,
     RedBlobBasic,
-    PinkBlobBasic
+    PinkBlobBasic,
+    GhostBasic,
+    MagicFlameBasic
 };
 
 /**
@@ -45,8 +47,12 @@ class BasicEnemy : public Enemy
     sf::Time nextWanderMoveTime_;
     sf::Vector2f moveDir_;
 
+    bool droppedItems_;
+
     void SetupAnimations();
     void NewWander();
+
+    void HandleDropItems();
 
 public:
     BasicEnemy(EnemyType enemyType);
@@ -59,6 +65,9 @@ public:
     virtual void Render(sf::RenderTarget& target) override;
 
     virtual float GetAggroDistance() const;
+
+    inline void SetHasDroppedItems(bool hasDropped) { droppedItems_ = hasDropped; }
+    inline bool HasDroppedItems() const { return droppedItems_; }
 
     inline virtual EnemyType GetEnemyType() const override { return enemyType_; }
 

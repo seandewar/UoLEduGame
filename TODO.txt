@@ -1,5 +1,6 @@
 [todo] = finished
 >todo  = in progress
+?todo  = maybe scheduled
 todo   = scheduled
 
 
@@ -26,19 +27,20 @@ todo   = scheduled
 [DungeonGen spawn chests depending on files in game fs]
 [anim]
 
-[21st, 22nd, 23rd, 24th, 25th, 26th, 27th, 28th, 29th,] (>30th, 31st, (1st))?
+>[21st+]
 ----
 
 [weapon base & attack]
-Collision with ents func?
->[Basic Enemy Entity] that follows
->[Different] Enemy Ents
->projectiles
+[Collision with ents func?]
+[Basic Enemy Entity that follows]
+>[Different Enemy Ents]
+?projectiles
 [Objective system finished + floor nav] 
 [Chest class rolls items when opened (dungeon gen only spawns special items in chest)]
-GameFilesystemGen usr & lib & mnt
+[game state, menu,] >win & death
+>GameFilesystemGen usr & lib & mnt
 [Procedural ent alivestats based on difficulty and seed]
 [Questions for each item with UI and chest trigger]
-[altar] + BETTER ALTAR SPRITE!!!1 Maybe change artefacts to pages & altar to tp book!!?!?!?
+[altar + BETTER ALTAR SPRITE!!!1 Maybe change artefacts to pages & altar to tp book!!?!?!?]
 Boss?
 AUDIO

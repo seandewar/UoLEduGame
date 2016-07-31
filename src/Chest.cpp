@@ -92,6 +92,75 @@ void ChestEntity::Use(EntityId playerId)
             if (Helper::GenerateRandomBool(1 / 8.0f)) {
                 items_.emplace_back(std::make_unique<PotionItem>(ItemType::MagicPotion, 1));
             }
+
+            // roll for melee weapon
+            if (Helper::GenerateRandomBool(1 / 12.0f)) {
+                std::unique_ptr<MeleeWeapon> weapon;
+                
+                auto randNum = Helper::GenerateRandomInt(1, 100);
+
+                if (randNum <= 35) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::AdventurerSword);
+                }
+                else if (randNum <= 60) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::RoguesDagger);
+                }
+                else if (randNum <= 70) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::GraniteBlade);
+                }
+                else if (randNum <= 80) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::ShardBlade);
+                }
+                else if (randNum <= 90) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::RegenBlade);
+                }
+                else {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::ThornedSabre);
+                }
+
+                weapon->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+                items_.emplace_back(std::move(weapon));
+            }
+
+            // roll for magic weapon
+            if (Helper::GenerateRandomBool(1 / 22.0f)) {
+                std::unique_ptr<MagicWeapon> weapon;
+
+                auto randNum = Helper::GenerateRandomInt(1, 100);
+
+                if (randNum <= 10) {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
+                }
+                else if (randNum <= 40) {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
+                }
+                else {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
+                }
+
+                weapon->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+                items_.emplace_back(std::move(weapon));
+            }
+
+            // roll for armour
+            if (Helper::GenerateRandomBool(1 / 22.0f)) {
+                std::unique_ptr<Armour> armour;
+
+                auto randNum = Helper::GenerateRandomInt(1, 100);
+
+                if (randNum <= 60) {
+                    armour = std::make_unique<Armour>(ArmourType::WarriorHelmet);
+                }
+                else if (randNum <= 85) {
+                    armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
+                }
+                else {
+                    armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
+                }
+
+                armour->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+                items_.emplace_back(std::move(armour));
+            }
             break;
         }
 
@@ -102,7 +171,7 @@ void ChestEntity::Use(EntityId playerId)
             auto itemEnt = area->GetEntity<ItemEntity>(area->EmplaceEntity<ItemEntity>());
             itemEnt->SetItem(std::move(item));
             itemEnt->SetCenterPosition(GetCenterPosition() +
-                sf::Vector2f(Helper::GenerateRandomReal(-5.0f, 5.0f), 0.0f));
+                sf::Vector2f(Helper::GenerateRandomReal(-8.0f, 8.0f), 0.0f));
         }
 
         if (items_.size() > 0) {

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <memory>
+#include <iomanip>
+#include <sstream>
 
 #include <SFML/System/Time.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
@@ -9,6 +11,7 @@
 
 #include "Entity.h"
 #include "IPlayerUsable.h"
+#include "PlayerFacingDirection.h"
 
 /**
 * The type of item
@@ -19,7 +22,8 @@ enum class ItemType
     MagicPotion,
     MeleeWeapon,
     MagicWeapon,
-    ArtefactPiece
+    ArtefactPiece,
+    Armour
 };
 
 class PlayerEntity;
@@ -145,7 +149,7 @@ public:
     {
         switch (potionType_) {
         case ItemType::HealthPotion:
-            return "Drink Health Potion (Restores 250 Health)";
+            return "Drink Health Potion (Restores 200 Health)";
 
         case ItemType::MagicPotion:
             return "Drink Magic Potion (Restores 250 Mana)";
@@ -162,11 +166,55 @@ public:
 };
 
 /**
+* Type of armour
+*/
+enum class ArmourType
+{
+    WarriorHelmet,
+    AntiMagicVisor,
+    BalanceHeadgear
+};
+
+/**
+* Armour class
+*/
+class Armour : public Item
+{
+    ArmourType armourType_;
+    float difficultyMul_;
+
+public:
+    Armour(ArmourType armourType);
+    virtual ~Armour();
+
+    inline virtual void Use(PlayerEntity* player) override { }
+    inline std::string GetUseText() const override { return std::string(); }
+
+    inline void SetDifficultyMultiplier(float diff) { difficultyMul_ = diff; }
+    inline float GetDifficultyMultiplier() const { return difficultyMul_; }
+
+    u32 GetMeleeDefense() const;
+    u32 GetMagicDefense() const;
+
+    std::string GetShortDescription() const;
+
+    sf::Sprite GetSprite() const override;
+
+    sf::Sprite GetPlayerSprite(PlayerFacingDirection dir) const;
+
+    std::string GetItemName() const override;
+    inline ArmourType GetArmourType() const { return armourType_; }
+
+    inline ItemType GetItemType() const override { return ItemType::Armour; }
+};
+
+/**
 * Base weapon class
 */
 class BaseWeaponItem : public Item
 {
     std::string itemName_;
+    float difficultyMul_;
 
 public:
     BaseWeaponItem(const std::string& itemName = std::string());
@@ -175,10 +223,26 @@ public:
     inline virtual u32 GetAttack() const { return 0; }
     inline virtual float GetAttackRange() const { return 12.0f; }
 
+    inline void SetDifficultyMultiplier(float diff) { difficultyMul_ = diff; }
+    inline float GetDifficultyMultiplier() const { return difficultyMul_; }
+
+    virtual std::string GetShortDescription() const = 0;
+
     inline virtual std::string GetUseText() const override { return "Attack using " + itemName_; }
 
     inline void SetItemName(const std::string& itemName) { itemName_ = itemName; }
-    inline std::string GetItemName() const override { return itemName_; }
+    inline std::string GetItemName() const override
+    {
+        // append difficulty num
+        if (difficultyMul_ > 0.0f) {
+            std::ostringstream oss;
+            oss << itemName_ << " " << std::fixed << std::setprecision(1) << difficultyMul_;
+            return oss.str();
+        }
+        else {
+            return itemName_;
+        }
+    }
 };
 
 /**
@@ -186,7 +250,15 @@ public:
 */
 enum class MeleeWeaponType
 {
-    BasicSword
+    BasicSword,
+    AdventurerSword,
+    GraniteBlade,
+    RoguesDagger,
+    ShardBlade,
+    ThornedSabre,
+    Zeraleth,
+    AntiBlobSpear,
+    RegenBlade
 };
 
 /**
@@ -206,6 +278,8 @@ public:
     virtual float GetAttackRange() const override;
     virtual sf::Time GetUseDelay() const override;
 
+    virtual std::string GetShortDescription() const override;
+
     sf::Sprite GetSprite() const override;
 
     inline ItemType GetItemType() const override { return ItemType::MeleeWeapon; }
@@ -217,7 +291,10 @@ public:
 */
 enum class MagicWeaponType
 {
-    ZeroStaff
+    ZeroStaff,
+    FlameStaff,
+    DrainStaff,
+    InvincibilityStaff
 };
 
 /**
@@ -233,12 +310,19 @@ public:
 
     virtual void Use(PlayerEntity* player) override;
 
+    virtual u32 GetAttack() const override;
+    virtual float GetAttackRange() const override;
+    virtual sf::Time GetUseDelay() const override;
+
+    virtual u32 GetManaCost() const;
+
+    virtual std::string GetShortDescription() const override;
+
     sf::Sprite GetSprite() const override;
 
     inline ItemType GetItemType() const override { return ItemType::MagicWeapon; }
     inline MagicWeaponType GetMagicWeaponType() const { return magicWeaponType_; }
 };
-
 
 /**
 * Item entity

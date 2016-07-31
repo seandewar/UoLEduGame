@@ -22,7 +22,7 @@ class IGameQuestion
 public:
     IGameQuestion() { }
     virtual ~IGameQuestion() { }
-
+    
     virtual std::string GetQuestion() const = 0;
     virtual std::string GetAnswerChoice(GameQuestionAnswerChoice choice) const = 0;
 };
@@ -39,7 +39,8 @@ enum class GenericGameQuestionType
     BinDirectory,
     HomeDirectory,
     DoubleDot,
-    SingleDot
+    SingleDot,
+    EquivPath
 };
 
 /**

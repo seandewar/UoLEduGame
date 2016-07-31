@@ -32,7 +32,15 @@ UpStairEntity::~UpStairEntity()
 
 void UpStairEntity::Render(sf::RenderTarget& target)
 {
-    sf::Sprite stairSprite(GameAssets::Get().stairsSpriteSheet, sf::IntRect(16, 0, 16, 16));
+    sf::Sprite stairSprite(GameAssets::Get().stairsSpriteSheet);
+
+    if (Game::Get().GetDirector().GetCurrentObjectiveType() == GameObjectiveType::BossFight) {
+        stairSprite.setTextureRect(sf::IntRect(16, 16, 16, 16));
+    }
+    else {
+        stairSprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
+    }
+
     stairSprite.setPosition(GetPosition());
     target.draw(stairSprite);
 
@@ -51,6 +59,12 @@ void UpStairEntity::Render(sf::RenderTarget& target)
         area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, sf::Vector2f(0.5f, 0.5f)));
         area->AddFrameUIRenderable(stairTargetText);
     }
+}
+
+
+bool UpStairEntity::IsUsable(EntityId playerId) const
+{
+    return Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::BossFight;
 }
 
 
@@ -87,7 +101,15 @@ DownStairEntity::~DownStairEntity()
 
 void DownStairEntity::Render(sf::RenderTarget& target)
 {
-    sf::Sprite stairSprite(GameAssets::Get().stairsSpriteSheet, sf::IntRect(0, 0, 16, 16));
+    sf::Sprite stairSprite(GameAssets::Get().stairsSpriteSheet);
+
+    if (Game::Get().GetDirector().GetCurrentObjectiveType() == GameObjectiveType::BossFight) {
+        stairSprite.setTextureRect(sf::IntRect(0, 16, 16, 16));
+    }
+    else {
+        stairSprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
+    }
+
     stairSprite.setPosition(GetPosition());
     target.draw(stairSprite);
 
@@ -108,6 +130,13 @@ void DownStairEntity::Render(sf::RenderTarget& target)
             area->AddFrameUIRenderable(stairTargetText);
         }
     }
+}
+
+
+bool DownStairEntity::IsUsable(EntityId playerId) const
+{
+    return Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::BossFight &&
+        !destinationFsNodeName_.empty();
 }
 
 

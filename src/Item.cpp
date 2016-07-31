@@ -98,7 +98,7 @@ void PotionItem::Use(PlayerEntity* player)
     switch (potionType_) {
     case ItemType::HealthPotion:
         if (stats->GetHealth() < stats->GetMaxHealth()) {
-            player->Heal(250);
+            player->Heal(200);
             RemoveAmount(1);
 
             Game::Get().AddMessage("You drink a Health Potion.", sf::Color(255, 100, 100));
@@ -159,9 +159,208 @@ std::string PotionItem::GetItemName() const
 }
 
 
+Armour::Armour(ArmourType armourType) :
+Item(1, 1),
+armourType_(armourType),
+difficultyMul_(0.0f)
+{
+}
+
+
+Armour::~Armour()
+{
+}
+
+
+std::string Armour::GetItemName() const
+{
+    std::string itemName;
+
+    switch (armourType_) {
+    default:
+        return std::string();
+
+    case ArmourType::WarriorHelmet:
+        itemName = "Rock Helmet";
+        break;
+
+    case ArmourType::AntiMagicVisor:
+        itemName = "Anti-Magic Visor";
+        break;
+
+    case ArmourType::BalanceHeadgear:
+        itemName = "Balancer";
+        break;
+    }
+
+    // append difficulty num
+    if (difficultyMul_ > 0.0f) {
+        std::ostringstream oss;
+        oss << itemName << " " << std::fixed << std::setprecision(1) << difficultyMul_;
+        return oss.str();
+    }
+    else {
+        return itemName;
+    }
+}
+
+
+u32 Armour::GetMeleeDefense() const
+{
+    switch (armourType_) {
+    default:
+        return 0;
+
+    case ArmourType::WarriorHelmet:
+        return 30 + static_cast<u32>(66 * difficultyMul_);
+
+    case ArmourType::AntiMagicVisor:
+        return 11 + static_cast<u32>(21 * difficultyMul_);
+
+    case ArmourType::BalanceHeadgear:
+        return 22 + static_cast<u32>(42 * difficultyMul_);
+    }
+}
+
+
+u32 Armour::GetMagicDefense() const
+{
+    switch (armourType_) {
+    default:
+        return 0;
+
+    case ArmourType::WarriorHelmet:
+        return 11 + static_cast<u32>(21 * difficultyMul_);
+
+    case ArmourType::AntiMagicVisor:
+        return 30 + static_cast<u32>(66 * difficultyMul_);
+
+    case ArmourType::BalanceHeadgear:
+        return 22 + static_cast<u32>(42 * difficultyMul_);
+    }
+}
+
+
+std::string Armour::GetShortDescription() const
+{
+    switch (armourType_) {
+    default:
+        return std::string();
+
+    case ArmourType::WarriorHelmet:
+        return "Great melee defence";
+
+    case ArmourType::AntiMagicVisor:
+        return "Great magic defence";
+
+    case ArmourType::BalanceHeadgear:
+        return "Magic and melee defence";
+    }
+}
+
+
+sf::Sprite Armour::GetSprite() const
+{
+    sf::Sprite armourItemSprite(GameAssets::Get().itemsSpriteSheet);
+
+    switch (armourType_) {
+    default:
+        return sf::Sprite();
+
+    case ArmourType::WarriorHelmet:
+        armourItemSprite.setTextureRect(sf::IntRect(16, 32, 16, 16));
+        break;
+
+    case ArmourType::AntiMagicVisor:
+        armourItemSprite.setTextureRect(sf::IntRect(32, 32, 16, 16));
+        break;
+
+    case ArmourType::BalanceHeadgear:
+        armourItemSprite.setTextureRect(sf::IntRect(48, 32, 16, 16));
+        break;
+    }
+
+    return armourItemSprite;
+}
+
+
+sf::Sprite Armour::GetPlayerSprite(PlayerFacingDirection dir) const
+{
+    sf::Sprite armourSprite(GameAssets::Get().playerSpriteSheet);
+
+    switch (armourType_) {
+    default:
+        return sf::Sprite();
+
+    case ArmourType::WarriorHelmet:
+        switch (dir) {
+        case PlayerFacingDirection::Down:
+            armourSprite.setTextureRect(sf::IntRect(64, 0, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Up:
+            armourSprite.setTextureRect(sf::IntRect(80, 0, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Left:
+            armourSprite.setTextureRect(sf::IntRect(96, 0, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Right:
+            armourSprite.setTextureRect(sf::IntRect(112, 0, 16, 16));
+            break;
+        }
+        break;
+
+    case ArmourType::AntiMagicVisor:
+        switch (dir) {
+        case PlayerFacingDirection::Down:
+            armourSprite.setTextureRect(sf::IntRect(64, 16, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Up:
+            armourSprite.setTextureRect(sf::IntRect(80, 16, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Left:
+            armourSprite.setTextureRect(sf::IntRect(96, 16, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Right:
+            armourSprite.setTextureRect(sf::IntRect(112, 16, 16, 16));
+            break;
+        }
+        break;
+
+    case ArmourType::BalanceHeadgear:
+        switch (dir) {
+        case PlayerFacingDirection::Down:
+            armourSprite.setTextureRect(sf::IntRect(64, 32, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Up:
+            armourSprite.setTextureRect(sf::IntRect(80, 32, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Left:
+            armourSprite.setTextureRect(sf::IntRect(96, 32, 16, 16));
+            break;
+
+        case PlayerFacingDirection::Right:
+            armourSprite.setTextureRect(sf::IntRect(112, 32, 16, 16));
+            break;
+        }
+        break;
+    }
+
+    return armourSprite;
+}
+
+
 BaseWeaponItem::BaseWeaponItem(const std::string& itemName) :
 Item(1, 1),
-itemName_(itemName)
+itemName_(itemName),
+difficultyMul_(0.0f)
 {
 }
 
@@ -174,8 +373,42 @@ BaseWeaponItem::~BaseWeaponItem()
 MeleeWeapon::MeleeWeapon(MeleeWeaponType meleeWeaponType) :
 meleeWeaponType_(meleeWeaponType)
 {
-    if (meleeWeaponType_ == MeleeWeaponType::BasicSword) {
+    switch (meleeWeaponType_) {
+    case MeleeWeaponType::BasicSword:
         SetItemName("Basic Sword");
+        break;
+
+    case MeleeWeaponType::AdventurerSword:
+        SetItemName("Adventurers' Sword");
+        break;
+
+    case MeleeWeaponType::GraniteBlade:
+        SetItemName("Granite Blade");
+        break;
+
+    case MeleeWeaponType::RoguesDagger:
+        SetItemName("Rogues' Dagger");
+        break;
+
+    case MeleeWeaponType::ShardBlade:
+        SetItemName("Shard Blade");
+        break;
+
+    case MeleeWeaponType::ThornedSabre:
+        SetItemName("Thorned Sabre");
+        break;
+
+    case MeleeWeaponType::Zeraleth:
+        SetItemName("Zeraleth");
+        break;
+
+    case MeleeWeaponType::AntiBlobSpear:
+        SetItemName("Anti-Blob Spear");
+        break;
+
+    case MeleeWeaponType::RegenBlade:
+        SetItemName("Regen Blade");
+        break;
     }
 }
 
@@ -193,6 +426,30 @@ u32 MeleeWeapon::GetAttack() const
 
     case MeleeWeaponType::BasicSword:
         return 100;
+
+    case MeleeWeaponType::AdventurerSword:
+        return 135 + static_cast<u32>(50 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::GraniteBlade:
+        return 260 + static_cast<u32>(165 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::RoguesDagger:
+        return 70 + static_cast<u32>(42 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::ShardBlade:
+        return 110 + static_cast<u32>(30 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::ThornedSabre:
+        return 150 + static_cast<u32>(40 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::Zeraleth:
+        return 115 + static_cast<u32>(38 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::AntiBlobSpear:
+        return 105 + static_cast<u32>(36 * GetDifficultyMultiplier());
+
+    case MeleeWeaponType::RegenBlade:
+        return 125 + static_cast<u32>(40 * GetDifficultyMultiplier());
     }
 }
 
@@ -202,7 +459,21 @@ float MeleeWeapon::GetAttackRange() const
     switch (meleeWeaponType_) {
     default:
     case MeleeWeaponType::BasicSword:
+    case MeleeWeaponType::AdventurerSword:
+    case MeleeWeaponType::GraniteBlade:
+    case MeleeWeaponType::ShardBlade:
+    case MeleeWeaponType::Zeraleth:
+    case MeleeWeaponType::RegenBlade:
+        return 18.0f;
+
+    case MeleeWeaponType::AntiBlobSpear:
+        return 21.0f;
+
+    case MeleeWeaponType::ThornedSabre:
         return 16.0f;
+
+    case MeleeWeaponType::RoguesDagger:
+        return 11.0f;
     }
 }
 
@@ -212,7 +483,59 @@ sf::Time MeleeWeapon::GetUseDelay() const
     switch (meleeWeaponType_) {
     default:
     case MeleeWeaponType::BasicSword:
-        return sf::seconds(0.3f);
+    case MeleeWeaponType::AdventurerSword:
+    case MeleeWeaponType::Zeraleth:
+    case MeleeWeaponType::RegenBlade:
+        return sf::seconds(0.4f);
+
+    case MeleeWeaponType::AntiBlobSpear:
+        return sf::seconds(0.345f);
+
+    case MeleeWeaponType::ShardBlade:
+    case MeleeWeaponType::ThornedSabre:
+        return sf::seconds(0.5f);
+
+    case MeleeWeaponType::GraniteBlade:
+        return sf::seconds(2.2f);
+
+    case MeleeWeaponType::RoguesDagger:
+        return sf::seconds(0.25f);
+    }
+}
+
+
+std::string MeleeWeapon::GetShortDescription() const
+{
+    switch (meleeWeaponType_) {
+    default:
+        return std::string();
+
+    case MeleeWeaponType::BasicSword:
+        return "A simple sword";
+
+    case MeleeWeaponType::AdventurerSword:
+        return "A versatile sword";
+
+    case MeleeWeaponType::GraniteBlade:
+        return "Chance to ignore armour";
+
+    case MeleeWeaponType::RoguesDagger:
+        return "Chance to ignore armour";
+
+    case MeleeWeaponType::ShardBlade:
+        return "Chance for high magic hits";
+
+    case MeleeWeaponType::ThornedSabre:
+        return "Chance to ignore armour";
+
+    case MeleeWeaponType::Zeraleth:
+        return "Massive damage to undead";
+
+    case MeleeWeaponType::AntiBlobSpear:
+        return "Massive damage to blobs";
+
+    case MeleeWeaponType::RegenBlade:
+        return "Restores some mana on hit";
     }
 }
 
@@ -254,10 +577,102 @@ void MeleeWeapon::Use(PlayerEntity* player)
         auto ent = player->GetAssignedArea()->GetEntity<Enemy>(id);
         assert(ent);
 
+        if (!ent->GetStats() || !ent->GetStats()->IsAlive()) {
+            continue;
+        }
+
+        // damage enemy
         switch (meleeWeaponType_) {
         default:
         case MeleeWeaponType::BasicSword:
+        case MeleeWeaponType::AdventurerSword:
             ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            break;
+
+        case MeleeWeaponType::RoguesDagger:
+            if (Helper::GenerateRandomBool(1 / 5.0f)) {
+                ent->Attack(Helper::GenerateRandomInt<u32>(GetAttack() / 2, GetAttack()), DamageType::Other);
+            }
+            else {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            }
+            break;
+
+        case MeleeWeaponType::ShardBlade:
+            if (Helper::GenerateRandomBool(1 / 5.5f)) {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack() * 2), DamageType::Magic);
+            }
+            else {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            }
+            break;
+
+        case MeleeWeaponType::ThornedSabre:
+            if (Helper::GenerateRandomBool(1 / 6.0f)) {
+                ent->Attack(GetAttack(), DamageType::Other);
+            }
+            else {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            }
+            break;
+
+        case MeleeWeaponType::GraniteBlade:
+            if (Helper::GenerateRandomBool(1 / 10.0f)) {
+                ent->Attack(Helper::GenerateRandomInt<u32>(GetAttack() / 5, GetAttack()), DamageType::Other);
+            }
+            else {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            }
+            break;
+
+        case MeleeWeaponType::Zeraleth:
+            if (ent->GetEnemyType() == EnemyType::GhostBasic ||
+                ent->GetEnemyType() == EnemyType::SkeletonBasic) {
+                ent->Attack(Helper::GenerateRandomInt<u32>(GetAttack() * 2, GetAttack() * 4), DamageType::Other);
+            }
+            else {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            }
+            break;
+
+        case MeleeWeaponType::AntiBlobSpear:
+            if (ent->GetEnemyType() == EnemyType::GreenBlobBasic ||
+                ent->GetEnemyType() == EnemyType::BlueBlobBasic ||
+                ent->GetEnemyType() == EnemyType::RedBlobBasic ||
+                ent->GetEnemyType() == EnemyType::PinkBlobBasic) {
+                ent->Attack(Helper::GenerateRandomInt<u32>(GetAttack() * 4, GetAttack() * 5), DamageType::Other);
+            }
+            else {
+                ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            }
+            break;
+
+        case MeleeWeaponType::RegenBlade:
+            ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Melee);
+            
+            if (player->GetStats()) {
+                player->GetStats()->SetMana(std::min(player->GetStats()->GetMaxMana(),
+                    player->GetStats()->GetMana() + Helper::GenerateRandomInt(1, 10)));
+            }
+            break;
+        }
+
+        // push enemy back
+        switch (player->GetFacingDirection()) {
+        case PlayerFacingDirection::Up:
+            ent->MoveWithCollision(sf::Vector2f(0.0f, -4.0f));
+            break;
+
+        case PlayerFacingDirection::Down:
+            ent->MoveWithCollision(sf::Vector2f(0.0f, 4.0f));
+            break;
+
+        case PlayerFacingDirection::Left:
+            ent->MoveWithCollision(sf::Vector2f(-4.0f, 0.0f));
+            break;
+
+        case PlayerFacingDirection::Right:
+            ent->MoveWithCollision(sf::Vector2f(4.0f, 0.0f));
             break;
         }
     }
@@ -275,6 +690,38 @@ sf::Sprite MeleeWeapon::GetSprite() const
         weaponSprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
         break;
 
+    case MeleeWeaponType::AdventurerSword:
+        weaponSprite.setTextureRect(sf::IntRect(32, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::GraniteBlade:
+        weaponSprite.setTextureRect(sf::IntRect(48, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::RoguesDagger:
+        weaponSprite.setTextureRect(sf::IntRect(64, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::ShardBlade:
+        weaponSprite.setTextureRect(sf::IntRect(80, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::ThornedSabre:
+        weaponSprite.setTextureRect(sf::IntRect(96, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::Zeraleth:
+        weaponSprite.setTextureRect(sf::IntRect(112, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::AntiBlobSpear:
+        weaponSprite.setTextureRect(sf::IntRect(128, 0, 16, 16));
+        break;
+
+    case MeleeWeaponType::RegenBlade:
+        weaponSprite.setTextureRect(sf::IntRect(144, 0, 16, 16));
+        break;
+
     default:
         return sf::Sprite();
     }
@@ -286,8 +733,22 @@ sf::Sprite MeleeWeapon::GetSprite() const
 MagicWeapon::MagicWeapon(MagicWeaponType magicWeaponType) :
 magicWeaponType_(magicWeaponType)
 {
-    if (magicWeaponType_ == MagicWeaponType::ZeroStaff) {
+    switch (magicWeaponType_) {
+    case MagicWeaponType::ZeroStaff:
         SetItemName("Zero Staff");
+        break;
+
+    case MagicWeaponType::FlameStaff:
+        SetItemName("Staff of Flame");
+        break;
+
+    case MagicWeaponType::DrainStaff:
+        SetItemName("Vampiric Staff");
+        break;
+
+    case MagicWeaponType::InvincibilityStaff:
+        SetItemName("Staff of Protection");
+        break;
     }
 }
 
@@ -297,13 +758,179 @@ MagicWeapon::~MagicWeapon()
 }
 
 
+u32 MagicWeapon::GetAttack() const
+{
+    switch (magicWeaponType_) {
+    default:
+    case MagicWeaponType::InvincibilityStaff:
+        return 0;
+
+    case MagicWeaponType::ZeroStaff:
+        return 0;
+
+    case MagicWeaponType::FlameStaff:
+        return 300 + static_cast<u32>(125 * GetDifficultyMultiplier());
+
+    case MagicWeaponType::DrainStaff:
+        return 40 + static_cast<u32>(28 * GetDifficultyMultiplier());
+    }
+}
+
+
+float MagicWeapon::GetAttackRange() const
+{
+    switch (magicWeaponType_) {
+    default:
+    case MagicWeaponType::ZeroStaff:
+    case MagicWeaponType::FlameStaff:
+    case MagicWeaponType::DrainStaff:
+        return 125.0f;
+
+    case MagicWeaponType::InvincibilityStaff:
+        return 0.0f;
+    }
+}
+
+
+sf::Time MagicWeapon::GetUseDelay() const
+{
+    switch (magicWeaponType_) {
+    default:
+    case MagicWeaponType::ZeroStaff:
+    case MagicWeaponType::FlameStaff:
+    case MagicWeaponType::DrainStaff:
+        return sf::seconds(1.0f);
+
+    case MagicWeaponType::InvincibilityStaff:
+        return sf::seconds(20.0f);
+    }
+}
+
+
+u32 MagicWeapon::GetManaCost() const
+{
+    switch (magicWeaponType_) {
+    default:
+    case MagicWeaponType::ZeroStaff:
+        return 0;
+
+    case MagicWeaponType::FlameStaff:
+        return 200;
+
+    case MagicWeaponType::DrainStaff:
+        return 300;
+
+    case MagicWeaponType::InvincibilityStaff:
+        return 1000;
+    }
+}
+
+
+std::string MagicWeapon::GetShortDescription() const
+{
+    switch (magicWeaponType_) {
+    default:
+        return std::string();
+
+    case MagicWeaponType::ZeroStaff:
+        return "Zero cost - zero damage";
+
+    case MagicWeaponType::FlameStaff:
+        return "Area of effect damage";
+
+    case MagicWeaponType::DrainStaff:
+        return "Area of effect health steal";
+
+    case MagicWeaponType::InvincibilityStaff:
+        return "Grants 10s of invincibility";
+    }
+}
+
+
 void MagicWeapon::Use(PlayerEntity* player)
 {
-    if (!player || GetAmount() <= 0) {
+    if (!player || !player->GetAssignedArea() || GetAmount() <= 0) {
         return;
     }
 
-    // TODO
+    auto stats = player->GetStats();
+    auto manaCost = GetManaCost();
+
+    // check for enough mana
+    if (stats && stats->GetMana() < manaCost) {
+        Game::Get().AddMessage("You need " + std::to_string(manaCost) + " mana to use this.");
+        return;
+    }
+    else {
+        stats->SetMana(stats->GetMana() - manaCost);
+    }
+
+    switch (magicWeaponType_) {
+    default:
+    case MagicWeaponType::ZeroStaff:
+    case MagicWeaponType::FlameStaff:
+    {
+        // aoe
+        auto enemiesInAoE = player->GetAssignedArea()->GetWorldEntitiesInRange<Enemy>(player->GetCenterPosition(),
+            GetAttackRange());
+
+        for (auto id : enemiesInAoE) {
+            auto enemy = player->GetAssignedArea()->GetEntity<Enemy>(id.first);
+            assert(enemy);
+
+            if (enemy->GetStats() && enemy->GetStats()->IsAlive()) {
+                // damage enemy
+                switch (magicWeaponType_) {
+                default:
+                case MagicWeaponType::ZeroStaff:
+                case MagicWeaponType::FlameStaff:
+                    enemy->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Magic);
+                    break;
+
+                case MagicWeaponType::DrainStaff:
+                    player->Heal(enemy->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack()), DamageType::Magic));
+                    break;
+                }
+
+                enemy->MoveWithCollision(sf::Vector2f(Helper::GenerateRandomReal(-8.0f, 8.0f),
+                    Helper::GenerateRandomReal(-8.0f, 8.0f)));
+
+                // show effect
+                EntityId effectId = Entity::InvalidId;
+
+                switch (magicWeaponType_) {
+                case MagicWeaponType::ZeroStaff:
+                    effectId = player->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Zero,
+                        sf::seconds(0.5f));
+                    break;
+
+                case MagicWeaponType::FlameStaff:
+                    effectId = player->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Flame,
+                        sf::seconds(0.5f));
+                    break;
+
+                case MagicWeaponType::DrainStaff:
+                    effectId = player->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Drain,
+                        sf::seconds(0.5f));
+                    break;
+                }
+
+                if (effectId != Entity::InvalidId) {
+                    player->GetAssignedArea()->GetEntity<DamageEffectEntity>(effectId)->SetCenterPosition(
+                        enemy->GetCenterPosition());
+                }
+            }
+        }
+
+        break;
+    }
+
+    case MagicWeaponType::InvincibilityStaff:
+        // invincibility
+        player->SetInvincibility(sf::seconds(10.0f));
+        break;
+    }
+
     player->PlayAttackAnimation(PlayerSelectedWeapon::Magic);
 }
 
@@ -315,6 +942,18 @@ sf::Sprite MagicWeapon::GetSprite() const
     switch (magicWeaponType_) {
     case MagicWeaponType::ZeroStaff:
         weaponSprite.setTextureRect(sf::IntRect(16, 16, 16, 16));
+        break;
+
+    case MagicWeaponType::FlameStaff:
+        weaponSprite.setTextureRect(sf::IntRect(32, 16, 16, 16));
+        break;
+
+    case MagicWeaponType::DrainStaff:
+        weaponSprite.setTextureRect(sf::IntRect(48, 16, 16, 16));
+        break;
+
+    case MagicWeaponType::InvincibilityStaff:
+        weaponSprite.setTextureRect(sf::IntRect(64, 16, 16, 16));
         break;
 
     default:

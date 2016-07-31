@@ -62,14 +62,15 @@ class DungeonAreaGen
     int currentStructureCount_;
 
     bool CheckRoomRectanglePlaceable(WorldArea& area, u32 topX, u32 topY, u32 w, u32 h) const;
-	bool PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h);
-    bool GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h);
+	bool PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h, bool goldRoom = false);
+    bool GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h, bool goldRoom = false);
 
     bool AddPlayerStart(WorldArea& area);
 
     inline bool GenerateCenterRoom(WorldArea& area, Rng& rng, u32 w, u32 h)
     {
-        return GenerateRoom(area, rng, (area.GetWidth() - w) / 2, (area.GetHeight() - h) / 2, w, h);
+        bool rootGoldRoom = node_.IsRootDirectoryNode();
+        return GenerateRoom(area, rng, (area.GetWidth() - w) / 2, (area.GetHeight() - h) / 2, w, h, rootGoldRoom);
     }
 
     bool GenerateStructure(WorldArea& area, Rng& rng, ActiveGenPassage& entrancePassage);

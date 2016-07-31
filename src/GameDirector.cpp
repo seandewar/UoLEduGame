@@ -47,6 +47,9 @@ std::string GenericGameQuestion::GetQuestion() const
 
     case GenericGameQuestionType::SingleDot:
         return "Which directory does /sbin/. refer to?";
+
+    case GenericGameQuestionType::EquivPath:
+        return "Are the paths /usr/local/bin and /usr///local//bin equivalent?";
     }
 }
 
@@ -152,6 +155,18 @@ std::string GenericGameQuestion::GetAnswerChoice(GameQuestionAnswerChoice choice
         case GameQuestionAnswerChoice::WrongChoice2:
             return "D:\\";
         }
+
+    case GenericGameQuestionType::EquivPath:
+        switch (choice) {
+        case GameQuestionAnswerChoice::CorrectChoice:
+            return "Yes";
+
+        case GameQuestionAnswerChoice::WrongChoice1:
+            return "No";
+
+        case GameQuestionAnswerChoice::WrongChoice2:
+            return "What?!";
+        }
     }
 
     return std::string();
@@ -186,6 +201,7 @@ void GameDirector::ResetUnusedQuestionsList()
     unusedQuestions_.emplace_back(std::make_unique<GenericGameQuestion>(GenericGameQuestionType::HomeDirectory));
     unusedQuestions_.emplace_back(std::make_unique<GenericGameQuestion>(GenericGameQuestionType::DoubleDot));
     unusedQuestions_.emplace_back(std::make_unique<GenericGameQuestion>(GenericGameQuestionType::SingleDot));
+    unusedQuestions_.emplace_back(std::make_unique<GenericGameQuestion>(GenericGameQuestionType::EquivPath));
 
     // invalid i so no question gets removed from the unused list when
     // selecting the first question to be given
@@ -262,53 +278,54 @@ void GameDirector::RemoveAllEnemies(WorldArea* area)
 void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
 {
     if (area && area->GetRelatedNode()) {
-        int targetEnemies = Helper::GenerateRandomInt(0, std::max<int>(3, area->GetRelatedNode()->GetChildrenCount() + 2));
+        int targetEnemies = Helper::GenerateRandomInt<int>(area->GetRelatedNode()->GetChildrenCount() / 2,
+            std::max<int>(3, static_cast<std::size_t>(area->GetRelatedNode()->GetChildrenCount() * 1.6f)));
         printf("Target enemies for floor: %d\n", targetEnemies);
 
-        for (int i = 0; i < targetEnemies; ++i) {
-            int tryCount = 0;
+        // select enemy types that can be spawned
+        std::vector<EnemyType> spawnableEnemies;
+        spawnableEnemies.emplace_back(EnemyType::GreenBlobBasic);
+        
+        if (difficultyMul >= 1.0f) {
+            spawnableEnemies.emplace_back(EnemyType::BlueBlobBasic);
+        }
+        if (difficultyMul >= 2.0f) {
+            spawnableEnemies.emplace_back(EnemyType::RedBlobBasic);
+        }
+        if (difficultyMul >= 3.0f) {
+            spawnableEnemies.emplace_back(EnemyType::PinkBlobBasic);
+        }
+        if (difficultyMul >= 4.0f) {
+            spawnableEnemies.emplace_back(EnemyType::SkeletonBasic);
+        }
+        if (difficultyMul >= 5.0f) {
+            spawnableEnemies.emplace_back(EnemyType::GhostBasic);
+        }
+        if (difficultyMul >= 6.0f) {
+            spawnableEnemies.emplace_back(EnemyType::MagicFlameBasic);
+        }
 
-            while (tryCount++ < 10000) {
-                auto desiredArea = sf::FloatRect(
-                    Helper::GenerateRandomInt<u32>(0, area->GetWidth() - 1) * BaseTile::TileSize.x,
-                    Helper::GenerateRandomInt<u32>(0, area->GetHeight() - 1) * BaseTile::TileSize.y,
-                    16.0f, 16.0f
-                    );
+        // try spawn enemies
+        if (!spawnableEnemies.empty()) {
+            for (int i = 0; i < targetEnemies; ++i) {
+                int tryCount = 0;
 
-                if (area->CheckEntRectangleWalkable(desiredArea)) {
-                    EnemyType enemyType;
+                while (tryCount++ < 10000) {
+                    auto desiredArea = sf::FloatRect(
+                        Helper::GenerateRandomInt<u32>(0, area->GetWidth() - 1) * BaseTile::TileSize.x,
+                        Helper::GenerateRandomInt<u32>(0, area->GetHeight() - 1) * BaseTile::TileSize.y,
+                        16.0f, 16.0f
+                        );
 
-                    switch (Helper::GenerateRandomInt(0, 4)) {
-                    default:
-                        assert(!"Bad enemy type chosen!");
-                        break;
+                    if (area->CheckEntRectangleWalkable(desiredArea)) {
+                        auto chosenEnemyType = spawnableEnemies[Helper::GenerateRandomInt<std::size_t>(0,
+                            spawnableEnemies.size() - 1)];
+                        auto enemyEnt = area->GetEntity<Enemy>(area->EmplaceEntity<BasicEnemy>(chosenEnemyType));
 
-                    case 0:
-                        enemyType = EnemyType::SkeletonBasic;
-                        break;
-
-                    case 1:
-                        enemyType = EnemyType::GreenBlobBasic;
-                        break;
-
-                    case 2:
-                        enemyType = EnemyType::BlueBlobBasic;
-                        break;
-
-                    case 3:
-                        enemyType = EnemyType::RedBlobBasic;
-                        break;
-
-                    case 4:
-                        enemyType = EnemyType::PinkBlobBasic;
-                        break;
-                    }
-
-                    auto enemyEnt = area->GetEntity<Enemy>(area->EmplaceEntity<BasicEnemy>(enemyType));
-
-                    if (enemyEnt) {
-                        enemyEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
-                        break;
+                        if (enemyEnt) {
+                            enemyEnt->SetPosition(sf::Vector2f(desiredArea.left, desiredArea.top));
+                            break;
+                        }
                     }
                 }
             }
@@ -488,9 +505,11 @@ void GameDirector::FoundArtefact(WorldArea* currentArea)
             objective_ = GameObjectiveType::RootArtefactAltar;
 
             printf("GameDirector - ALL ARTEFACTS FOUND!\n");
-            Game::Get().AddMessage("Well done! You have found all " + std::to_string(maxArtefacts_) + " artefact pieces!",
+            Game::Get().AddMessage("Well done! You have found all " + std::to_string(maxArtefacts_) + " artefact pieces.",
                 sf::Color(255, 150, 0));
-            Game::Get().AddMessage("Return to / and place your artefact pieces on the altar.", sf::Color(255, 150, 0));
+            Game::Get().AddMessage("Mysterious stairs have appeared within the gilded room on /",
+                sf::Color(255, 0, 255));
+            Game::Get().AddMessage("Maybe it's the dungeon exit? You should investigate...", sf::Color(255, 0, 255));
         }
     }
 }
@@ -506,7 +525,7 @@ std::string GameDirector::GetObjectiveText() const
         return "No objective.";
 
     case GameObjectiveType::Complete:
-        return "Objectives complete!";
+        return "Ascend the mysterious staircase to exit the dungeon.";
 
     case GameObjectiveType::CollectArtefact:
         if (!objectiveFsNode_) {
@@ -515,15 +534,16 @@ std::string GameDirector::GetObjectiveText() const
 
         if (numArtefacts_ < maxArtefacts_) {
             return "Collect artefact piece " + std::to_string(numArtefacts_ + 1) + " of " +
-                std::to_string(maxArtefacts_) + " in " + objectiveFsNodePath_;
+                std::to_string(maxArtefacts_) + " in the " + objectiveFsNodePath_ + " chest.";
         }
 
-        return "Collect artefact piece " + std::to_string(numArtefacts_ + 1) + " in " + objectiveFsNodePath_;
+        return "Collect artefact piece " + std::to_string(numArtefacts_ + 1) + " in the " + objectiveFsNodePath_ +
+            "chest.";
 
     case GameObjectiveType::RootArtefactAltar:
-        return "Place your artefact pieces on the altar in /";
+        return "Investigate the mysterious stairs that appeared within the gilded room on the / floor.";
 
     case GameObjectiveType::BossFight:
-        return "Reign victorious in your final battle!";
+        return "Defeat the Dungeon Guardian!";
     }
 }

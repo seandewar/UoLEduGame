@@ -4,6 +4,7 @@
 
 #include "Item.h"
 #include "Animation.h"
+#include "PlayerFacingDirection.h"
 
 /**
 * Entity where the player will be positioned if there are no other
@@ -51,6 +52,8 @@ class PlayerInventory
     std::unique_ptr<MeleeWeapon> meleeWeapon_;
     std::unique_ptr<MagicWeapon> magicWeapon_;
 
+    std::unique_ptr<Armour> armour_;
+
     std::unique_ptr<PotionItem> healthPotions_;
     std::unique_ptr<PotionItem> magicPotions_;
 
@@ -87,22 +90,14 @@ public:
     inline MagicWeapon* GetMagicWeapon() { return magicWeapon_.get(); }
     inline const MagicWeapon* GetMagicWeapon() const { return magicWeapon_.get(); }
 
+    inline Armour* GetArmour() { return armour_.get(); }
+    inline const Armour* GetArmour() const { return armour_.get(); }
+
     inline PotionItem* GetHealthPotions() { return healthPotions_.get(); }
     inline const PotionItem* GetHealthPotions() const { return healthPotions_.get(); }
 
     inline PotionItem* GetMagicPotions() { return magicPotions_.get(); }
     inline const PotionItem* GetMagicPotions() const { return magicPotions_.get(); }
-};
-
-/**
-* The direction the player is facing
-*/
-enum class PlayerFacingDirection
-{
-    Up,
-    Down,
-    Left,
-    Right
 };
 
 /**
@@ -115,7 +110,13 @@ class PlayerEntity : public AliveEntity
     float useRange_;
     EntityId targettedUsableEnt_;
 
+    sf::Time invincibilityTime_;
+
     PlayerInventory* inv_;
+
+    sf::Vector2f moveDir_;
+    PlayerFacingDirection nextDir_;
+    bool useTarget_;
 
     PlayerFacingDirection dir_;
 
@@ -142,6 +143,25 @@ public:
     virtual void Tick() override;
     virtual void Render(sf::RenderTarget& target) override;
 
+    void AddMoveInDirection(PlayerFacingDirection dir);
+
+    inline void SetUseTargetThisFrame(bool useTarget) { useTarget_ = useTarget; }
+    inline bool IsUsingTargetThisFrame() const { return useTarget_; }
+
+    virtual u32 Attack(u32 initialDamage, DamageType source = DamageType::Other) override;
+
+    inline virtual u32 Damage(u32 amount, DamageType source = DamageType::Other) override
+    {
+        if (invincibilityTime_ <= sf::Time::Zero) {
+            invincibilityTime_ = sf::seconds(1.0f);
+            return DamageWithoutInvincibility(amount, source);
+        }
+
+        return 0;
+    }
+
+    u32 DamageWithoutInvincibility(u32 amount, DamageType source = DamageType::Other);
+
     virtual bool SetPositionToDefaultStart();
 
     inline void SetInventory(PlayerInventory* inv) { inv_ = inv; }
@@ -158,6 +178,10 @@ public:
     void UseInventorySlot(PlayerInventorySlot slot);
     bool CanPickupItem(Item* item) const;
     bool PickupItem(Item* item);
+
+    inline void SetInvincibility(const sf::Time& invincibilityTime) { invincibilityTime_ = invincibilityTime; }
+    inline sf::Time GetInvincibilityTimeLeft() const { return invincibilityTime_; }
+    inline bool HasInvincibility() const { return invincibilityTime_ > sf::Time::Zero; }
 
     inline PlayerInventory* GetInventory() { return inv_; }
     inline const PlayerInventory* GetInventory() const { return inv_; }

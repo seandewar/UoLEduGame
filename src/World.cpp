@@ -406,7 +406,7 @@ bool WorldArea::TryCollisionRectMove(const sf::FloatRect& r, const sf::Vector2f&
 
                 if (tile && !tile->IsWalkable()) {
                     // calc the final pos on y depending on our displacement's dir in y
-                    endPos.y = (d.y >= 0.0f ? y * BaseTile::TileSize.y - r.width : (y + 1) * BaseTile::TileSize.y);
+                    endPos.y = (d.y >= 0.0f ? y * BaseTile::TileSize.y - r.height : (y + 1) * BaseTile::TileSize.y);
 
                     // mark this tile as collided, regardless of whether we collided in x
                     collidedTile = tile;

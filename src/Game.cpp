@@ -26,6 +26,8 @@ bool GameAssets::LoadAssets()
 
     // fonts
     LOAD_FROM_FILE(gameFont, "assets/PressStart2P.ttf");
+    //LOAD_FROM_FILE(gameFont, "assets/prstart.ttf");
+    LOAD_FROM_FILE(altFont, "assets/prstart.ttf");
 
     // textures
     LOAD_FROM_FILE(viewVignette, "assets/DarknessVignette.png");
@@ -37,6 +39,7 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(altarSpriteSheet, "assets/AltarSprites.png");
     LOAD_FROM_FILE(enemySpriteSheet, "assets/EnemySprites.png");
     LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/DamageTypeSprites.png");
+    LOAD_FROM_FILE(effectSpriteSheet, "assets/EffectSprites.png");
 
     return true;
 }
@@ -47,7 +50,8 @@ const sf::Time Game::FrameTimeStep = sf::microseconds(16667);
 
 Game::Game() :
 debugMode_(false),
-playerId_(Entity::InvalidId)
+playerId_(Entity::InvalidId),
+state_(GameState::Menu1)
 {
     // add these so that they can be shuffled when the display question UI is invoked.
     displayedQuestionShuffledChoices_.emplace_back(GameQuestionAnswerChoice::CorrectChoice);
@@ -65,7 +69,13 @@ Game::~Game()
 
 bool Game::Init()
 {
-    return NewGame();
+    GameFilesystemGen gen;
+    if (!(worldFs_ = std::move(gen.GenerateNewFilesystem()))) {
+        return false;
+    }
+
+    world_ = std::make_unique<World>(*worldFs_);
+    return world_->NavigateToFsArea("/");
 }
 
 
@@ -278,7 +288,7 @@ bool Game::NewGame()
     }
 
     world_ = std::make_unique<World>(*worldFs_);
-    director_.StartNewSession(8, nullptr, worldFs_.get());
+    director_.StartNewSession(9, nullptr, worldFs_.get());
 
     ResetDisplayedQuestion();
 
@@ -287,17 +297,28 @@ bool Game::NewGame()
     }
 
     ResetPlayerStats();
+    state_ = GameState::InGame;
     return true;
 }
 
 
-void Game::ViewFollowPlayer(sf::RenderTarget& target)
+void Game::UpdateCamera(sf::RenderTarget& target)
 {
     auto area = GetWorldArea();
 
-    if (area && playerId_ != Entity::InvalidId) {
-        area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 275.0f));
-        area->CenterViewOnWorldEntity(playerId_);
+    if (area) {
+        if (state_ == GameState::Menu1) {
+            area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 1000.0f));
+            area->GetRenderView().setCenter(0.5f * area->GetWidth() * BaseTile::TileSize.x,
+                0.5f * area->GetHeight() * BaseTile::TileSize.y);
+        }
+        else {
+            area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 275.0f));
+        }
+
+        if (playerId_ != Entity::InvalidId) {
+            area->CenterViewOnWorldEntity(playerId_);
+        }
     }
 }
 
@@ -372,17 +393,40 @@ void Game::HandleUseInventory()
         return;
     }
 
-    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num1) || sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1) || sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
         player->UseInventorySlot(PlayerInventorySlot::MeleeWeapon);
     }
-    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num2) || sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2) || sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
         player->UseInventorySlot(PlayerInventorySlot::MagicWeapon);
     }
-    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3)) {
         player->UseInventorySlot(PlayerInventorySlot::HealthPotions);
     }
-    else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num4)) {
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4)) {
         player->UseInventorySlot(PlayerInventorySlot::MagicPotions);
+    }
+}
+
+
+void Game::HandlePlayerMoveInput()
+{
+    auto player = GetPlayerEntity();
+
+    if (!player) {
+        return;
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+        player->AddMoveInDirection(PlayerFacingDirection::Up);
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+        player->AddMoveInDirection(PlayerFacingDirection::Down);
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+        player->AddMoveInDirection(PlayerFacingDirection::Left);
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+        player->AddMoveInDirection(PlayerFacingDirection::Right);
     }
 }
 
@@ -396,16 +440,7 @@ void Game::Tick()
             scheduledLevelChangeFsNodePath_.clear();
         }
 
-        world_->SetDebugMode(debugMode_);
-        world_->Tick();
-
-        // handle input for question interface or inventory if no question interface
-        if (displayedQuestion_) {
-            HandleDisplayedQuestionInput();
-        }
-        else {
-            HandleUseInventory();
-        }
+        auto player = GetPlayerEntity();
 
         // debug mode
         if (debugMode_) {
@@ -413,7 +448,78 @@ void Game::Tick()
                 // tp to objective
                 TeleportPlayerToObjective();
             }
+
+            if (player) {
+                // give weapons & armour
+                std::unique_ptr<BaseWeaponItem> weapon;
+                std::unique_ptr<Armour> armour;
+
+                if (Game::IsKeyPressedFromEvent(sf::Keyboard::F3)) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::AdventurerSword);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F4)) {
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::RoguesDagger);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F5)) {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F6)) {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F7)) {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F8)) {
+                    armour = std::make_unique<Armour>(ArmourType::WarriorHelmet);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F9)) {
+                    armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F10)) {
+                    armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
+                }
+
+                if (weapon) {
+                    weapon->SetDifficultyMultiplier(director_.GetCurrentDifficultyMultiplier());
+                    player->PickupItem(weapon.get());
+                }
+
+                if (armour) {
+                    armour->SetDifficultyMultiplier(director_.GetCurrentDifficultyMultiplier());
+                    player->PickupItem(armour.get());
+                }
+            }
         }
+
+        // handle state specific input
+        if (state_ == GameState::InGame) {
+            // handle input for player inputs, question interface or inventory
+            // if there is no question interface being shown
+            HandlePlayerMoveInput();
+
+            if (displayedQuestion_) {
+                HandleDisplayedQuestionInput();
+            }
+            else {
+                HandleUseInventory();
+                
+                // use ent in player's target
+                if (player && IsKeyPressedFromEvent(sf::Keyboard::E)) {
+                    player->SetUseTargetThisFrame(true);
+                }
+            }
+        }
+        else if (state_ == GameState::Menu1) {
+            // enter to start game
+            if (Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+                if (!NewGame()) {
+                    throw std::runtime_error("Failed to start new game!");
+                }
+            }
+        }
+
+        world_->SetDebugMode(debugMode_);
+        world_->Tick();
     }
 }
 
@@ -444,26 +550,6 @@ void Game::RenderUIObjective(sf::RenderTarget& target)
 }
 
 
-void Game::RenderUIArtefactCount(sf::RenderTarget& target)
-{
-    if (world_ &&
-        director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted &&
-        director_.GetCurrentObjectiveType() != GameObjectiveType::Complete) {
-        sf::Sprite artefactSprite(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 32, 16, 16));
-        artefactSprite.setPosition(sf::Vector2f(5.0f, 100.0f));
-
-        target.draw(artefactSprite);
-
-        sf::Text artefactCountText(" x " + std::to_string(director_.GetNumArtefacts()),
-            GameAssets::Get().gameFont, 8);
-        artefactCountText.setPosition(21.0f, 100.0f);
-        artefactCountText.setColor(sf::Color(255, 255, 255));
-
-        Helper::RenderTextWithDropShadow(target, artefactCountText);
-    }
-}
-
-
 void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
 {
     auto area = GetWorldArea();
@@ -475,7 +561,7 @@ void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
         if (useable) {
             sf::Text targetUseText(std::string("Press E: ") + useable->GetUseText(), GameAssets::Get().gameFont, 16);
             targetUseText.setPosition(
-                sf::Vector2f(target.getView().getCenter().x, 0.8f * target.getView().getSize().y) -
+                sf::Vector2f(target.getView().getCenter().x, 0.15f * target.getView().getSize().y) -
                 0.5f * sf::Vector2f(targetUseText.getGlobalBounds().width, targetUseText.getGlobalBounds().height)
                 );
             targetUseText.setColor(sf::Color(255, 255, 0));
@@ -558,6 +644,24 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIControls(sf::RenderTarget& target)
+{
+    sf::Text moveControls("Press W, A, S, D to move.", GameAssets::Get().gameFont, 8);
+    moveControls.setColor(sf::Color(255, 255, 0));
+    moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
+        target.getView().getSize().y - 85.0f);
+
+    Helper::RenderTextWithDropShadow(target, moveControls);
+
+    sf::Text invControls("Press 1-4 to use inventory item.", GameAssets::Get().gameFont, 8);
+    invControls.setColor(sf::Color(255, 255, 0));
+    invControls.setPosition(target.getSize().x - invControls.getGlobalBounds().width - 5.0f,
+        target.getView().getSize().y - 70.0f);
+
+    Helper::RenderTextWithDropShadow(target, invControls);
+}
+
+
 void Game::RenderUILoadingArea(sf::RenderTarget& target)
 {
     sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 16);
@@ -626,46 +730,172 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             // render weapons inv text label
             sf::Text invWeaponsLabelText("Weapons", GameAssets::Get().gameFont, 8);
             invWeaponsLabelText.setPosition(5.0f,
-                target.getView().getSize().y - 60.0f - invWeaponsLabelText.getGlobalBounds().height);
+                target.getView().getSize().y - 192.0f - invWeaponsLabelText.getGlobalBounds().height);
             invWeaponsLabelText.setColor(sf::Color(255, 255, 255));
 
             Helper::RenderTextWithDropShadow(target, invWeaponsLabelText);
 
-            // TODO render melee wep item
-            RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 55.0f),
+            // render melee wep item
+            RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 187.0f),
                 "1", playerInv->GetMeleeWeapon(), playerInv->GetSelectedWeapon() == PlayerSelectedWeapon::Melee);
 
-            // TODO render magic wep item
-            RenderUIItem(target, sf::Vector2f(62.5f, target.getView().getSize().y - 55.0f),
+            // render melee wep info
+            // melee icon sprite
+            sf::Sprite invMeleeInfoSprite(GameAssets::Get().damageTypesSpriteSheet, sf::IntRect(0, 0, 16, 16));
+            invMeleeInfoSprite.setPosition(62.0f, target.getView().getSize().y - 192.0f);
+
+            target.draw(invMeleeInfoSprite);
+
+            // melee name
+            sf::Text invMeleeInfoNameText(std::string(), GameAssets::Get().gameFont, 8);
+            invMeleeInfoNameText.setPosition(82.0f, target.getView().getSize().y - 187.0f);
+            invMeleeInfoNameText.setColor(sf::Color(255, 255, 255));
+
+            if (!playerInv->GetMeleeWeapon() || playerInv->GetMeleeWeapon()->GetAmount() <= 0) {
+                invMeleeInfoNameText.setString("None");
+            }
+            else {
+                invMeleeInfoNameText.setString(playerInv->GetMeleeWeapon()->GetItemName());
+
+                // melee stats
+                std::ostringstream oss;
+                oss << "Attack: " << playerInv->GetMeleeWeapon()->GetAttack() << "\n";
+                oss << "Range:  " << std::fixed << std::setprecision(1) <<
+                    playerInv->GetMeleeWeapon()->GetAttackRange() << "\n";
+                oss << "Delay:  " << std::fixed << std::setprecision(1) <<
+                    playerInv->GetMeleeWeapon()->GetUseDelay().asSeconds() << "s";
+
+                sf::Text invMeleeInfoStatsText(oss.str(), GameAssets::Get().gameFont, 8);
+                invMeleeInfoStatsText.setPosition(64.0f, target.getView().getSize().y - 174.0f);
+                invMeleeInfoStatsText.setColor(sf::Color(255, 255, 255));
+
+                Helper::RenderTextWithDropShadow(target, invMeleeInfoStatsText);
+
+                // melee desc
+                sf::Text invMeleeInfoDescText(playerInv->GetMeleeWeapon()->GetShortDescription(),
+                    GameAssets::Get().gameFont, 8);
+                invMeleeInfoDescText.setPosition(64.0f, target.getView().getSize().y - 144.0f);
+                invMeleeInfoDescText.setColor(sf::Color(255, 255, 0));
+
+                Helper::RenderTextWithDropShadow(target, invMeleeInfoDescText);
+            }
+
+            Helper::RenderTextWithDropShadow(target, invMeleeInfoNameText);
+
+            // render magic wep item
+            RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 126.0f),
                 "2", playerInv->GetMagicWeapon(), playerInv->GetSelectedWeapon() == PlayerSelectedWeapon::Magic);
+
+            // render magic wep info
+            // magic icon sprite
+            sf::Sprite invMagicInfoSprite(GameAssets::Get().damageTypesSpriteSheet, sf::IntRect(16, 0, 16, 16));
+            invMagicInfoSprite.setPosition(62.0f, target.getView().getSize().y - 131.0f);
+
+            target.draw(invMagicInfoSprite);
+
+            // magic name
+            sf::Text invMagicInfoNameText(std::string(), GameAssets::Get().gameFont, 8);
+            invMagicInfoNameText.setPosition(82.0f, target.getView().getSize().y - 126.0f);
+            invMagicInfoNameText.setColor(sf::Color(255, 255, 255));
+
+            if (!playerInv->GetMagicWeapon() || playerInv->GetMagicWeapon()->GetAmount() <= 0) {
+                invMagicInfoNameText.setString("None");
+            }
+            else {
+                invMagicInfoNameText.setString(playerInv->GetMagicWeapon()->GetItemName());
+
+                // magic stats
+                std::ostringstream oss;
+                oss << "Attack: " << playerInv->GetMagicWeapon()->GetAttack() << "\n";
+                oss << "M Cost: " << playerInv->GetMagicWeapon()->GetManaCost() << "\n";
+                oss << "Delay:  " << std::fixed << std::setprecision(1) <<
+                    playerInv->GetMagicWeapon()->GetUseDelay().asSeconds() << "s";
+
+                sf::Text invMagicInfoStatsText(oss.str(), GameAssets::Get().gameFont, 8);
+                invMagicInfoStatsText.setPosition(64.0f, target.getView().getSize().y - 113.0f);
+                invMagicInfoStatsText.setColor(sf::Color(255, 255, 255));
+
+                Helper::RenderTextWithDropShadow(target, invMagicInfoStatsText);
+
+                // magic desc
+                sf::Text invMagicInfoDescText(playerInv->GetMagicWeapon()->GetShortDescription(),
+                    GameAssets::Get().gameFont, 8);
+                invMagicInfoDescText.setPosition(64.0f, target.getView().getSize().y - 83.0f);
+                invMagicInfoDescText.setColor(sf::Color(255, 255, 0));
+
+                Helper::RenderTextWithDropShadow(target, invMagicInfoDescText);
+            }
+
+            Helper::RenderTextWithDropShadow(target, invMagicInfoNameText);
+
+            // render armour inv text label
+            sf::Text invArmourLabelText("Armour", GameAssets::Get().gameFont, 8);
+            invArmourLabelText.setPosition(5.0f,
+                target.getView().getSize().y - 60.0f - invArmourLabelText.getGlobalBounds().height);
+            invArmourLabelText.setColor(sf::Color(255, 255, 255));
+
+            Helper::RenderTextWithDropShadow(target, invArmourLabelText);
+
+            // render armour item
+            RenderUIItem(target, sf::Vector2f(5.0f, target.getView().getSize().y - 55.0f),
+                std::string(), playerInv->GetArmour());
+
+            // render armour info
+            // def icon sprite
+            sf::Sprite invArmourInfoSprite(GameAssets::Get().damageTypesSpriteSheet, sf::IntRect(16, 16, 16, 16));
+            invArmourInfoSprite.setPosition(62.0f, target.getView().getSize().y - 59.0f);
+
+            target.draw(invArmourInfoSprite);
+
+            // armour name
+            sf::Text invArmourInfoNameText(std::string(), GameAssets::Get().gameFont, 8);
+            invArmourInfoNameText.setPosition(82.0f, target.getView().getSize().y - 55.0f);
+            invArmourInfoNameText.setColor(sf::Color(255, 255, 255));
+
+            if (!playerInv->GetArmour() || playerInv->GetArmour()->GetAmount() <= 0) {
+                invArmourInfoNameText.setString("None");
+            }
+            else {
+                invArmourInfoNameText.setString(playerInv->GetArmour()->GetItemName());
+
+                // armour stats
+                std::ostringstream oss;
+                oss << "Defence against:" << "\n";
+                oss << "Melee : " << playerInv->GetArmour()->GetMeleeDefense() << "\n";
+                oss << "Magic : " << playerInv->GetArmour()->GetMagicDefense() << "\n";
+
+                sf::Text invArmourInfoStatsText(oss.str(), GameAssets::Get().gameFont, 8);
+                invArmourInfoStatsText.setPosition(64.0f, target.getView().getSize().y - 42.0f);
+                invArmourInfoStatsText.setColor(sf::Color(255, 255, 255));
+
+                Helper::RenderTextWithDropShadow(target, invArmourInfoStatsText);
+
+                // armour desc
+                sf::Text invArmourInfoDescText(playerInv->GetArmour()->GetShortDescription(),
+                    GameAssets::Get().gameFont, 8);
+                invArmourInfoDescText.setPosition(64.0f, target.getView().getSize().y - 12.0f);
+                invArmourInfoDescText.setColor(sf::Color(255, 255, 0));
+
+                Helper::RenderTextWithDropShadow(target, invArmourInfoDescText);
+            }
+
+            target.draw(invArmourInfoNameText);
 
             // render potions inv text label
             sf::Text invPotionsLabelText("Potions", GameAssets::Get().gameFont, 8);
-            invPotionsLabelText.setPosition(122.5f,
+            invPotionsLabelText.setPosition(282.5f,
                 target.getView().getSize().y - 60.0f - invPotionsLabelText.getGlobalBounds().height);
             invPotionsLabelText.setColor(sf::Color(255, 255, 255));
 
             Helper::RenderTextWithDropShadow(target, invPotionsLabelText);
 
             // render health potion item
-            RenderUIItem(target, sf::Vector2f(122.5f, target.getView().getSize().y - 55.0f),
+            RenderUIItem(target, sf::Vector2f(282.5f, target.getView().getSize().y - 55.0f),
                 "3", playerInv->GetHealthPotions());
 
             // render magic potion item
-            RenderUIItem(target, sf::Vector2f(180.0f, target.getView().getSize().y - 55.0f),
+            RenderUIItem(target, sf::Vector2f(340.0f, target.getView().getSize().y - 55.0f),
                 "4", playerInv->GetMagicPotions());
-
-            // render special inv text label
-            sf::Text invSpecLabelText("Special", GameAssets::Get().gameFont, 8);
-            invSpecLabelText.setPosition(241.0f,
-                target.getView().getSize().y - 60.0f - invSpecLabelText.getGlobalBounds().height);
-            invSpecLabelText.setColor(sf::Color(255, 255, 255));
-
-            Helper::RenderTextWithDropShadow(target, invSpecLabelText);
-
-            // TODO render special item
-            RenderUIItem(target, sf::Vector2f(241.0f, target.getView().getSize().y - 55.0f),
-                "5", nullptr);
         }
     }
 }
@@ -759,12 +989,155 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIMenu(sf::RenderTarget& target)
+{
+    sf::RectangleShape menuBack(target.getView().getSize());
+    menuBack.setPosition(sf::Vector2f());
+    menuBack.setFillColor(sf::Color(30, 30, 30, 200));
+
+    target.draw(menuBack);
+
+    sf::Text menuTitleThe("The", GameAssets::Get().gameFont, 18);
+    menuTitleThe.setColor(sf::Color(200, 200, 200));
+    menuTitleThe.setPosition(0.5f * (target.getView().getSize().x - menuTitleThe.getGlobalBounds().width),
+        50.0f);
+
+    Helper::RenderTextWithDropShadow(target, menuTitleThe, sf::Vector2f(5.0f, 5.0f));
+
+    sf::Text menuTitleFs("File System Dungeon", GameAssets::Get().gameFont, 32);
+    menuTitleFs.setColor(sf::Color(255, 255, 255));
+    menuTitleFs.setPosition(0.5f * (target.getView().getSize().x - menuTitleFs.getGlobalBounds().width),
+        80.0f);
+
+    Helper::RenderTextWithDropShadow(target, menuTitleFs, sf::Vector2f(5.0f, 5.0f));
+
+    sf::Text menuCont("Press ENTER to continue", GameAssets::Get().gameFont, 12);
+    menuCont.setColor(sf::Color(255, 255, 0));
+    menuCont.setPosition(0.5f * (target.getView().getSize().x - menuCont.getGlobalBounds().width),
+        140.0f);
+
+    Helper::RenderTextWithDropShadow(target, menuCont);
+
+    sf::Sprite menuBob(GameAssets::Get().playerSpriteSheet, sf::IntRect(0, 0, 16, 16));
+    menuBob.setScale(5.0f, 5.0f);
+    menuBob.setPosition(0.5f * (target.getView().getSize().x - menuBob.getGlobalBounds().width), 175.0f);
+
+    target.draw(menuBob);
+
+    std::ostringstream oss;
+    oss << "This is Bob; an archaeologist who specializes in\n";
+    oss << "exploring lost ruins to find all sorts of valuable\n";
+    oss << "artefacts and other treasures.\n\n";
+
+    oss << "In his most recent archaeological venture however,\n";
+    oss << "Bob managed to get himself trapped within a large\n";
+    oss << "underground dungeon containing a disorienting amount\n";
+    oss << "of winding passages and staircases that seemingly\n";
+    oss << "led to everywhere other than the exit he wished to find.\n\n";
+
+    oss << "What Bob doesn't know however, is that this dungeon is\n";
+    oss << "very special, as its structure reflects the layout of\n";
+    oss << "files and directories within a UNIX-style file system.\n";
+    oss << "This is unfortunate for Bob, as he knows nothing about\n";
+    oss << "computers whatsoever!";
+
+    sf::Text menuDesc1(oss.str(), GameAssets::Get().altFont, 12);
+    menuDesc1.setColor(sf::Color(200, 200, 200));
+    menuDesc1.setPosition(0.5f * (target.getView().getSize().x - menuDesc1.getGlobalBounds().width),
+        275.0f);
+
+    Helper::RenderTextWithDropShadow(target, menuDesc1);
+
+    sf::Sprite menuChest(GameAssets::Get().chestsSpriteSheet, sf::IntRect(16, 0, 16, 16));
+    menuChest.setScale(5.0f, 5.0f);
+    menuChest.setPosition(0.5f * (target.getView().getSize().x - menuChest.getGlobalBounds().width),
+        465.0f);
+
+    target.draw(menuChest);
+
+    sf::Sprite menuArt1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 32, 16, 16));
+    menuArt1.setScale(4.0f, 4.0f);
+    menuArt1.setPosition(0.5f * (target.getView().getSize().x - 130.0f), 495.0f);
+
+    target.draw(menuArt1);
+
+    sf::Sprite menuArt2(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 64, 16, 16));
+    menuArt2.setScale(4.0f, 4.0f);
+    menuArt2.setPosition(0.5f * (target.getView().getSize().x + 30.0f), 490.0f);
+
+    target.draw(menuArt2);
+
+    sf::Sprite menuStaff1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(32, 16, 16, 16));
+    menuStaff1.setScale(4.0f, 4.0f);
+    menuStaff1.setPosition(0.5f * (target.getView().getSize().x + 100.0f), 480.0f);
+
+    target.draw(menuStaff1);
+
+    sf::Sprite menuSword1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(32, 0, 16, 16));
+    menuSword1.setScale(4.0f, 4.0f);
+    menuSword1.setPosition(0.5f * (target.getView().getSize().x + 180.0f), 480.0f);
+
+    target.draw(menuSword1);
+
+    sf::Sprite menuArm1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(48, 32, 16, 16));
+    menuArm1.setScale(4.0f, 4.0f);
+    menuArm1.setPosition(0.5f * (target.getView().getSize().x - 64.5f), 505.0f);
+
+    target.draw(menuArm1);
+
+    sf::Sprite menuHPot(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 0, 16, 16));
+    menuHPot.setScale(4.0f, 4.0f);
+    menuHPot.setPosition(0.5f * (target.getView().getSize().x - 220.0f), 480.0f);
+
+    target.draw(menuHPot);
+
+    sf::Sprite menuMPot(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 16, 16, 16));
+    menuMPot.setScale(4.0f, 4.0f);
+    menuMPot.setPosition(0.5f * (target.getView().getSize().x - 300.0f), 480.0f);
+
+    target.draw(menuMPot);
+
+    sf::Sprite menuBad1(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 0, 16, 16));
+    menuBad1.setScale(5.0f, 5.0f);
+    menuBad1.setPosition(0.5f * (target.getView().getSize().x - 500.0f), 475.0f);
+
+    target.draw(menuBad1);
+
+    sf::Sprite menuBad2(GameAssets::Get().enemySpriteSheet, sf::IntRect(0, 80, 16, 16));
+    menuBad2.setScale(5.0f, 5.0f);
+    menuBad2.setPosition(0.5f * (target.getView().getSize().x + 350.0f), 475.0f);
+
+    target.draw(menuBad2);
+
+    oss = std::ostringstream();
+    oss << "Here's where you come in: your job is to help Bob\n";
+    oss << "escape by locating 9 magical artefact pieces from within\n";
+    oss << "the dungeon while protecting Bob from the baddies inside!\n\n";
+
+    oss << "Be warned however, as you will need to know how to\n";
+    oss << "interpret UNIX path names in order to locate the artefact\n";
+    oss << "pieces while also being able to correctly answer some\n";
+    oss << "questions relating to the structure of UNIX-style file\n";
+    oss << "systems and their properties!\n\n";
+    
+    oss << "This is nothing that a bit of research can't solve -\n";
+    oss << "Good luck!";
+
+    sf::Text menuDesc2(oss.str(), GameAssets::Get().altFont, 12);
+    menuDesc2.setColor(sf::Color(200, 200, 200));
+    menuDesc2.setPosition(0.5f * (target.getView().getSize().x - menuDesc2.getGlobalBounds().width),
+        570.0f);
+
+    Helper::RenderTextWithDropShadow(target, menuDesc2);
+}
+
+
 void Game::Render(sf::RenderTarget& target)
 {
     target.clear();
 
     if (world_) {
-        ViewFollowPlayer(target);
+        UpdateCamera(target);
 
         // debug mode
         if (debugMode_) {
@@ -788,18 +1161,24 @@ void Game::Render(sf::RenderTarget& target)
 
         world_->Render(target);
 
-        RenderUILocation(target);
-        RenderUIObjective(target);
-        //RenderUIArtefactCount(target);
-        RenderUIPlayerStats(target);
-        RenderUIPlayerInventory(target);
-        RenderUIMessages(target);
+        // state specific ui
+        if (state_ == GameState::InGame) {
+            RenderUILocation(target);
+            RenderUIObjective(target);
+            RenderUIPlayerStats(target);
+            RenderUIPlayerInventory(target);
+            RenderUIControls(target);
+            RenderUIMessages(target);
 
-        if (displayedQuestion_) {
-            RenderUIDisplayedQuestion(target);
+            if (displayedQuestion_) {
+                RenderUIDisplayedQuestion(target);
+            }
+            else {
+                RenderUIPlayerUseTargetText(target);
+            }
         }
-        else {
-            RenderUIPlayerUseTargetText(target);
+        else if (state_ == GameState::Menu1) {
+            RenderUIMenu(target);
         }
 
         // if level is going to change next frame, display loading text

@@ -32,6 +32,7 @@ enum class GenericTileType
     RoomFloor3,
     RoomFloor4,
     RoomFloor5,
+    RoomFloorGold,
 	RoomWall,
 	PassageFloor,
     PassageWall,

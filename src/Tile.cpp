@@ -57,6 +57,10 @@ void GenericTile::Render(sf::RenderTarget& target, const sf::Vector2f& pos)
         tileSprite.setTextureRect(sf::IntRect(0, 64, 16, 16));
         break;
 
+    case GenericTileType::RoomFloorGold:
+        tileSprite.setTextureRect(sf::IntRect(0, 80, 16, 16));
+        break;
+
     case GenericTileType::RoomWall:
     case GenericTileType::PassageWall:
         tileSprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
@@ -96,6 +100,7 @@ std::string GenericTile::GetName() const
     case GenericTileType::RoomFloor3:
     case GenericTileType::RoomFloor4:
     case GenericTileType::RoomFloor5:
+    case GenericTileType::RoomFloorGold:
 		return "Room Floor";
 
 	case GenericTileType::PassageFloor:
@@ -122,6 +127,7 @@ bool GenericTile::IsWalkable() const
     case GenericTileType::RoomFloor3:
     case GenericTileType::RoomFloor4:
     case GenericTileType::RoomFloor5:
+    case GenericTileType::RoomFloorGold:
 	case GenericTileType::PassageFloor:
 		return true;
 

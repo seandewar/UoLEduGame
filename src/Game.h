@@ -25,6 +25,7 @@ struct GameAssets
     }
 
     sf::Font gameFont;
+    sf::Font altFont;
 
     sf::Texture viewVignette;
     sf::Texture genericTilesSheet;
@@ -35,12 +36,22 @@ struct GameAssets
     sf::Texture altarSpriteSheet;
     sf::Texture enemySpriteSheet;
     sf::Texture damageTypesSpriteSheet;
+    sf::Texture effectSpriteSheet;
 
     bool LoadAssets();
 
 private:
     GameAssets() { }
     ~GameAssets() { }
+};
+
+/**
+* List of game states
+*/
+enum class GameState
+{
+    Menu1,
+    InGame
 };
 
 /**
@@ -60,9 +71,11 @@ class Game
         ~GameMessage() { }
     };
 
-    static const std::size_t MaxMessages = 8;
+    static const std::size_t MaxMessages = 10;
 
     bool debugMode_;
+
+    GameState state_;
 
     std::vector<sf::Keyboard::Key> eventKeysPressed_;
 
@@ -99,25 +112,25 @@ class Game
 
     bool ChangeLevel(const std::string& fsNodePath);
 
-    void ViewFollowPlayer(sf::RenderTarget& target);
+    void UpdateCamera(sf::RenderTarget& target);
 
     void HandleDisplayedQuestionInput();
     void HandleUseInventory();
+    void HandlePlayerMoveInput();
 
     void RenderUIMessages(sf::RenderTarget& target);
-
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
     void RenderUIObjective(sf::RenderTarget& target);
     void RenderUIPlayerStats(sf::RenderTarget& target);
-
     void RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, const std::string& label,
         Item* item, bool isHighlighted = false);
     void RenderUIPlayerInventory(sf::RenderTarget& target);
-    void RenderUIArtefactCount(sf::RenderTarget& target);
     void RenderUIDisplayedQuestion(sf::RenderTarget& target);
-
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
+    void RenderUIControls(sf::RenderTarget& target);
+
+    void RenderUIMenu(sf::RenderTarget& target);
 
     void Tick();
     void Render(sf::RenderTarget& target);
@@ -169,5 +182,7 @@ public:
 
     inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
     inline bool IsInDebugMode() const { return debugMode_; }
+
+    inline GameState GetCurrentGameState() const { return state_; }
 };
 

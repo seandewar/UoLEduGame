@@ -24,10 +24,13 @@ PlayerDefaultStartEntity::~PlayerDefaultStartEntity()
 PlayerInventory::PlayerInventory() :
 selectedWeapon_(PlayerSelectedWeapon::Melee),
 meleeWeapon_(std::make_unique<MeleeWeapon>(MeleeWeaponType::BasicSword)),
-magicWeapon_(std::make_unique<MagicWeapon>(MagicWeaponType::ZeroStaff)),
+//magicWeapon_(std::make_unique<MagicWeapon>(MagicWeaponType::ZeroStaff)),
+//armour_(std::make_unique<Armour>(ArmourType::WarriorHelmet)),
 healthPotions_(std::make_unique<PotionItem>(ItemType::HealthPotion)),
 magicPotions_(std::make_unique<PotionItem>(ItemType::MagicPotion))
 {
+    // TODO dbg
+    //armour_->SetDifficultyMultiplier(10.0f);
 }
 
 
@@ -79,8 +82,14 @@ void PlayerInventory::GiveItem(Item* item)
         receivedAmount = magicWeapon_->GetAmount();
         item->SetAmount(0);
     }
+    else if (item->GetItemType() == ItemType::Armour &&
+        (!armour_ || armour_->GetAmount() <= 0)) {
+        armour_ = std::make_unique<Armour>(static_cast<Armour&>(*item));
+        receivedAmount = armour_->GetAmount();
+        item->SetAmount(0);
+    }
 
-    // TODO specials
+    // TODO specials ?
 
     if (receivedAmount > 0) {
         Game::Get().AddMessage("You received " + item->GetItemName() + " x " + std::to_string(receivedAmount));
@@ -99,8 +108,10 @@ AliveEntity(),
 useRange_(25.0f),
 targettedUsableEnt_(InvalidId),
 inv_(nullptr),
+nextDir_(PlayerFacingDirection::Down),
 dir_(PlayerFacingDirection::Down),
-attackAnimTimeLeft_(sf::Time::Zero)
+attackAnimTimeLeft_(sf::Time::Zero),
+useTarget_(false)
 {
     SetSize(sf::Vector2f(12.0f, 12.0f));
     InitAnimations();
@@ -164,7 +175,7 @@ bool PlayerEntity::CanPickupItem(Item* item) const
         return false;
     }
 
-    // TODO specials (weps will drop automatically to accommodate)
+    // TODO specials (weps & armour will drop automatically to accommodate)
     return true;
 }
 
@@ -178,11 +189,12 @@ bool PlayerEntity::PickupItem(Item* item)
     }
 
     if (item->GetItemType() == ItemType::MeleeWeapon ||
-        item->GetItemType() == ItemType::MagicWeapon) {
+        item->GetItemType() == ItemType::MagicWeapon ||
+        item->GetItemType() == ItemType::Armour) {
         auto itemEnt = area->GetEntity<ItemEntity>(area->EmplaceEntity<ItemEntity>());
         itemEnt->SetCenterPosition(GetCenterPosition());
         
-        BaseWeaponItem* droppedItem = nullptr;
+        Item* droppedItem = nullptr;
 
         switch (item->GetItemType()) {
         case ItemType::MeleeWeapon:
@@ -191,6 +203,10 @@ bool PlayerEntity::PickupItem(Item* item)
 
         case ItemType::MagicWeapon:
             droppedItem = inv_->magicWeapon_.release();
+            break;
+
+        case ItemType::Armour:
+            droppedItem = inv_->armour_.release();
             break;
         }
 
@@ -285,33 +301,37 @@ void PlayerEntity::TickAnimations()
 }
 
 
+void PlayerEntity::AddMoveInDirection(PlayerFacingDirection dir)
+{
+    nextDir_ = dir;
+
+    switch (dir) {
+    case PlayerFacingDirection::Up:
+        moveDir_.y -= 1.0f;
+        break;
+
+    case PlayerFacingDirection::Down:
+        moveDir_.y += 1.0f;
+        break;
+
+    case PlayerFacingDirection::Left:
+        moveDir_.x -= 1.0f;
+        break;
+
+    case PlayerFacingDirection::Right:
+        moveDir_.x += 1.0f;
+        break;
+    }
+}
+
+
 void PlayerEntity::HandleMovement()
 {
     if (!GetAssignedArea() || !GetStats()) {
         return;
     }
 
-    sf::Vector2f moveDir;
-    PlayerFacingDirection faceDir = dir_;
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-        moveDir.y -= 1.0f;
-        faceDir = PlayerFacingDirection::Up;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-        moveDir.y += 1.0f;
-        faceDir = PlayerFacingDirection::Down;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-        moveDir.x -= 1.0f;
-        faceDir = PlayerFacingDirection::Left;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-        moveDir.x += 1.0f;
-        faceDir = PlayerFacingDirection::Right;
-    }
-
-    if (dir_ != faceDir || moveDir.x == 0.0f && moveDir.y == 0.0f) {
+    if (dir_ != nextDir_ || moveDir_.x == 0.0f && moveDir_.y == 0.0f) {
         RestartAnimations();
     }
     else {
@@ -319,9 +339,9 @@ void PlayerEntity::HandleMovement()
         TickAnimations();
     }
 
-    dir_ = faceDir;
-
-    MoveWithCollision(moveDir * GetStats()->GetMoveSpeed() * Game::FrameTimeStep.asSeconds());
+    MoveWithCollision(moveDir_ * GetStats()->GetMoveSpeed() * Game::FrameTimeStep.asSeconds());
+    dir_ = nextDir_;
+    moveDir_ = sf::Vector2f();
 }
 
 
@@ -330,11 +350,12 @@ void PlayerEntity::HandleUseNearbyObjects()
     auto area = GetAssignedArea();
 
     if (!area || Game::Get().GetDisplayedQuestion()) {
+        useTarget_ = false;
         return;
     }
 
     // use target from last tick if use key was pressed
-    if (Game::Get().IsKeyPressedFromEvent(sf::Keyboard::E) && targettedUsableEnt_ != InvalidId) {
+    if (useTarget_ && targettedUsableEnt_ != InvalidId) {
         auto usableEnt = dynamic_cast<IPlayerUsable*>(area->GetEntity(targettedUsableEnt_));
 
         if (usableEnt && usableEnt->IsUsable(GetAssignedId())) {
@@ -358,6 +379,7 @@ void PlayerEntity::HandleUseNearbyObjects()
     }
 
     targettedUsableEnt_ = closestUsableEntId;
+    useTarget_ = false;
 }
 
 
@@ -369,6 +391,31 @@ void PlayerEntity::TickAttackAnimation()
 }
 
 
+u32 PlayerEntity::Attack(u32 initialDamage, DamageType source)
+{
+    u32 damageReduction = 0;
+
+    if (inv_ && inv_->GetArmour() && inv_->GetArmour()->GetAmount() > 0) {
+        if (source == DamageType::Melee) {
+            damageReduction = Helper::GenerateRandomInt<u32>(0, inv_->GetArmour()->GetMeleeDefense());
+        }
+        else if (source == DamageType::Magic) {
+            damageReduction = Helper::GenerateRandomInt<u32>(0, inv_->GetArmour()->GetMagicDefense());
+        }
+    }
+
+    return AliveEntity::Attack(static_cast<u32>(std::max<i64>(0, static_cast<i64>(initialDamage)-damageReduction)),
+        source);
+}
+
+
+u32 PlayerEntity::DamageWithoutInvincibility(u32 amount, DamageType source)
+{
+    Game::Get().ResetDisplayedQuestion(); // interrupt question interface if it's up
+    return AliveEntity::Damage(amount, source);
+}
+
+
 void PlayerEntity::Tick()
 {
     HandleMovement();
@@ -377,6 +424,10 @@ void PlayerEntity::Tick()
 
     if (inv_) {
         inv_->TickUseDelays();
+    }
+
+    if (invincibilityTime_ > sf::Time::Zero) {
+        invincibilityTime_ -= Game::FrameTimeStep;
     }
 }
 
@@ -406,6 +457,25 @@ void PlayerEntity::Render(sf::RenderTarget& target)
 
     playerSprite.setPosition(GetCenterPosition() - sf::Vector2f(8.0f, 8.0f));
 
+    // armour sprite
+    sf::Sprite armourSprite;
+
+    if (inv_ && inv_->GetArmour() && inv_->GetArmour()->GetAmount() > 0) {
+        armourSprite = inv_->GetArmour()->GetPlayerSprite(dir_);
+    }
+
+    armourSprite.setPosition(playerSprite.getPosition());
+
+    // invincibility effect
+    if (HasInvincibility()) {
+        playerSprite.setColor(sf::Color(255, 55, 55, 90));
+        armourSprite.setColor(sf::Color(255, 55, 55, 90));
+    }
+    else {
+        playerSprite.setColor(sf::Color(255, 255, 255, 255));
+        armourSprite.setColor(sf::Color(255, 255, 255, 255));
+    }
+
     // render weapon if attacking
     sf::Sprite weaponSprite;
 
@@ -414,7 +484,6 @@ void PlayerEntity::Render(sf::RenderTarget& target)
 
         if (weapon && weapon->GetAmount() > 0) {
             weaponSprite = weapon->GetSprite();
-            float animTimeFactor = 1.0f - (attackAnimTimeLeft_ / attackAnimDuration_);
 
             switch (dir_) {
             case PlayerFacingDirection::Up:
@@ -441,10 +510,12 @@ void PlayerEntity::Render(sf::RenderTarget& target)
 
     if (dir_ == PlayerFacingDirection::Down || dir_ == PlayerFacingDirection::Left) {
         target.draw(playerSprite);
+        target.draw(armourSprite);
         target.draw(weaponSprite);
     }
     else {
         target.draw(weaponSprite);
         target.draw(playerSprite);
+        target.draw(armourSprite);
     }
 }

@@ -106,7 +106,7 @@ bool DungeonAreaGen::CheckRoomRectanglePlaceable(WorldArea& area, u32 topX, u32 
 }
 
 
-bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h)
+bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h, bool goldRoom)
 {
     if (w <= 2 || h <= 2) {
         assert(!"Room size too small (w or h <= 2)! Room will only be generated as walls at this size.");
@@ -118,31 +118,33 @@ bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 top
     }
 
     GenericTileType floorType;
-    switch (Helper::GenerateRandomInt(rng, 1, 5)) {
-    case 1:
-        floorType = GenericTileType::RoomFloor1;
-        break;
 
-    case 2:
-        floorType = GenericTileType::RoomFloor2;
-        break;
+    if (goldRoom) {
+        floorType = GenericTileType::RoomFloorGold;
+    }
+    else {
+        switch (Helper::GenerateRandomInt(rng, 1, 5)) {
+        default:
+        case 1:
+            floorType = GenericTileType::RoomFloor1;
+            break;
 
-    case 3:
-        floorType = GenericTileType::RoomFloor3;
-        break;
+        case 2:
+            floorType = GenericTileType::RoomFloor2;
+            break;
 
-    case 4:
-        floorType = GenericTileType::RoomFloor4;
-        break;
+        case 3:
+            floorType = GenericTileType::RoomFloor3;
+            break;
 
-    case 5:
-        floorType = GenericTileType::RoomFloor5;
-        break;
+        case 4:
+            floorType = GenericTileType::RoomFloor4;
+            break;
 
-    default:
-        assert(!"Unknown room floor type!");
-        floorType = GenericTileType::RoomFloor1;
-        break;
+        case 5:
+            floorType = GenericTileType::RoomFloor5;
+            break;
+        }
     }
 
     for (u32 y = topY; y < (topY + h) && y < area.GetHeight(); ++y) {
@@ -160,9 +162,9 @@ bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 top
 }
 
 
-bool DungeonAreaGen::GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h)
+bool DungeonAreaGen::GenerateRoom(WorldArea& area, Rng& rng, u32 topX, u32 topY, u32 w, u32 h, bool goldRoom)
 {
-    if (!PlaceEmptyRoom(area, rng, topX, topY, w, h)) {
+    if (!PlaceEmptyRoom(area, rng, topX, topY, w, h, goldRoom)) {
         return false;
     }
 

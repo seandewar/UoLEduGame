@@ -6,6 +6,7 @@
 #include <SFML/System/Time.hpp>
 
 #include "Types.h"
+#include "Animation.h"
 
 typedef u64 EntityId;
 
@@ -149,12 +150,13 @@ class DamageTextEntity : public WorldEntity
 {
     DamageType type_;
     u32 damage_;
+    sf::Color color_;
     sf::Vector2f velo_;
     sf::Time timeLeft_;
 
 public:
-    DamageTextEntity(DamageType type, u32 damage, const sf::Vector2f& velo = sf::Vector2f(0.0f, -15.0f),
-        const sf::Time& displayTime = sf::seconds(1.0f));
+    DamageTextEntity(DamageType type, u32 damage, const sf::Color& color = sf::Color(255, 255, 255),
+        const sf::Vector2f& velo = sf::Vector2f(0.0f, -15.0f), const sf::Time& displayTime = sf::seconds(1.0f));
     virtual ~DamageTextEntity();
 
     virtual void Tick() override;
@@ -163,8 +165,43 @@ public:
     inline DamageType GetDamageType() const { return type_; }
     inline u32 GetDamageAmount() const { return damage_; }
     inline sf::Vector2f GetVelocity() const { return velo_; }
+    inline sf::Color GetTextColor() const { return color_; }
 
     inline virtual std::string GetName() const override { return "DamageTextEntity"; }
+};
+
+/**
+* Different damage effects
+*/
+enum class DamageEffectType
+{
+    Zero,
+    Flame,
+    Drain
+};
+
+/**
+* Damage effect ent
+*/
+class DamageEffectEntity : public WorldEntity
+{
+    DamageEffectType effectType_;
+    Animation anim_;
+    sf::Time timeLeft_;
+
+    void SetupAnimations();
+
+public:
+    DamageEffectEntity(DamageEffectType type, const sf::Time& duration);
+    virtual ~DamageEffectEntity();
+
+    virtual void Tick() override;
+    virtual void Render(sf::RenderTarget& target) override;
+
+    inline DamageEffectType GetEffectType() const { return effectType_; }
+    inline sf::Time GetTimeLeft() const { return timeLeft_; }
+
+    inline virtual std::string GetName() const override { return "DamageEffectEntity"; }
 };
 
 /**
@@ -183,7 +220,7 @@ public:
     inline AliveStats* GetStats() { return stats_; }
     inline const AliveStats* GetStats() const { return stats_; }
 
-    virtual void Attack(u32 initialDamage, DamageType source = DamageType::Other);
-    virtual void Damage(u32 amount, DamageType source = DamageType::Other);
+    virtual u32 Attack(u32 initialDamage, DamageType source = DamageType::Other);
+    virtual u32 Damage(u32 amount, DamageType source = DamageType::Other);
     virtual void Heal(u32 amount);
 };

@@ -37,6 +37,7 @@ public:
 
     virtual void Render(sf::RenderTarget& target) override;
 
+    virtual bool IsUsable(EntityId playerId) const override;
     virtual void Use(EntityId playerId) override;
 
     inline virtual std::string GetUseText() const override { return "Ascend to .."; }
@@ -62,7 +63,7 @@ public:
 
     inline std::string GetDestinationFsNodeName() const { return destinationFsNodeName_; }
 
-    inline virtual bool IsUsable(EntityId playerId) const override { return !destinationFsNodeName_.empty(); }
+    virtual bool IsUsable(EntityId playerId) const override;
     inline virtual void Use(EntityId playerId) override;
 
     inline virtual std::string GetUseText() const override { return "Descend to " + destinationFsNodeName_; }

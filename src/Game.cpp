@@ -450,6 +450,9 @@ void Game::Tick()
             }
 
             if (player) {
+                // give invincibility if debug mode
+                player->SetInvincibility(sf::seconds(2.0f));
+
                 // give weapons & armour
                 std::unique_ptr<BaseWeaponItem> weapon;
                 std::unique_ptr<Armour> armour;
@@ -543,7 +546,7 @@ void Game::RenderUIObjective(sf::RenderTarget& target)
         director_.GetCurrentObjectiveType() != GameObjectiveType::Complete) {
         sf::Text objText("Objective: " + director_.GetObjectiveText(), GameAssets::Get().gameFont, 8);
         objText.setPosition(5.0f, 35.0f);
-        objText.setColor(sf::Color(255, 255, 255));
+        objText.setColor(sf::Color(255, 150, 0));
 
         Helper::RenderTextWithDropShadow(target, objText);
     }
@@ -646,14 +649,14 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 
 void Game::RenderUIControls(sf::RenderTarget& target)
 {
-    sf::Text moveControls("Press W, A, S, D to move.", GameAssets::Get().gameFont, 8);
+    sf::Text moveControls("Press W, A, S, D to move", GameAssets::Get().gameFont, 8);
     moveControls.setColor(sf::Color(255, 255, 0));
     moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
         target.getView().getSize().y - 85.0f);
 
     Helper::RenderTextWithDropShadow(target, moveControls);
 
-    sf::Text invControls("Press 1-4 to use inventory item.", GameAssets::Get().gameFont, 8);
+    sf::Text invControls("Press 1-4 to use inventory item", GameAssets::Get().gameFont, 8);
     invControls.setColor(sf::Color(255, 255, 0));
     invControls.setPosition(target.getSize().x - invControls.getGlobalBounds().width - 5.0f,
         target.getView().getSize().y - 70.0f);
@@ -1011,7 +1014,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
 
     Helper::RenderTextWithDropShadow(target, menuTitleFs, sf::Vector2f(5.0f, 5.0f));
 
-    sf::Text menuCont("Press ENTER to continue", GameAssets::Get().gameFont, 12);
+    sf::Text menuCont("Press ENTER to play!", GameAssets::Get().gameFont, 12);
     menuCont.setColor(sf::Color(255, 255, 0));
     menuCont.setPosition(0.5f * (target.getView().getSize().x - menuCont.getGlobalBounds().width),
         140.0f);

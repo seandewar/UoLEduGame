@@ -62,6 +62,52 @@ const std::array<std::string, 45> GameFilesystemGen::fileNameGenPhrases_ = {
 };
 
 
+const std::array<std::string, 40> GameFilesystemGen::userNames_ = {
+    {
+        "bobbo",
+        "john",
+        "james",
+        "aaron",
+        "myranda",
+        "sean",
+        "josh",
+        "pitcher",
+        "dewar",
+        "carl",
+        "stephen",
+        "charlie",
+        "fred",
+        "alex",
+        "hannah",
+        "emily",
+        "geraldo",
+        "celeste",
+        "anna",
+        "leigh",
+        "lewis",
+        "callum",
+        "joel",
+        "jacob",
+        "jason",
+        "sandy",
+        "julie",
+        "sian",
+        "daniel",
+        "matthew",
+        "parker",
+        "sam",
+        "jake",
+        "daisy",
+        "naomi",
+        "wendy",
+        "david",
+        "tux",
+        "gnu",
+        "tess"
+    }
+};
+
+
 GameFilesystemGen::GameFilesystemGen(RngInt seed) :
 seed_(seed)
 {
@@ -121,22 +167,7 @@ void GameFilesystemGen::GenerateRandomFiles(GameFilesystemNode& parent, Rng& rng
         case 1:
         case 2:
             // generate other file with name using phrases list
-
-            assert(fileNameGenPhrases_.size() > 0);
-
-            {
-                bool underscoresBetweenPhrases = Helper::GenerateRandomBool(rng, 0.5);
-                int numPhrases = Helper::GenerateRandomInt(rng, 1, 3);
-
-                for (int i = 0; i < numPhrases; ++i) {
-                    auto phraseIdx = Helper::GenerateRandomInt<Rng, std::size_t>(rng, 0, fileNameGenPhrases_.size() - 1);
-                    nodeName += fileNameGenPhrases_[phraseIdx];
-
-                    if (underscoresBetweenPhrases && i != numPhrases - 1) {
-                        nodeName += '_';
-                    }
-                }
-            }
+            nodeName = GenerateRandomPhraseName(rng);
 
             // choose a filetype
             switch (Helper::GenerateRandomInt(rng, 0, 10)) {
@@ -196,11 +227,42 @@ void GameFilesystemGen::GenerateRandomFiles(GameFilesystemNode& parent, Rng& rng
 }
 
 
+std::size_t GameFilesystemGen::GenRandomFileDirsRecurse(GameFilesystemNode* node, Rng& rng, std::size_t numDirsLeft,
+    bool firstDir)
+{
+    if (!node || !node->IsDirectory()) {
+        return numDirsLeft;
+    }
+
+    GenerateRandomFiles(*node, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 0, 15));
+
+    while ((firstDir || Helper::GenerateRandomBool(rng, 0.5f)) && numDirsLeft > 0) {
+        auto dir = AddNodeWithUniqueName(*node, std::make_unique<GameFilesystemNode>(
+            GenerateRandomPhraseName(rng, 1), GameFilesystemNodeType::Directory, GenerateNewId(rng)));
+        assert(dir);
+
+        numDirsLeft = GenRandomFileDirsRecurse(dir, rng, --numDirsLeft);
+    }
+
+    return numDirsLeft;
+}
+
+
 void GameFilesystemGen::GenerateHomeDir(GameFilesystemNode& parent, Rng& rng)
 {
 	auto homeNode = parent.AddChildNode(NEW_NODE("home", Directory, rng));
 
-	// TODO: Generate users
+    assert(userNames_.size() > 0);
+    int numUsers = Helper::GenerateRandomInt(rng, 1, 6);
+
+    for (int i = 0; i < numUsers; ++i) {
+        auto user = homeNode->AddChildNode(NEW_NODE(
+            (userNames_[Helper::GenerateRandomInt<Rng, std::size_t>(rng, 0, userNames_.size() - 1)] + std::to_string(i)),
+            Directory, rng));
+        assert(user);
+
+        assert(GenRandomFileDirsRecurse(user, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 5)) == 0);
+    }
 }
 
 
@@ -385,6 +447,10 @@ void GameFilesystemGen::GenerateEtcDir(GameFilesystemNode& parent, Rng& rng)
     etcNode->AddChildNode(NEW_NODE("shadow", TextFile, rng));
     etcNode->AddChildNode(NEW_NODE("ssh", TextFile, rng));
 
+    auto initNode = etcNode->AddChildNode(NEW_NODE("init", Directory, rng));
+    initNode->AddChildNode(NEW_NODE("init", TextFile, rng));
+    initNode->AddChildNode(NEW_NODE("init.d", TextFile, rng));
+
     auto networkNode = etcNode->AddChildNode(NEW_NODE("network", Directory, rng));
     networkNode->AddChildNode(NEW_NODE("interfaces", TextFile, rng));
 }
@@ -395,6 +461,35 @@ void GameFilesystemGen::GenerateProcDir(GameFilesystemNode& parent, Rng& rng)
     auto procNode = parent.AddChildNode(NEW_NODE("proc", Directory, rng));
 
     procNode->AddChildNode(NEW_NODE("uptime", TextFile, rng));
+    procNode->AddChildNode(NEW_NODE("sys", TextFile, rng));
+
+    int targetNumProcs = Helper::GenerateRandomInt(rng, 1, 15);
+
+    for (int i = 0; i < targetNumProcs; ++i) {
+        try {
+            procNode->AddChildNode(NEW_NODE(std::to_string(i == 0 ? 1 : Helper::GenerateRandomInt(rng, 2, 2000)),
+                TextFile, rng));
+        }
+        catch (GameFilesystemException& e) {
+            if (e.GetType() != GameFilesystemExceptionType::NameIsTaken) {
+                throw;
+            }
+        }
+    }
+}
+
+
+void GameFilesystemGen::GenerateLibDir(GameFilesystemNode& parent, Rng& rng)
+{
+    auto libNode = parent.AddChildNode(NEW_NODE("lib", Directory, rng));
+
+    libNode->AddChildNode(NEW_NODE("chroot-setup.sh", ShellScriptFile, rng));
+
+    auto initNode = libNode->AddChildNode(NEW_NODE("init", Directory, rng));
+    initNode->AddChildNode(NEW_NODE("fstab", TextFile, rng));
+    initNode->AddChildNode(NEW_NODE("vars.sh", TextFile, rng));
+    initNode->AddChildNode(NEW_NODE("init-d-script", ExecutableFile, rng));
+    initNode->AddChildNode(NEW_NODE("upstart-job", ExecutableFile, rng));
 }
 
 
@@ -408,11 +503,39 @@ void GameFilesystemGen::GenerateTmpDir(GameFilesystemNode& parent, Rng& rng)
     do {
         int tmpFiles = Helper::GenerateRandomInt(rng, 0, 8);
         for (int i = 0; i < tmpFiles; ++i) {
-            targetNode->AddChildNode(NEW_NODE(GenerateRandomHexName(rng, 5) + ".log", TextFile, rng));
+            AddNodeWithUniqueName(*targetNode, NEW_NODE(GenerateRandomHexName(rng, 5) + ".log", TextFile, rng));
         }
 
         targetNode = AddNodeWithUniqueName(*tmpNode, NEW_NODE(GenerateRandomHexName(rng, 8), Directory, rng));
     } while (++i <= tmpSubdirs); // <= because we do 1 extra iteration to populate the tmp dir before the subdirs
+}
+
+
+void GameFilesystemGen::GenerateMntDir(GameFilesystemNode& parent, Rng& rng)
+{
+    auto mntNode = parent.AddChildNode(NEW_NODE("mnt", Directory, rng));
+
+    int numMnts = Helper::GenerateRandomInt(rng, 0, 3);
+
+    for (int i = 0; i < numMnts; ++i) {
+        auto mnt = AddNodeWithUniqueName(*mntNode, NEW_NODE(GenerateRandomPhraseName(rng, 1), Directory, rng));
+        assert(mnt);
+
+        assert(GenRandomFileDirsRecurse(mnt, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 5)) == 0);
+    }
+}
+
+
+void GameFilesystemGen::GenerateMediaDir(GameFilesystemNode& parent, Rng& rng)
+{
+    auto mediaNode = parent.AddChildNode(NEW_NODE("media", Directory, rng));
+
+    if (Helper::GenerateRandomBool(rng, 0.5f)) {
+        auto media = AddNodeWithUniqueName(*mediaNode, NEW_NODE("cdrom", Directory, rng));
+        assert(media);
+
+        assert(GenRandomFileDirsRecurse(media, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 5)) == 0);
+    }
 }
 
 
@@ -426,13 +549,13 @@ std::unique_ptr<GameFilesystem> GameFilesystemGen::GenerateNewFilesystem()
     assert(rootNode);
 
 	// populate root dir
-    // TODO POPULATE WITH FILES & FOLDERS THAT FIT THE DIRECTORY'S PURPOSE!!!111
     GenerateBinDir(*rootNode, rng);
     GenerateDevDir(*rootNode, rng);
     GenerateEtcDir(*rootNode, rng);
-	rootNode->AddChildNode(NEW_NODE("lib", Directory, rng));
+    GenerateLibDir(*rootNode, rng);
 	GenerateHomeDir(*rootNode, rng);
-	rootNode->AddChildNode(NEW_NODE("mnt", Directory, rng));
+    GenerateMntDir(*rootNode, rng);
+    GenerateMediaDir(*rootNode, rng);
     GenerateProcDir(*rootNode, rng);
     GenerateTmpDir(*rootNode, rng);
     GenerateUsrDir(*rootNode, rng);

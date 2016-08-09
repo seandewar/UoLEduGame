@@ -8,7 +8,7 @@
 
 int main(int argc, char* argv[])
 {
-    sf::RenderWindow window(sf::VideoMode(1024, 768), "UoLEduGame");
+    sf::RenderWindow window(sf::VideoMode(1024, 768), "The File System Dungeon");
 
     const auto targetFrameRate = static_cast<unsigned int>(
         std::roundf(1000000.0f / Game::FrameTimeStep.asMicroseconds())

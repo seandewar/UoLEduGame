@@ -976,6 +976,14 @@ ItemEntity::~ItemEntity()
 }
 
 
+void ItemEntity::Tick()
+{
+    if (!item_ || item_->GetAmount() <= 0) {
+        MarkForDeletion();
+    }
+}
+
+
 void ItemEntity::Render(sf::RenderTarget& target)
 {
     if (item_ && item_->GetAmount() > 0) {

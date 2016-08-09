@@ -335,6 +335,7 @@ public:
     ItemEntity();
     virtual ~ItemEntity();
 
+    virtual void Tick() override;
     virtual void Render(sf::RenderTarget& target) override;
 
     virtual void Use(EntityId playerId) override;

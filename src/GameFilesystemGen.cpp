@@ -39,15 +39,15 @@ const std::array<std::string, 45> GameFilesystemGen::fileNameGenPhrases_ = {
         "settings",
         "manager",
         "cheese",
-        "mutagen",
+        "poe",
         "sign",
-        "griffin",
-        "cockatrice",
+        "123",
+        "wow",
         "roach",
-        "geralt",
+        "fish",
         "alien",
-        "normandy",
-        "shepard",
+        "aaa",
+        "doc",
         "controller",
         "dog",
         "matrix",
@@ -64,7 +64,7 @@ const std::array<std::string, 45> GameFilesystemGen::fileNameGenPhrases_ = {
 
 const std::array<std::string, 40> GameFilesystemGen::userNames_ = {
     {
-        "bobbo",
+        "gordon",
         "john",
         "james",
         "aaron",
@@ -80,7 +80,7 @@ const std::array<std::string, 40> GameFilesystemGen::userNames_ = {
         "alex",
         "hannah",
         "emily",
-        "geraldo",
+        "geralt",
         "celeste",
         "anna",
         "leigh",
@@ -102,7 +102,7 @@ const std::array<std::string, 40> GameFilesystemGen::userNames_ = {
         "wendy",
         "david",
         "tux",
-        "gnu",
+        "shepard",
         "tess"
     }
 };
@@ -429,12 +429,6 @@ void GameFilesystemGen::GenerateUsrDir(GameFilesystemNode& parent, Rng& rng)
     // /usr/lib
     auto libNode = usrNode->AddChildNode(NEW_NODE("lib", Directory, rng));
     libNode->AddChildNode(NEW_NODE("sudo", LibraryFile, rng));
-
-    // /usr/share
-    usrNode->AddChildNode(NEW_NODE("share", Directory, rng));
-
-    // /usr/include
-    usrNode->AddChildNode(NEW_NODE("include", Directory, rng));
 }
 
 

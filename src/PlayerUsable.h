@@ -3,17 +3,18 @@
 #include "Entity.h"
 
 /**
-* Interface to be implemented by objects that wish to be usable
+* Class to be implemented by objects that wish to be usable
 * by the player.
 */
-class IPlayerUsable
+class PlayerUsable
 {
 public:
-    IPlayerUsable() { }
-    virtual ~IPlayerUsable() { }
+    PlayerUsable() { }
+    virtual ~PlayerUsable() { }
 
     virtual void Use(EntityId playerId) = 0;
 
     virtual bool IsUsable(EntityId playerId) const = 0;
     virtual std::string GetUseText() const = 0;
+    virtual std::string GetCannotUseText() const { return std::string(); }
 };

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Entity.h"
-#include "IPlayerUsable.h"
+#include "PlayerUsable.h"
 
 /**
 * Altar ent class.
 */
-class AltarEntity : public UnitEntity, public IPlayerUsable
+class AltarEntity : public UnitEntity, public PlayerUsable
 {
     Animation anim_;
     Animation animProtected_;

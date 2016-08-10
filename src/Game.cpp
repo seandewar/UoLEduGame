@@ -7,7 +7,7 @@
 #include "Helper.h"
 #include "GameFilesystemGen.h"
 #include "Player.h"
-#include "IPlayerUsable.h"
+#include "PlayerUsable.h"
 #include "Stairs.h"
 #include "Chest.h"
 
@@ -49,6 +49,7 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(specSoundBuffer, "assets/SpecSound.wav");
     LOAD_FROM_FILE(deathSoundBuffer, "assets/DeathSound.wav");
     LOAD_FROM_FILE(playerHurtSoundBuffer, "assets/PlayerHurtSound.wav");
+    LOAD_FROM_FILE(playerDeathSoundBuffer, "assets/PlayerDeathSound.wav");
     LOAD_FROM_FILE(pickupSoundBuffer, "assets/PickupSound.wav");
     LOAD_FROM_FILE(pickup2SoundBuffer, "assets/Pickup2Sound.wav");
     LOAD_FROM_FILE(selectSoundBuffer, "assets/SelectSound.wav");
@@ -73,6 +74,7 @@ bool GameAssets::LoadAssets()
     specSound.setBuffer(specSoundBuffer);
     deathSound.setBuffer(deathSoundBuffer);
     playerHurtSound.setBuffer(playerHurtSoundBuffer);
+    playerDeathSound.setBuffer(playerDeathSoundBuffer);
     successSound.setBuffer(successSoundBuffer);
     failureSound.setBuffer(failureSoundBuffer);
     openChestSound.setBuffer(openChestSoundBuffer);
@@ -145,15 +147,21 @@ bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
         return false;
     }
 
+    if (playerId_ != Entity::InvalidId && !RemovePlayer()) {
+        printf("SpawnPlayer() - could not remove previous player!\n");
+        return false;
+    }
+
     playerId_ = area->EmplaceEntity<PlayerEntity>();
     if (playerId_ == Entity::InvalidId) {
         return false;
     }
 
-    // get spawned player & restore stats to our cached copy
+    // get spawned player, set stats & restore invinc time left
     auto player = GetPlayerEntity();
     player->SetStats(&playerStats_);
     player->SetInventory(&playerInv_);
+    player->SetInvincibility(playerCachedInvincTimeLeft_);
     
     // set player location to a default start or start pos if provided
     if (!optionalStartPos) {
@@ -171,12 +179,17 @@ bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
 
 bool Game::RemovePlayer()
 {
-    if (!GetWorldArea() || !GetPlayerEntity() ||
-        !GetWorldArea()->RemoveEntity(playerId_)) {
+    auto player = GetPlayerEntity();
+
+    if (!GetWorldArea() || !player) {
         playerId_ = Entity::InvalidId;
         return false;
     }
 
+    // cache invincibility time that was left so we can restore it
+    playerCachedInvincTimeLeft_ = player->GetInvincibilityTimeLeft();
+
+    player->MarkForDeletion();
     playerId_ = Entity::InvalidId;
     return true;
 }
@@ -320,18 +333,21 @@ bool Game::TeleportPlayerToObjective()
 bool Game::NewGame()
 {
     messages_.clear();
-    AddMessage("Welcome to the File System Dungeon!", sf::Color(173, 216, 230));
 
     GameFilesystemGen gen;
     if (!(worldFs_ = std::move(gen.GenerateNewFilesystem()))) {
         return false;
     }
 
+    AddMessage("Welcome to the File System Dungeon!", sf::Color(173, 216, 230));
+    AddMessage("The seed for this dungeon is " + std::to_string(gen.GetSeed()) + ".", sf::Color(173, 216, 230));
+
     world_ = std::make_unique<World>(*worldFs_);
     director_.StartNewSession(9, nullptr, worldFs_.get());
 
     ResetDisplayedQuestion();
 
+    playerCachedInvincTimeLeft_ = sf::seconds(3.0f); // give player some spawn invincibility
     if (!ChangeLevel("/")) {
         return false;
     }
@@ -353,7 +369,7 @@ void Game::UpdateCamera(sf::RenderTarget& target)
                 0.5f * area->GetHeight() * BaseTile::TileSize.y);
         }
         else {
-            area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 275.0f));
+            area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 300.0f));
         }
 
         if (playerId_ != Entity::InvalidId) {
@@ -440,6 +456,67 @@ void Game::HandleDisplayedQuestionInput()
 }
 
 
+void Game::HandleRespawnSacrificeInput()
+{
+    auto player = GetPlayerEntity();
+
+    if (!player) {
+        return;
+    }
+
+    auto pstats = player->GetStats();
+
+    // if our player is alive, don't bother
+    if (!pstats || pstats->IsAlive()) {
+        return;
+    }
+
+    if (Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+        AddMessage("You have been revived!", sf::Color(0, 255, 0));
+        GameAssets::Get().selectSound.play();
+        GameAssets::Get().invincibilitySound.play();
+
+        auto pInv = player->GetInventory();
+
+        // remove items
+        if (pInv) {
+            if (pInv->GetMagicWeapon() && pInv->GetMagicWeapon()->GetAmount() > 0) {
+                // magic weapon
+                AddMessage("You lose your " + pInv->GetMagicWeapon()->GetItemName(), sf::Color(100, 0, 0));
+                pInv->GetMagicWeapon()->SetAmount(0);
+            }
+
+            if (pInv->GetArmour() && pInv->GetArmour()->GetAmount() > 0) {
+                // armour weapon
+                AddMessage("You lose your " + pInv->GetArmour()->GetItemName(), sf::Color(100, 0, 0));
+                pInv->GetArmour()->SetAmount(0);
+            }
+
+            if (pInv->GetHealthPotions() && pInv->GetHealthPotions()->GetAmount() > 0) {
+                // health potions
+                AddMessage("You lose your Health Potions", sf::Color(100, 0, 0));
+                pInv->GetHealthPotions()->SetAmount(0);
+            }
+
+            if (pInv->GetMagicPotions() && pInv->GetMagicPotions()->GetAmount() > 0) {
+                // magic potions
+                AddMessage("You lose your Magic Potions", sf::Color(100, 0, 0));
+                pInv->GetMagicPotions()->SetAmount(0);
+            }
+        }
+
+        // remove remaining mana
+        if (pstats->GetMana() > 0) {
+            AddMessage("You lose your remaining Mana", sf::Color(100, 0, 0));
+            pstats->SetMana(0);
+        }
+
+        pstats->SetHealth(pstats->GetMaxHealth()); // restore health for respawn
+        player->SetInvincibility(sf::seconds(5.0f)); // invincibility period so we're not insta dead again
+    }
+}
+
+
 void Game::HandleUseInventory()
 {
     auto player = GetPlayerEntity();
@@ -508,6 +585,18 @@ void Game::Tick()
                 // give invincibility if debug mode
                 player->SetInvincibility(sf::seconds(2.0f));
 
+                // kill / revive player
+                auto pstats = player->GetStats();
+
+                if (pstats && Game::IsKeyPressedFromEvent(sf::Keyboard::K)) {
+                    if (pstats->IsAlive()) {
+                        player->DamageWithoutInvincibility(pstats->GetHealth());
+                    }
+                    else {
+                        pstats->SetHealth(pstats->GetMaxHealth());
+                    }
+                }
+
                 // give weapons & armour
                 std::unique_ptr<BaseWeaponItem> weapon;
                 std::unique_ptr<Armour> armour;
@@ -551,11 +640,13 @@ void Game::Tick()
 
         // handle state specific input
         if (state_ == GameState::InGame) {
-            // handle input for player inputs, question interface or inventory
-            // if there is no question interface being shown
+            // handle input for player inputs, interfaces or inventory
             HandlePlayerMoveInput();
 
-            if (displayedQuestion_) {
+            if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
+                HandleRespawnSacrificeInput();
+            }
+            else if (displayedQuestion_) {
                 HandleDisplayedQuestionInput();
             }
             else {
@@ -616,15 +707,29 @@ void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
     auto player = GetPlayerEntity();
 
     if (area && player) {
-        auto useable = dynamic_cast<IPlayerUsable*>(area->GetEntity(player->GetTargettedUsableEntity()));
+        auto useable = dynamic_cast<PlayerUsable*>(area->GetEntity(player->GetTargettedUsableEntity()));
 
         if (useable) {
-            sf::Text targetUseText(std::string("Press E: ") + useable->GetUseText(), GameAssets::Get().gameFont, 16);
+            sf::Text targetUseText(std::string(), GameAssets::Get().gameFont, 16);
+
+            if (useable->IsUsable(player->GetAssignedId())) {
+                targetUseText.setString(std::string("Press E: ") + useable->GetUseText());
+                targetUseText.setColor(sf::Color(255, 255, 0));
+            }
+            else {
+                // our target is not currently usable right now.
+                if (useable->GetCannotUseText().empty()) {
+                    return;
+                }
+
+                targetUseText.setString(useable->GetCannotUseText());
+                targetUseText.setColor(sf::Color(150, 150, 150));
+            }
+
             targetUseText.setPosition(
                 sf::Vector2f(target.getView().getCenter().x, 0.15f * target.getView().getSize().y) -
                 0.5f * sf::Vector2f(targetUseText.getGlobalBounds().width, targetUseText.getGlobalBounds().height)
                 );
-            targetUseText.setColor(sf::Color(255, 255, 0));
 
             Helper::RenderTextWithDropShadow(target, targetUseText);
         }
@@ -996,7 +1101,8 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
 
     // render window label
     sf::Text uiLabel("Answer this question correctly to unlock the chest:", GameAssets::Get().gameFont, 8);
-    uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width), 20.0f));
+    uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width),
+        20.0f));
     uiLabel.setColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiLabel);
@@ -1049,6 +1155,127 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
+{
+    auto player = GetPlayerEntity();
+
+    // don't render if the player is alive...
+    if (!player || !player->GetStats() || player->GetStats()->IsAlive()) {
+        return;
+    }
+
+    // render window bg
+    sf::RectangleShape uiBg(sf::Vector2f(600.0f, 250.0f));
+    uiBg.setFillColor(sf::Color(20, 20, 20, 250));
+    uiBg.setOutlineColor(sf::Color(0, 0, 0));
+    uiBg.setOutlineThickness(-2.0f);
+    uiBg.setPosition(0.5f * (target.getView().getSize() - uiBg.getSize()));
+
+    target.draw(uiBg);
+
+    // render window label
+    sf::Text uiLabel("Oh dear - Bob has been knocked out!", GameAssets::Get().gameFont, 16);
+    uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width),
+        20.0f));
+    uiLabel.setColor(sf::Color(255, 50, 50));
+
+    Helper::RenderTextWithDropShadow(target, uiLabel);
+
+    // render sacrifice labels
+    sf::Text uiSacrificeLabel1("However, not all hope is lost!", GameAssets::Get().gameFont, 10);
+    uiSacrificeLabel1.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeLabel1.getGlobalBounds().width), 60.0f));
+    uiSacrificeLabel1.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiSacrificeLabel1);
+
+    sf::Text uiSacrificeLabel2("Bob can be revived, but at a price...", GameAssets::Get().gameFont, 10);
+    uiSacrificeLabel2.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeLabel2.getGlobalBounds().width), 80.0f));
+    uiSacrificeLabel2.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiSacrificeLabel2);
+
+    sf::Text uiSacrificeLabel3("You will lose the following things after you have been revived:", GameAssets::Get().gameFont, 8);
+    uiSacrificeLabel3.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeLabel3.getGlobalBounds().width), 110.0f));
+    uiSacrificeLabel3.setColor(sf::Color(255, 145, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiSacrificeLabel3);
+
+    // render sacrifice items labels
+    auto pInv = player->GetInventory();
+
+    float sacrificeListItemY = 130.0f;
+
+    // render list labels
+    for (int i = 0; i < 5; ++i) {
+        sf::Text uiSacrificeItemLabel(std::string(), GameAssets::Get().gameFont, 8);
+        uiSacrificeItemLabel.setColor(sf::Color(255, 255, 255));
+
+        if (i == 0) {
+            // lose mana
+            uiSacrificeItemLabel.setString("Any remaining Mana that you have");
+            uiSacrificeItemLabel.setColor(sf::Color(100, 100, 255));
+        }
+        else if (pInv) {
+            // lose items
+
+            if (i == 1) {
+                // lose magic item
+                if (!pInv->GetMagicWeapon() || pInv->GetMagicWeapon()->GetAmount() <= 0) {
+                    continue;
+                }
+
+                uiSacrificeItemLabel.setString("Your " + pInv->GetMagicWeapon()->GetItemName());
+            }
+            else if (i == 2) {
+                // lose armour item
+                if (!pInv->GetArmour() || pInv->GetArmour()->GetAmount() <= 0) {
+                    continue;
+                }
+
+                uiSacrificeItemLabel.setString("Your " + pInv->GetArmour()->GetItemName());
+            }
+            else if (i == 3) {
+                // lose health potions
+                if (!pInv->GetHealthPotions() || pInv->GetHealthPotions()->GetAmount() <= 0) {
+                    continue;
+                }
+
+                uiSacrificeItemLabel.setString("All of your Health Potions");
+                uiSacrificeItemLabel.setColor(sf::Color(255, 100, 100));
+            }
+            else if (i == 4) {
+                // lose magic potions
+                if (!pInv->GetMagicPotions() || pInv->GetMagicPotions()->GetAmount() <= 0) {
+                    continue;
+                }
+
+                uiSacrificeItemLabel.setString("All of your Magic Potions");
+                uiSacrificeItemLabel.setColor(sf::Color(100, 100, 255));
+            }
+        }
+
+        uiSacrificeItemLabel.setPosition(uiBg.getPosition() +
+            sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeItemLabel.getGlobalBounds().width),
+            sacrificeListItemY));
+
+        Helper::RenderTextWithDropShadow(target, uiSacrificeItemLabel);
+
+        sacrificeListItemY += 12.0f;
+    }
+
+    // render confirm label
+    sf::Text uiConfirmLabel("Press ENTER to be revived.", GameAssets::Get().gameFont, 8);
+    uiConfirmLabel.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiConfirmLabel.getGlobalBounds().width), 220.0f));
+    uiConfirmLabel.setColor(sf::Color(255, 255, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
+}
+
+
 void Game::RenderUIMenu(sf::RenderTarget& target)
 {
     sf::RectangleShape menuBack(target.getView().getSize());
@@ -1076,7 +1303,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
     menuCreds.setPosition(0.5f * (target.getView().getSize().x - menuCreds.getGlobalBounds().width),
         125.0f);
 
-    Helper::RenderTextWithDropShadow(target, menuCreds, sf::Vector2f(5.0f, 5.0f));
+    Helper::RenderTextWithDropShadow(target, menuCreds);
 
     sf::Text menuCont("Press ENTER to play!", GameAssets::Get().gameFont, 12);
     menuCont.setColor(sf::Color(255, 255, 0));
@@ -1237,7 +1464,12 @@ void Game::Render(sf::RenderTarget& target)
             RenderUIControls(target);
             RenderUIMessages(target);
 
-            if (displayedQuestion_) {
+            auto player = GetPlayerEntity();
+
+            if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
+                RenderUIRespawnSacrifice(target);
+            }
+            else if (displayedQuestion_) {
                 RenderUIDisplayedQuestion(target);
             }
             else {

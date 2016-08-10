@@ -10,7 +10,7 @@
 #include <SFML/Graphics/Sprite.hpp>
 
 #include "Entity.h"
-#include "IPlayerUsable.h"
+#include "PlayerUsable.h"
 #include "PlayerFacingDirection.h"
 
 /**
@@ -327,7 +327,7 @@ public:
 /**
 * Item entity
 */
-class ItemEntity : public UnitEntity, public IPlayerUsable
+class ItemEntity : public UnitEntity, public PlayerUsable
 {
     std::unique_ptr<Item> item_;
 
@@ -352,6 +352,22 @@ public:
             }
 
             return useText;
+        }
+        else {
+            return std::string();
+        }
+    }
+
+    inline virtual std::string GetCannotUseText() const override
+    {
+        if (item_ && item_->GetAmount() > 0) {
+            std::string cannotUseText = "You can't carry another " + item_->GetItemName();
+
+            if (item_->GetAmount() > 1) {
+                cannotUseText += " x " + std::to_string(item_->GetAmount());
+            }
+
+            return cannotUseText;
         }
         else {
             return std::string();

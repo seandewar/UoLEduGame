@@ -536,7 +536,10 @@ void BasicEnemy::Tick()
                 }
             }
 
-            if (moveDir_.x != 0.0f || moveDir_.y != 0.0f || enemyType_ == EnemyType::MagicFlameBasic) {
+            // tick anim if moving or if certain enemy type
+            if (moveDir_.x != 0.0f || moveDir_.y != 0.0f ||
+                enemyType_ == EnemyType::MagicFlameBasic ||
+                enemyType_ == EnemyType::GhostBasic) {
                 anim_.Tick();
             }
 

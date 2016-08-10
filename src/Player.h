@@ -129,6 +129,8 @@ class PlayerEntity : public AliveEntity
     PlayerSelectedWeapon attackAnimWeapon_;
     sf::Time attackAnimTimeLeft_;
 
+    bool handledDeath_;
+
     void InitAnimations();
 
     void RestartAnimations();

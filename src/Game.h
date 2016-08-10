@@ -48,6 +48,7 @@ struct GameAssets
     sf::SoundBuffer specSoundBuffer;
     sf::SoundBuffer deathSoundBuffer;
     sf::SoundBuffer playerHurtSoundBuffer;
+    sf::SoundBuffer playerDeathSoundBuffer;
     sf::SoundBuffer pickupSoundBuffer;
     sf::SoundBuffer pickup2SoundBuffer;
     sf::SoundBuffer selectSoundBuffer;
@@ -71,6 +72,7 @@ struct GameAssets
     sf::Sound specSound;
     sf::Sound deathSound;
     sf::Sound playerHurtSound;
+    sf::Sound playerDeathSound;
     sf::Sound successSound;
     sf::Sound failureSound;
     sf::Sound openChestSound;
@@ -128,6 +130,7 @@ class Game
 
     AliveStats playerStats_;
     PlayerInventory playerInv_;
+    sf::Time playerCachedInvincTimeLeft_;
     EntityId playerId_;
 
     std::string scheduledLevelChangeFsNodePath_;
@@ -155,6 +158,7 @@ class Game
     void UpdateCamera(sf::RenderTarget& target);
 
     void HandleDisplayedQuestionInput();
+    void HandleRespawnSacrificeInput();
     void HandleUseInventory();
     void HandlePlayerMoveInput();
 
@@ -167,6 +171,7 @@ class Game
         Item* item, bool isHighlighted = false);
     void RenderUIPlayerInventory(sf::RenderTarget& target);
     void RenderUIDisplayedQuestion(sf::RenderTarget& target);
+    void RenderUIRespawnSacrifice(sf::RenderTarget& target);
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
     void RenderUIControls(sf::RenderTarget& target);
 

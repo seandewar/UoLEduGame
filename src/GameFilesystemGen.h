@@ -80,5 +80,7 @@ public:
 	~GameFilesystemGen();
 
 	std::unique_ptr<GameFilesystem> GenerateNewFilesystem();
+
+    inline RngInt GetSeed() const { return seed_; }
 };
 

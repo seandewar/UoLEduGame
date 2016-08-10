@@ -2,7 +2,7 @@
 
 #include "Entity.h"
 
-#include "IPlayerUsable.h"
+#include "PlayerUsable.h"
 #include "Item.h"
 
 /**
@@ -29,7 +29,7 @@ enum class ChestDropTableType
 /**
 * Chest entity class.
 */
-class ChestEntity : public UnitEntity, public IPlayerUsable
+class ChestEntity : public UnitEntity, public PlayerUsable
 {
     ChestType chestType_;
     ChestDropTableType chestDropTable_;

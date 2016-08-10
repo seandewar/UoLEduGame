@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Entity.h"
-#include "IPlayerUsable.h"
+#include "PlayerUsable.h"
 
 /**
 * The type of StairEntity
@@ -15,7 +15,7 @@ enum class StairEntityType
 /**
 * Base StairEntity class for stairs
 */
-class StairEntity : public UnitEntity, public IPlayerUsable
+class StairEntity : public UnitEntity, public PlayerUsable
 {
 public:
     StairEntity();

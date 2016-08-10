@@ -7,7 +7,7 @@
 #include "World.h"
 #include "Game.h"
 #include "Helper.h"
-#include "IPlayerUsable.h"
+#include "PlayerUsable.h"
 #include "Stairs.h"
 
 
@@ -112,7 +112,8 @@ inv_(nullptr),
 nextDir_(PlayerFacingDirection::Down),
 dir_(PlayerFacingDirection::Down),
 attackAnimTimeLeft_(sf::Time::Zero),
-useTarget_(false)
+useTarget_(false),
+handledDeath_(false)
 {
     SetSize(sf::Vector2f(12.0f, 12.0f));
     InitAnimations();
@@ -363,7 +364,7 @@ void PlayerEntity::HandleUseNearbyObjects()
 
     // use target from last tick if use key was pressed
     if (useTarget_ && targettedUsableEnt_ != InvalidId) {
-        auto usableEnt = dynamic_cast<IPlayerUsable*>(area->GetEntity(targettedUsableEnt_));
+        auto usableEnt = dynamic_cast<PlayerUsable*>(area->GetEntity(targettedUsableEnt_));
 
         if (usableEnt && usableEnt->IsUsable(GetAssignedId())) {
             usableEnt->Use(GetAssignedId());
@@ -374,14 +375,25 @@ void PlayerEntity::HandleUseNearbyObjects()
     auto entsInRange = area->GetWorldEntitiesInRange(GetCenterPosition(), useRange_);
 
     EntityId closestUsableEntId = InvalidId;
+    bool closestUsableEntIsCurrentlyUsable = false;
     float closestUsableEntDistSq = useRange_ * useRange_ + 1.0f;
 
     for (auto& eInfo : entsInRange) {
-        auto usableEnt = dynamic_cast<IPlayerUsable*>(area->GetEntity<WorldEntity>(eInfo.first));
+        auto usableEnt = dynamic_cast<PlayerUsable*>(area->GetEntity<WorldEntity>(eInfo.first));
 
-        if (usableEnt && usableEnt->IsUsable(GetAssignedId()) && eInfo.second < closestUsableEntDistSq) {
-            closestUsableEntId = eInfo.first;
-            closestUsableEntDistSq = eInfo.second;
+        if (usableEnt) {
+            bool currentlyUsable = usableEnt->IsUsable(GetAssignedId());
+            bool isCloser = eInfo.second < closestUsableEntDistSq;
+
+            // prioritise PlayerUsables that are currently usable over
+            // those that are currently unusable within the proximity of the player
+            if ((!closestUsableEntIsCurrentlyUsable && isCloser) ||
+                (!closestUsableEntIsCurrentlyUsable && currentlyUsable) ||
+                (closestUsableEntIsCurrentlyUsable && currentlyUsable && isCloser)) {
+                closestUsableEntId = eInfo.first;
+                closestUsableEntDistSq = eInfo.second;
+                closestUsableEntIsCurrentlyUsable = currentlyUsable;
+            }
         }
     }
 
@@ -435,10 +447,21 @@ void PlayerEntity::Tick()
         attackAnimTimeLeft_ = sf::Time::Zero;
         dir_ = PlayerFacingDirection::Down;
 
+        // handle death specific stuff for this
+        // death
+        if (!handledDeath_) {
+            GameAssets::Get().playerDeathSound.play();
+            Game::Get().AddMessage("Oh dear - you have been knocked out!", sf::Color(255, 0, 0));
+
+            handledDeath_ = true;
+        }
+
         deadAnim_.Tick();
     }
     else {
         // player is alive
+        handledDeath_ = false;
+
         HandleMovement();
         HandleUseNearbyObjects();
         TickAttackAnimation();
@@ -492,8 +515,13 @@ void PlayerEntity::Render(sf::RenderTarget& target)
 
     // check if we have armour to render
     if (inv_ && inv_->GetArmour() && inv_->GetArmour()->GetAmount() > 0) {
-        // if dead, render armour as if player is facing downwards
-        armourSprite = inv_->GetArmour()->GetPlayerSprite(isDead ? PlayerFacingDirection::Down : dir_);
+        // if dead, render armour as item
+        if (!isDead) {
+            armourSprite = inv_->GetArmour()->GetPlayerSprite(dir_);
+        }
+        else {
+            armourSprite = inv_->GetArmour()->GetSprite();
+        }
     }
 
     if (!isDead) {
@@ -508,7 +536,7 @@ void PlayerEntity::Render(sf::RenderTarget& target)
     if (!isDead) {
         // invincibility effect
         if (HasInvincibility()) {
-            sf::Color invincColor(255, 55, 55, Helper::GenerateRandomInt(0, 180));
+            sf::Color invincColor(255, 255, 255, Helper::GenerateRandomInt(0, 155));
             playerSprite.setColor(invincColor);
             armourSprite.setColor(invincColor);
         }

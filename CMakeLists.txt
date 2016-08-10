@@ -33,7 +33,7 @@ add_executable(UoLEduGame
     src/Animation.cpp
     src/Entity.h
     src/Entity.cpp
-    src/IPlayerUsable.h
+    src/PlayerUsable.h
     src/PlayerFacingDirection.h
     src/Player.h
     src/Player.cpp

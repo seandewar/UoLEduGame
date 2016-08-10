@@ -434,28 +434,28 @@ u32 MeleeWeapon::GetAttack() const
         return 100;
 
     case MeleeWeaponType::AdventurerSword:
-        return 135 + static_cast<u32>(50 * GetDifficultyMultiplier());
+        return 135 + static_cast<u32>(70 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::GraniteBlade:
         return 260 + static_cast<u32>(165 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::RoguesDagger:
-        return 70 + static_cast<u32>(42 * GetDifficultyMultiplier());
+        return 70 + static_cast<u32>(48 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::ShardBlade:
-        return 110 + static_cast<u32>(30 * GetDifficultyMultiplier());
+        return 130 + static_cast<u32>(55 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::ThornedSabre:
-        return 150 + static_cast<u32>(40 * GetDifficultyMultiplier());
+        return 150 + static_cast<u32>(45 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::Zeraleth:
-        return 115 + static_cast<u32>(38 * GetDifficultyMultiplier());
+        return 115 + static_cast<u32>(42 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::AntiBlobSpear:
-        return 105 + static_cast<u32>(36 * GetDifficultyMultiplier());
+        return 105 + static_cast<u32>(38 * GetDifficultyMultiplier());
 
     case MeleeWeaponType::RegenBlade:
-        return 125 + static_cast<u32>(40 * GetDifficultyMultiplier());
+        return 125 + static_cast<u32>(62 * GetDifficultyMultiplier());
     }
 }
 
@@ -502,7 +502,7 @@ sf::Time MeleeWeapon::GetUseDelay() const
         return sf::seconds(0.5f);
 
     case MeleeWeaponType::GraniteBlade:
-        return sf::seconds(1.5f);
+        return sf::seconds(1.15f);
 
     case MeleeWeaponType::RoguesDagger:
         return sf::seconds(0.25f);
@@ -608,7 +608,7 @@ void MeleeWeapon::Use(PlayerEntity* player)
             break;
 
         case MeleeWeaponType::ShardBlade:
-            if (Helper::GenerateRandomBool(1 / 5.5f)) {
+            if (Helper::GenerateRandomBool(1 / 10.0f)) {
                 GameAssets::Get().specSound.play();
                 ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack() * 2), DamageType::Magic);
             }
@@ -664,7 +664,7 @@ void MeleeWeapon::Use(PlayerEntity* player)
             
             if (player->GetStats()) {
                 player->GetStats()->SetMana(std::min(player->GetStats()->GetMaxMana(),
-                    player->GetStats()->GetMana() + Helper::GenerateRandomInt(1, 10)));
+                    player->GetStats()->GetMana() + Helper::GenerateRandomInt(1, 15)));
             }
             break;
         }
@@ -815,7 +815,7 @@ sf::Time MagicWeapon::GetUseDelay() const
         return sf::seconds(1.0f);
 
     case MagicWeaponType::InvincibilityStaff:
-        return sf::seconds(20.0f);
+        return sf::seconds(30.0f);
     }
 }
 
@@ -834,7 +834,7 @@ u32 MagicWeapon::GetManaCost() const
         return 300;
 
     case MagicWeaponType::InvincibilityStaff:
-        return 1000;
+        return 750;
     }
 }
 
@@ -871,7 +871,7 @@ void MagicWeapon::Use(PlayerEntity* player)
 
     // check for enough mana
     if (stats && stats->GetMana() < manaCost) {
-        Game::Get().AddMessage("You need " + std::to_string(manaCost) + " mana to use this.");
+        Game::Get().AddMessage("You need " + std::to_string(manaCost) + " Mana to use this.");
         return;
     }
     else {

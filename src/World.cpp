@@ -115,17 +115,25 @@ void WorldArea::Tick()
 	}
 
     // tick ents
-    for (auto it = ents_.begin(); it != ents_.end();) {
-        auto& ent = it->second;
+    for (auto& entInfo : ents_) {
+        auto& ent = entInfo.second;
         assert(ent);
 
         if (!ent->IsMarkedForDeletion()) {
             ent->Tick();
-            ++it;
+        }
+    }
+
+    // remove ents marked for deletion
+    for (auto it = ents_.begin(); it != ents_.end();) {
+        auto& ent = it->second;
+        assert(ent);
+
+        if (ent->IsMarkedForDeletion()) {
+            it = ents_.erase(it);
         }
         else {
-            auto isRemoved = RemoveEntity(it++->first);
-            assert(isRemoved);
+            ++it;
         }
     }
 }
@@ -474,11 +482,7 @@ bool WorldArea::RemoveEntity(EntityId id)
         return false;
     }
 
-    printf("Removing ent %s (ent id %u)\n", it->second->GetName().c_str(), id);
-    it->second->assignedArea_ = nullptr;
-    it->second->assignedId_ = Entity::InvalidId;
-    ents_.erase(it);
-
+    it->second->MarkForDeletion();
     return true;
 }
 

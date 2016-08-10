@@ -26,7 +26,6 @@ bool GameAssets::LoadAssets()
 
     // fonts
     LOAD_FROM_FILE(gameFont, "assets/PressStart2P.ttf");
-    //LOAD_FROM_FILE(gameFont, "assets/prstart.ttf");
     LOAD_FROM_FILE(altFont, "assets/prstart.ttf");
 
     // textures
@@ -40,6 +39,46 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(enemySpriteSheet, "assets/EnemySprites.png");
     LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/DamageTypeSprites.png");
     LOAD_FROM_FILE(effectSpriteSheet, "assets/EffectSprites.png");
+
+    // sound buffers
+    LOAD_FROM_FILE(drinkSoundBuffer, "assets/DrinkSound.wav");
+    LOAD_FROM_FILE(blastSoundBuffer, "assets/BlastSound.wav");
+    LOAD_FROM_FILE(drainSoundBuffer, "assets/DrainSound.wav");
+    LOAD_FROM_FILE(zeroBlastSoundBuffer, "assets/ZeroBlastSound.wav");
+    LOAD_FROM_FILE(hitSoundBuffer, "assets/HitSound.wav");
+    LOAD_FROM_FILE(specSoundBuffer, "assets/SpecSound.wav");
+    LOAD_FROM_FILE(deathSoundBuffer, "assets/DeathSound.wav");
+    LOAD_FROM_FILE(playerHurtSoundBuffer, "assets/PlayerHurtSound.wav");
+    LOAD_FROM_FILE(pickupSoundBuffer, "assets/PickupSound.wav");
+    LOAD_FROM_FILE(pickup2SoundBuffer, "assets/Pickup2Sound.wav");
+    LOAD_FROM_FILE(selectSoundBuffer, "assets/SelectSound.wav");
+    LOAD_FROM_FILE(attackSoundBuffer, "assets/AttackSound.wav");
+    LOAD_FROM_FILE(successSoundBuffer, "assets/SuccessSound.wav");
+    LOAD_FROM_FILE(failureSoundBuffer, "assets/FailureSound.wav");
+    LOAD_FROM_FILE(openChestSoundBuffer, "assets/OpenChestSound.wav");
+    LOAD_FROM_FILE(blockSoundBuffer, "assets/BlockSound.wav");
+    LOAD_FROM_FILE(armourPenSoundBuffer, "assets/ArmourPenSound.wav");
+    LOAD_FROM_FILE(invincibilitySoundBuffer, "assets/InvincibilitySound.wav");
+
+    // sounds init
+    selectSound.setBuffer(selectSoundBuffer);
+    drinkSound.setBuffer(drinkSoundBuffer);
+    blastSound.setBuffer(blastSoundBuffer);
+    drainSound.setBuffer(drainSoundBuffer);
+    zeroBlastSound.setBuffer(zeroBlastSoundBuffer);
+    pickupSound.setBuffer(pickupSoundBuffer);
+    artefactPickupSound.setBuffer(pickup2SoundBuffer);
+    attackSound.setBuffer(attackSoundBuffer);
+    hitSound.setBuffer(hitSoundBuffer);
+    specSound.setBuffer(specSoundBuffer);
+    deathSound.setBuffer(deathSoundBuffer);
+    playerHurtSound.setBuffer(playerHurtSoundBuffer);
+    successSound.setBuffer(successSoundBuffer);
+    failureSound.setBuffer(failureSoundBuffer);
+    openChestSound.setBuffer(openChestSoundBuffer);
+    blockSound.setBuffer(blockSoundBuffer);
+    armourPenSound.setBuffer(armourPenSoundBuffer);
+    invincibilitySound.setBuffer(invincibilitySoundBuffer);
 
     return true;
 }
@@ -219,6 +258,7 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
     ResetDisplayedQuestion();
     director_.PlayerChangedArea(currentArea);
 
+    GameAssets::Get().openChestSound.play();
     AddMessage("You are on floor " + GameFilesystem::GetNodePathString(*currentFsNode),
         sf::Color(255, 255, 0));
     return true;
@@ -346,26 +386,39 @@ void Game::HandleDisplayedQuestionInput()
     }
 
     // arrow keys
+    bool changedInput = false;
     if (Game::IsKeyPressedFromEvent(sf::Keyboard::Up)) {
         if (displayedQuestionSelectedChoice_-- <= 0) {
             displayedQuestionSelectedChoice_ = 2;
         }
+
+        changedInput = true;
     }
     else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Down)) {
         if (++displayedQuestionSelectedChoice_ > 2) {
             displayedQuestionSelectedChoice_ = 0;
         }
+
+        changedInput = true;
     }
 
     // number keys
     if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num1)) {
         displayedQuestionSelectedChoice_ = 0;
+        changedInput = true;
     }
     else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num2)) {
         displayedQuestionSelectedChoice_ = 1;
+        changedInput = true;
     }
     else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Num3)) {
         displayedQuestionSelectedChoice_ = 2;
+        changedInput = true;
+    }
+
+    // play changed input sound
+    if (changedInput) {
+        GameAssets::Get().selectSound.play();
     }
 
     // ENTER to select
@@ -373,9 +426,11 @@ void Game::HandleDisplayedQuestionInput()
         auto selectedChoice = displayedQuestionShuffledChoices_[displayedQuestionSelectedChoice_];
         
         if (selectedChoice == GameQuestionAnswerChoice::CorrectChoice) {
+            GameAssets::Get().successSound.play();
             director_.AnswerQuestionResult(GameQuestionAnswerResult::Correct, GetWorldArea());
         }
         else {
+            GameAssets::Get().failureSound.play();
             director_.AnswerQuestionResult(GameQuestionAnswerResult::Wrong, GetWorldArea());
         }
 
@@ -515,6 +570,8 @@ void Game::Tick()
         else if (state_ == GameState::Menu1) {
             // enter to start game
             if (Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+                GameAssets::Get().successSound.play();
+
                 if (!NewGame()) {
                     throw std::runtime_error("Failed to start new game!");
                 }
@@ -1014,10 +1071,17 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
 
     Helper::RenderTextWithDropShadow(target, menuTitleFs, sf::Vector2f(5.0f, 5.0f));
 
+    sf::Text menuCreds("By Sean Dewar", GameAssets::Get().altFont, 10);
+    menuCreds.setColor(sf::Color(200, 200, 200));
+    menuCreds.setPosition(0.5f * (target.getView().getSize().x - menuCreds.getGlobalBounds().width),
+        125.0f);
+
+    Helper::RenderTextWithDropShadow(target, menuCreds, sf::Vector2f(5.0f, 5.0f));
+
     sf::Text menuCont("Press ENTER to play!", GameAssets::Get().gameFont, 12);
     menuCont.setColor(sf::Color(255, 255, 0));
     menuCont.setPosition(0.5f * (target.getView().getSize().x - menuCont.getGlobalBounds().width),
-        140.0f);
+        155.0f);
 
     Helper::RenderTextWithDropShadow(target, menuCont);
 

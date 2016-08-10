@@ -38,6 +38,7 @@ void ChestEntity::Use(EntityId playerId)
                 switch (Game::Get().GetDirector().GetQuestionAnswerResult()) {
                 case GameQuestionAnswerResult::Unanswered:
                 case GameQuestionAnswerResult::Wrong:
+                    GameAssets::Get().selectSound.play();
                     Game::Get().SetDisplayedQuestion(Game::Get().GetDirector().GetCurrentQuestion());
                     return;
 
@@ -75,6 +76,7 @@ void ChestEntity::Use(EntityId playerId)
         }
 
         isOpened_ = true;
+        GameAssets::Get().openChestSound.play();
 
         // roll drop tables
         switch (chestDropTable_) {

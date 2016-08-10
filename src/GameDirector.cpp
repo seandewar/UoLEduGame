@@ -269,7 +269,10 @@ void GameDirector::RemoveAllEnemies(WorldArea* area)
         auto enemies = area->GetAllEntitiesOfType<Enemy>();
 
         for (auto id : enemies) {
-            area->RemoveEntity(id);
+            auto ent = area->GetEntity<Enemy>(id);
+            assert(ent);
+
+            ent->MarkForDeletion();
         }
     }
 }

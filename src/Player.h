@@ -124,6 +124,7 @@ class PlayerEntity : public AliveEntity
     Animation downAnim_;
     Animation leftAnim_;
     Animation rightAnim_;
+    Animation deadAnim_;
 
     PlayerSelectedWeapon attackAnimWeapon_;
     sf::Time attackAnimTimeLeft_;
@@ -131,7 +132,7 @@ class PlayerEntity : public AliveEntity
     void InitAnimations();
 
     void RestartAnimations();
-    void TickAnimations();
+    void TickMoveAnimations();
 
     void HandleMovement();
     void HandleUseNearbyObjects();

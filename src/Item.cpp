@@ -94,12 +94,13 @@ void PotionItem::Use(PlayerEntity* player)
     }
 
     auto stats = player->GetStats();
+    bool drankPotion = false;
 
     switch (potionType_) {
     case ItemType::HealthPotion:
         if (stats->GetHealth() < stats->GetMaxHealth()) {
             player->Heal(200);
-            RemoveAmount(1);
+            drankPotion = true;
 
             Game::Get().AddMessage("You drink a Health Potion.", sf::Color(255, 100, 100));
         }
@@ -111,7 +112,7 @@ void PotionItem::Use(PlayerEntity* player)
     case ItemType::MagicPotion:
         if (stats->GetMana() < stats->GetMaxMana()) {
             stats->SetMana(std::min(stats->GetMaxMana(), stats->GetMana() + 250));
-            RemoveAmount(1);
+            drankPotion = true;
 
             Game::Get().AddMessage("You drink a Magic Potion.", sf::Color(100, 100, 255));
         }
@@ -119,6 +120,11 @@ void PotionItem::Use(PlayerEntity* player)
             Game::Get().AddMessage("You are already have full Mana.");
         }
         break;
+    }
+
+    if (drankPotion) {
+        RemoveAmount(1);
+        GameAssets::Get().drinkSound.play();
     }
 }
 
@@ -496,7 +502,7 @@ sf::Time MeleeWeapon::GetUseDelay() const
         return sf::seconds(0.5f);
 
     case MeleeWeaponType::GraniteBlade:
-        return sf::seconds(2.2f);
+        return sf::seconds(1.5f);
 
     case MeleeWeaponType::RoguesDagger:
         return sf::seconds(0.25f);
@@ -581,6 +587,9 @@ void MeleeWeapon::Use(PlayerEntity* player)
             continue;
         }
 
+        // hit sound
+        GameAssets::Get().hitSound.play();
+
         // damage enemy
         switch (meleeWeaponType_) {
         default:
@@ -600,6 +609,7 @@ void MeleeWeapon::Use(PlayerEntity* player)
 
         case MeleeWeaponType::ShardBlade:
             if (Helper::GenerateRandomBool(1 / 5.5f)) {
+                GameAssets::Get().specSound.play();
                 ent->Attack(Helper::GenerateRandomInt<u32>(0, GetAttack() * 2), DamageType::Magic);
             }
             else {
@@ -628,6 +638,7 @@ void MeleeWeapon::Use(PlayerEntity* player)
         case MeleeWeaponType::Zeraleth:
             if (ent->GetEnemyType() == EnemyType::GhostBasic ||
                 ent->GetEnemyType() == EnemyType::SkeletonBasic) {
+                GameAssets::Get().specSound.play();
                 ent->Attack(Helper::GenerateRandomInt<u32>(GetAttack() * 2, GetAttack() * 4), DamageType::Other);
             }
             else {
@@ -640,6 +651,7 @@ void MeleeWeapon::Use(PlayerEntity* player)
                 ent->GetEnemyType() == EnemyType::BlueBlobBasic ||
                 ent->GetEnemyType() == EnemyType::RedBlobBasic ||
                 ent->GetEnemyType() == EnemyType::PinkBlobBasic) {
+                GameAssets::Get().specSound.play();
                 ent->Attack(Helper::GenerateRandomInt<u32>(GetAttack() * 4, GetAttack() * 5), DamageType::Other);
             }
             else {
@@ -677,6 +689,7 @@ void MeleeWeapon::Use(PlayerEntity* player)
         }
     }
 
+    GameAssets::Get().attackSound.play();
     player->PlayAttackAnimation(PlayerSelectedWeapon::Melee);
 }
 
@@ -902,16 +915,19 @@ void MagicWeapon::Use(PlayerEntity* player)
                 case MagicWeaponType::ZeroStaff:
                     effectId = player->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Zero,
                         sf::seconds(0.5f));
+                    GameAssets::Get().zeroBlastSound.play();
                     break;
 
                 case MagicWeaponType::FlameStaff:
                     effectId = player->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Flame,
                         sf::seconds(0.5f));
+                    GameAssets::Get().blastSound.play();
                     break;
 
                 case MagicWeaponType::DrainStaff:
                     effectId = player->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Drain,
                         sf::seconds(0.5f));
+                    GameAssets::Get().drainSound.play();
                     break;
                 }
 
@@ -928,9 +944,11 @@ void MagicWeapon::Use(PlayerEntity* player)
     case MagicWeaponType::InvincibilityStaff:
         // invincibility
         player->SetInvincibility(sf::seconds(10.0f));
+        GameAssets::Get().invincibilitySound.play();
         break;
     }
 
+    GameAssets::Get().attackSound.play();
     player->PlayAttackAnimation(PlayerSelectedWeapon::Magic);
 }
 

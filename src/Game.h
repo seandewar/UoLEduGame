@@ -7,6 +7,8 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/System/Time.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <SFML/Audio/SoundBuffer.hpp>
+#include <SFML/Audio/Sound.hpp>
 
 #include "GameFilesystem.h"
 #include "GameDirector.h"
@@ -37,6 +39,44 @@ struct GameAssets
     sf::Texture enemySpriteSheet;
     sf::Texture damageTypesSpriteSheet;
     sf::Texture effectSpriteSheet;
+
+    sf::SoundBuffer drinkSoundBuffer;
+    sf::SoundBuffer blastSoundBuffer;
+    sf::SoundBuffer drainSoundBuffer;
+    sf::SoundBuffer zeroBlastSoundBuffer;
+    sf::SoundBuffer hitSoundBuffer;
+    sf::SoundBuffer specSoundBuffer;
+    sf::SoundBuffer deathSoundBuffer;
+    sf::SoundBuffer playerHurtSoundBuffer;
+    sf::SoundBuffer pickupSoundBuffer;
+    sf::SoundBuffer pickup2SoundBuffer;
+    sf::SoundBuffer selectSoundBuffer;
+    sf::SoundBuffer attackSoundBuffer;
+    sf::SoundBuffer successSoundBuffer;
+    sf::SoundBuffer failureSoundBuffer;
+    sf::SoundBuffer openChestSoundBuffer;
+    sf::SoundBuffer blockSoundBuffer;
+    sf::SoundBuffer armourPenSoundBuffer;
+    sf::SoundBuffer invincibilitySoundBuffer;
+
+    sf::Sound selectSound;
+    sf::Sound drinkSound;
+    sf::Sound blastSound;
+    sf::Sound drainSound;
+    sf::Sound zeroBlastSound;
+    sf::Sound pickupSound;
+    sf::Sound artefactPickupSound;
+    sf::Sound attackSound;
+    sf::Sound hitSound;
+    sf::Sound specSound;
+    sf::Sound deathSound;
+    sf::Sound playerHurtSound;
+    sf::Sound successSound;
+    sf::Sound failureSound;
+    sf::Sound openChestSound;
+    sf::Sound blockSound;
+    sf::Sound armourPenSound;
+    sf::Sound invincibilitySound;
 
     bool LoadAssets();
 

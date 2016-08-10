@@ -93,6 +93,7 @@ void PlayerInventory::GiveItem(Item* item)
 
     if (receivedAmount > 0) {
         Game::Get().AddMessage("You received " + item->GetItemName() + " x " + std::to_string(receivedAmount));
+        GameAssets::Get().pickupSound.play();
     }
     else if (receivedAmount == 0) {
         Game::Get().AddMessage("You cannot carry another " + item->GetItemName() + ".");
@@ -125,7 +126,7 @@ PlayerEntity::~PlayerEntity()
 
 void PlayerEntity::UseInventorySlot(PlayerInventorySlot slot)
 {
-    if (!inv_) {
+    if (!inv_ || (GetStats() && !GetStats()->IsAlive())) {
         return;
     }
 
@@ -227,6 +228,7 @@ bool PlayerEntity::PickupItem(Item* item)
         Game::Get().AddMessage("Congratulations - you've found an artefact piece!");
         Game::Get().GetDirector().FoundArtefact(GetAssignedArea());
         item->SetAmount(0);
+        GameAssets::Get().artefactPickupSound.play();
     }
 
     inv_->GiveItem(item);
@@ -255,6 +257,11 @@ void PlayerEntity::InitAnimations()
     rightAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(48, 16, 16, 16)));
     rightAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(48, 0, 16, 16)));
     rightAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(48, 32, 16, 16)));
+
+    deadAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(0, 48, 16, 16)), sf::seconds(0.25f));
+    deadAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(16, 48, 16, 16)), sf::seconds(0.25f));
+    deadAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(32, 48, 16, 16)), sf::seconds(0.25f));
+    deadAnim_.AddFrame(sf::Sprite(GameAssets::Get().playerSpriteSheet, sf::IntRect(48, 48, 16, 16)), sf::seconds(0.5f));
 }
 
 
@@ -292,7 +299,7 @@ void PlayerEntity::RestartAnimations()
 }
 
 
-void PlayerEntity::TickAnimations()
+void PlayerEntity::TickMoveAnimations()
 {
     upAnim_.Tick();
     downAnim_.Tick();
@@ -336,7 +343,7 @@ void PlayerEntity::HandleMovement()
     }
     else {
         Game::Get().ResetDisplayedQuestion(); // reset question interface if we moved and it's on
-        TickAnimations();
+        TickMoveAnimations();
     }
 
     MoveWithCollision(moveDir_ * GetStats()->GetMoveSpeed() * Game::FrameTimeStep.asSeconds());
@@ -412,47 +419,70 @@ u32 PlayerEntity::Attack(u32 initialDamage, DamageType source)
 u32 PlayerEntity::DamageWithoutInvincibility(u32 amount, DamageType source)
 {
     Game::Get().ResetDisplayedQuestion(); // interrupt question interface if it's up
+    GameAssets::Get().playerHurtSound.play();
     return AliveEntity::Damage(amount, source);
 }
 
 
 void PlayerEntity::Tick()
 {
-    HandleMovement();
-    HandleUseNearbyObjects();
-    TickAttackAnimation();
+    if (GetStats() && !GetStats()->IsAlive()) {
+        // player is dead
+        useTarget_ = false;
+        targettedUsableEnt_ = InvalidId;
+        moveDir_ = sf::Vector2f();
+        invincibilityTime_ = sf::Time::Zero;
+        attackAnimTimeLeft_ = sf::Time::Zero;
+        dir_ = PlayerFacingDirection::Down;
 
-    if (inv_) {
-        inv_->TickUseDelays();
+        deadAnim_.Tick();
     }
+    else {
+        // player is alive
+        HandleMovement();
+        HandleUseNearbyObjects();
+        TickAttackAnimation();
 
-    if (invincibilityTime_ > sf::Time::Zero) {
-        invincibilityTime_ -= Game::FrameTimeStep;
+        if (inv_) {
+            inv_->TickUseDelays();
+        }
+
+        if (invincibilityTime_ > sf::Time::Zero) {
+            invincibilityTime_ -= Game::FrameTimeStep;
+        }
     }
 }
 
 
 void PlayerEntity::Render(sf::RenderTarget& target)
 {
+    bool isDead = GetStats() && !GetStats()->IsAlive();
+
     // player sprite
     sf::Sprite playerSprite;
 
-    switch (dir_) {
-    case PlayerFacingDirection::Up:
-        playerSprite = upAnim_.GetCurrentFrame();
-        break;
+    if (!isDead) {
+        switch (dir_) {
+        case PlayerFacingDirection::Up:
+            playerSprite = upAnim_.GetCurrentFrame();
+            break;
 
-    case PlayerFacingDirection::Down:
-        playerSprite = downAnim_.GetCurrentFrame();
-        break;
+        case PlayerFacingDirection::Down:
+            playerSprite = downAnim_.GetCurrentFrame();
+            break;
 
-    case PlayerFacingDirection::Left:
-        playerSprite = leftAnim_.GetCurrentFrame();
-        break;
+        case PlayerFacingDirection::Left:
+            playerSprite = leftAnim_.GetCurrentFrame();
+            break;
 
-    case PlayerFacingDirection::Right:
-        playerSprite = rightAnim_.GetCurrentFrame();
-        break;
+        case PlayerFacingDirection::Right:
+            playerSprite = rightAnim_.GetCurrentFrame();
+            break;
+        }
+    }
+    else {
+        // display dead sprite
+        playerSprite = deadAnim_.GetCurrentFrame();
     }
 
     playerSprite.setPosition(GetCenterPosition() - sf::Vector2f(8.0f, 8.0f));
@@ -460,61 +490,79 @@ void PlayerEntity::Render(sf::RenderTarget& target)
     // armour sprite
     sf::Sprite armourSprite;
 
+    // check if we have armour to render
     if (inv_ && inv_->GetArmour() && inv_->GetArmour()->GetAmount() > 0) {
-        armourSprite = inv_->GetArmour()->GetPlayerSprite(dir_);
+        // if dead, render armour as if player is facing downwards
+        armourSprite = inv_->GetArmour()->GetPlayerSprite(isDead ? PlayerFacingDirection::Down : dir_);
     }
 
-    armourSprite.setPosition(playerSprite.getPosition());
-
-    // invincibility effect
-    if (HasInvincibility()) {
-        playerSprite.setColor(sf::Color(255, 55, 55, 90));
-        armourSprite.setColor(sf::Color(255, 55, 55, 90));
+    if (!isDead) {
+        // render armour to match head pos
+        armourSprite.setPosition(playerSprite.getPosition());
     }
     else {
-        playerSprite.setColor(sf::Color(255, 255, 255, 255));
-        armourSprite.setColor(sf::Color(255, 255, 255, 255));
+        // armour meeds to look like its been dropped in death
+        armourSprite.setPosition(playerSprite.getPosition() + sf::Vector2f(-12.5f, 10.0f));
     }
 
-    // render weapon if attacking
-    sf::Sprite weaponSprite;
+    if (!isDead) {
+        // invincibility effect
+        if (HasInvincibility()) {
+            sf::Color invincColor(255, 55, 55, Helper::GenerateRandomInt(0, 180));
+            playerSprite.setColor(invincColor);
+            armourSprite.setColor(invincColor);
+        }
+        else {
+            playerSprite.setColor(sf::Color(255, 255, 255, 255));
+            armourSprite.setColor(sf::Color(255, 255, 255, 255));
+        }
 
-    if (inv_ && attackAnimTimeLeft_ > sf::Time::Zero) {
-        auto weapon = inv_->GetWeaponItem(attackAnimWeapon_);
+        // render weapon if attacking
+        sf::Sprite weaponSprite;
 
-        if (weapon && weapon->GetAmount() > 0) {
-            weaponSprite = weapon->GetSprite();
+        if (inv_ && attackAnimTimeLeft_ > sf::Time::Zero) {
+            auto weapon = inv_->GetWeaponItem(attackAnimWeapon_);
 
-            switch (dir_) {
-            case PlayerFacingDirection::Up:
-                weaponSprite.setPosition(GetPosition() + sf::Vector2f(-6.0f, -8.0f));
-                break;
+            if (weapon && weapon->GetAmount() > 0) {
+                weaponSprite = weapon->GetSprite();
 
-            case PlayerFacingDirection::Right:
-                weaponSprite.setRotation(90.0f);
-                weaponSprite.setPosition(GetPosition() + sf::Vector2f(22.0f, 0.0f));
-                break;
+                switch (dir_) {
+                case PlayerFacingDirection::Up:
+                    weaponSprite.setPosition(GetPosition() + sf::Vector2f(-6.0f, -8.0f));
+                    break;
 
-            case PlayerFacingDirection::Down:
-                weaponSprite.setRotation(180.0f);
-                weaponSprite.setPosition(GetPosition() + sf::Vector2f(18.0f, 23.0f));
-                break;
+                case PlayerFacingDirection::Right:
+                    weaponSprite.setRotation(90.0f);
+                    weaponSprite.setPosition(GetPosition() + sf::Vector2f(22.0f, 0.0f));
+                    break;
 
-            case PlayerFacingDirection::Left:
-                weaponSprite.setRotation(-90.0f);
-                weaponSprite.setPosition(GetPosition() + sf::Vector2f(-10.0f, 16.0f));
-                break;
+                case PlayerFacingDirection::Down:
+                    weaponSprite.setRotation(180.0f);
+                    weaponSprite.setPosition(GetPosition() + sf::Vector2f(18.0f, 23.0f));
+                    break;
+
+                case PlayerFacingDirection::Left:
+                    weaponSprite.setRotation(-90.0f);
+                    weaponSprite.setPosition(GetPosition() + sf::Vector2f(-10.0f, 16.0f));
+                    break;
+                }
             }
         }
-    }
 
-    if (dir_ == PlayerFacingDirection::Down || dir_ == PlayerFacingDirection::Left) {
-        target.draw(playerSprite);
-        target.draw(armourSprite);
-        target.draw(weaponSprite);
+        if (dir_ == PlayerFacingDirection::Down || dir_ == PlayerFacingDirection::Left) {
+            target.draw(playerSprite);
+            target.draw(armourSprite);
+            target.draw(weaponSprite);
+        }
+        else {
+            target.draw(weaponSprite);
+            target.draw(playerSprite);
+            target.draw(armourSprite);
+        }
     }
     else {
-        target.draw(weaponSprite);
+        // if we're dead, just render the armour and player sprite as
+        // if the player was facing downwards
         target.draw(playerSprite);
         target.draw(armourSprite);
     }

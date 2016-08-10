@@ -220,7 +220,7 @@ void BasicEnemy::ResetStats(float difficultyMul)
 
     case EnemyType::MagicFlameBasic:
         stats_->SetMaxHealth(50 + static_cast<u32>(45 * difficultyMul));
-        stats_->SetMoveSpeed(70.0f);
+        stats_->SetMoveSpeed(62.5f);
         stats_->SetMeleeAttack(0);
         stats_->SetMagicAttack(115 + static_cast<u32>(55 * difficultyMul));
         stats_->SetMeleeDefence(85 + static_cast<u32>(62 * difficultyMul));
@@ -563,6 +563,7 @@ void BasicEnemy::Tick()
         }
         else if (!droppedItems_) {
             // dead - drop if we havent already
+            GameAssets::Get().deathSound.play();
             HandleDropItems();
         }
     }

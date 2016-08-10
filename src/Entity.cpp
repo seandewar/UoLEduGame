@@ -271,11 +271,19 @@ u32 AliveEntity::Damage(u32 amount, DamageType source)
         auto damageText = GetAssignedArea()->GetEntity<DamageTextEntity>(
             GetAssignedArea()->EmplaceEntity<DamageTextEntity>(source, amount, sf::Color(255, 75, 75)));
         damageText->SetCenterPosition(GetCenterPosition() + sf::Vector2f(0.0f, 4.0f));
-
-        return amount;
+    }
+    else {
+        return 0;
     }
 
-    return 0;
+    if (amount <= 0) {
+        GameAssets::Get().blockSound.play();
+    }
+    else if (source == DamageType::Other) {
+        GameAssets::Get().armourPenSound.play();
+    }
+
+    return amount;
 }
 
 

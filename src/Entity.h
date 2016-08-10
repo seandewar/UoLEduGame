@@ -33,7 +33,14 @@ public:
     inline virtual void Tick() { }
     inline virtual void Render(sf::RenderTarget& target) { }
 
-    inline void MarkForDeletion() { markedForDeletion_ = true; }
+    inline void MarkForDeletion()
+    {
+        if (!markedForDeletion_) {
+            printf("Marked for delete ent %s (ent id %u)\n", GetName().c_str(), assignedId_);
+            markedForDeletion_ = true;
+        }
+    }
+
     inline bool IsMarkedForDeletion() const { return markedForDeletion_; }
 
     inline EntityId GetAssignedId() const { return assignedId_; }

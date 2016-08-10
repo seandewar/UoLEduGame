@@ -259,7 +259,7 @@ public:
         }
 
         auto it = ents_.find(id);
-        if (it == ents_.end()) {
+        if (it == ents_.end() || it->second->IsMarkedForDeletion()) {
             return nullptr;
         }
 
@@ -274,7 +274,7 @@ public:
         }
 
         auto it = ents_.find(id);
-        if (it == ents_.end()) {
+        if (it == ents_.end() || it->second->IsMarkedForDeletion()) {
             return nullptr;
         }
 
@@ -294,6 +294,10 @@ public:
         for (auto& entInfo : ents_) {
             auto& ent = entInfo.second;
             assert(ent);
+
+            if (ent->IsMarkedForDeletion()) {
+                continue;
+            }
 
             auto worldEnt = dynamic_cast<T*>(ent.get());
 
@@ -319,9 +323,16 @@ public:
         std::vector<EntityId> result;
 
         for (auto& entInfo : ents_) {
-            auto worldEnt = dynamic_cast<T*>(entInfo.second.get());
+            auto& ent = entInfo.second;
+            assert(ent);
 
-            if (worldEnt && rect.intersects(worldEnt->GetRectangle())) {
+            if (ent->IsMarkedForDeletion()) {
+                continue;
+            }
+
+            auto worldEnt = dynamic_cast<T*>(ent.get());
+
+            if (worldEnt && !worldEnt->IsMarkedForDeletion() && rect.intersects(worldEnt->GetRectangle())) {
                 result.emplace_back(entInfo.first);
             }
         }
@@ -333,9 +344,16 @@ public:
     EntityId GetFirstWorldEntInRectangle(const sf::FloatRect& rect) const
     {
         for (auto& entInfo : ents_) {
-            auto worldEnt = dynamic_cast<T*>(entInfo.second.get());
+            auto& ent = entInfo.second;
+            assert(ent);
 
-            if (worldEnt && rect.intersects(worldEnt->GetRectangle())) {
+            if (ent->IsMarkedForDeletion()) {
+                continue;
+            }
+
+            auto worldEnt = dynamic_cast<T*>(ent.get());
+
+            if (worldEnt && !worldEnt->IsMarkedForDeletion() && rect.intersects(worldEnt->GetRectangle())) {
                 return entInfo.first;
             }
         }
@@ -352,7 +370,14 @@ public:
         std::vector<EntityId> result;
 
         for (auto& entInfo : ents_) {
-            if (dynamic_cast<T*>(entInfo.second.get())) {
+            auto& ent = entInfo.second;
+            assert(ent);
+
+            if (ent->IsMarkedForDeletion()) {
+                continue;
+            }
+
+            if (dynamic_cast<T*>(ent.get())) {
                 result.emplace_back(entInfo.first);
             }
         }
@@ -364,7 +389,14 @@ public:
     EntityId GetFirstEntityOfType() const
     {
         for (auto& entInfo : ents_) {
-            if (dynamic_cast<T*>(entInfo.second.get())) {
+            auto& ent = entInfo.second;
+            assert(ent);
+
+            if (ent->IsMarkedForDeletion()) {
+                continue;
+            }
+
+            if (dynamic_cast<T*>(ent.get())) {
                 return entInfo.first;
             }
         }
@@ -378,7 +410,10 @@ public:
 
         for (auto& entInfo : ents_) {
             assert(entInfo.second);
-            result.emplace_back(entInfo.first);
+
+            if (!entInfo.second->IsMarkedForDeletion()) {
+                result.emplace_back(entInfo.first);
+            }
         }
 
         return result;

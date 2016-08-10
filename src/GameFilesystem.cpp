@@ -73,31 +73,31 @@ void GameFilesystemNode::SetName(const std::string& name)
 std::string GameFilesystem::GetNodePathString(const GameFilesystemNode& node)
 {
 	// traverse through nodes to root directory OR root of graph (if no root directory)
-	std::vector<const GameFilesystemNode*> nodesInPathToRoot;
+    std::vector<std::string> nodeNamesInPathToRoot;
 
 	// currentNode will be null if the last node was the root of the graph
 	// (or the root directory)!
 	auto currentNode = &node;
 	while (currentNode) {
-		nodesInPathToRoot.emplace_back(currentNode);
-		currentNode = currentNode->GetParent();
+        bool isRootNode = currentNode->IsRootDirectoryNode();
+
+        nodeNamesInPathToRoot.emplace_back(isRootNode ? "/" : currentNode->GetName());
+        currentNode = isRootNode ? nullptr : currentNode->GetParent();
 	}
 
 	// construct path str
 	std::ostringstream oss;
-	for (auto it = nodesInPathToRoot.rbegin(); it != nodesInPathToRoot.rend(); ++it) {
-		if ((*it)->IsRootDirectoryNode()) {
-			oss << '/';
-		}
-		else {
-			oss << (*it)->GetName();
 
-			// don't print a slash at the end of the string
-			if (it != nodesInPathToRoot.rend() - 1) {
-				oss << '/';
-			}
-		}
-	}
+    for (auto it = nodeNamesInPathToRoot.rbegin(); it != nodeNamesInPathToRoot.rend(); ++it) {
+        oss << *it;
+
+        // don't print a slash at the beginning OR end of the string
+        // (beginning of string will already have a slash for root)
+        if (it != nodeNamesInPathToRoot.rbegin() &&
+            it != nodeNamesInPathToRoot.rend() - 1) {
+            oss << '/';
+        }
+    }
 
 	return oss.str();
 }

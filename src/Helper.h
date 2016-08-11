@@ -8,6 +8,8 @@
 
 #include "Types.h"
 
+#define PI 3.14159265358979323846f
+
 /**
 * Contains Helper functions.
 */
@@ -100,5 +102,10 @@ public:
     {
         target.setView(sf::View(sf::FloatRect(0.0f, 0.0f,
             static_cast<float>(target.getSize().x), static_cast<float>(target.getSize().y))));
+    }
+
+    static inline float RadiansToDegrees(float rad)
+    {
+        return rad / PI * 180.0f;
     }
 };

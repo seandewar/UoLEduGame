@@ -294,7 +294,8 @@ enum class MagicWeaponType
     ZeroStaff,
     FlameStaff,
     DrainStaff,
-    InvincibilityStaff
+    InvincibilityStaff,
+    WaveStaff
 };
 
 /**

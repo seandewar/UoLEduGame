@@ -32,15 +32,19 @@ WorldEntity::~WorldEntity()
 }
 
 
-void WorldEntity::MoveWithCollision(const sf::Vector2f& d)
+bool WorldEntity::MoveWithCollision(const sf::Vector2f& d)
 {
+    bool noCollision = true;
     auto area = GetAssignedArea();
+
     if (area) {
         sf::Vector2f newPos;
-        area->TryCollisionRectMove(GetRectangle(), d, &newPos);
+        noCollision = area->TryCollisionRectMove(GetRectangle(), d, &newPos);
 
         SetPosition(newPos);
     }
+
+    return noCollision;
 }
 
 
@@ -180,6 +184,13 @@ void DamageEffectEntity::SetupAnimations()
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 32, 16, 16)));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 32, 16, 16)));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 32, 16, 16)));
+        break;
+
+    case DamageEffectType::Wave:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(0, 48, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 48, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 48, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 48, 16, 16)));
         break;
     }
 }

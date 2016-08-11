@@ -136,8 +136,11 @@ void ChestEntity::Use(EntityId playerId)
                 else if (randNum <= 40) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
                 }
-                else {
+                else if (randNum <= 75) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
+                }
+                else {
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::WaveStaff);
                 }
 
                 weapon->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());

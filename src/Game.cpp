@@ -40,10 +40,12 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/DamageTypeSprites.png");
     LOAD_FROM_FILE(effectSpriteSheet, "assets/EffectSprites.png");
     LOAD_FROM_FILE(sparkleSpriteSheet, "assets/SparkleSprites.png");
+    LOAD_FROM_FILE(projectileSpriteSheet, "assets/ProjectileSprites.png");
 
     // sound buffers
     LOAD_FROM_FILE(drinkSoundBuffer, "assets/DrinkSound.wav");
     LOAD_FROM_FILE(blastSoundBuffer, "assets/BlastSound.wav");
+    LOAD_FROM_FILE(waveSoundBuffer, "assets/WaveSound.wav");
     LOAD_FROM_FILE(drainSoundBuffer, "assets/DrainSound.wav");
     LOAD_FROM_FILE(zeroBlastSoundBuffer, "assets/ZeroBlastSound.wav");
     LOAD_FROM_FILE(hitSoundBuffer, "assets/HitSound.wav");
@@ -66,6 +68,7 @@ bool GameAssets::LoadAssets()
     selectSound.setBuffer(selectSoundBuffer);
     drinkSound.setBuffer(drinkSoundBuffer);
     blastSound.setBuffer(blastSoundBuffer);
+    waveSound.setBuffer(waveSoundBuffer);
     drainSound.setBuffer(drainSoundBuffer);
     zeroBlastSound.setBuffer(zeroBlastSoundBuffer);
     pickupSound.setBuffer(pickupSoundBuffer);
@@ -532,7 +535,8 @@ void Game::HandleUseInventory()
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2) || sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
         player->UseInventorySlot(PlayerInventorySlot::MagicWeapon);
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3)) {
+    
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3)) {
         player->UseInventorySlot(PlayerInventorySlot::HealthPotions);
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4)) {
@@ -589,12 +593,21 @@ void Game::Tick()
                 // kill / revive player
                 auto pstats = player->GetStats();
 
-                if (pstats && Game::IsKeyPressedFromEvent(sf::Keyboard::K)) {
-                    if (pstats->IsAlive()) {
-                        player->DamageWithoutInvincibility(pstats->GetHealth());
+                if (pstats) {
+                    // toggle player killed/alive
+                    if (Game::IsKeyPressedFromEvent(sf::Keyboard::K)) {
+                        if (pstats->IsAlive()) {
+                            player->DamageWithoutInvincibility(pstats->GetHealth());
+                        }
+                        else {
+                            pstats->SetHealth(pstats->GetMaxHealth());
+                        }
                     }
-                    else {
+
+                    // restore hp and mana if in debug mode (if not dead)
+                    if (pstats->IsAlive()) {
                         pstats->SetHealth(pstats->GetMaxHealth());
+                        pstats->SetMana(pstats->GetMaxMana());
                     }
                 }
 
@@ -612,18 +625,21 @@ void Game::Tick()
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F6)) {
-                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::WaveStaff);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F7)) {
-                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F8)) {
-                    armour = std::make_unique<Armour>(ArmourType::WarriorHelmet);
+                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F9)) {
-                    armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
+                    armour = std::make_unique<Armour>(ArmourType::WarriorHelmet);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F10)) {
+                    armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F11)) {
                     armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
                 }
 

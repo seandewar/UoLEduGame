@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Enemy.h"
 #include "Helper.h"
+#include "Projectile.h"
 
 
 Item::Item(int maxAmount, int amount)
@@ -492,12 +493,12 @@ sf::Time MeleeWeapon::GetUseDelay() const
     case MeleeWeaponType::AdventurerSword:
     case MeleeWeaponType::Zeraleth:
     case MeleeWeaponType::RegenBlade:
+    case MeleeWeaponType::ShardBlade:
         return sf::seconds(0.4f);
 
     case MeleeWeaponType::AntiBlobSpear:
         return sf::seconds(0.345f);
 
-    case MeleeWeaponType::ShardBlade:
     case MeleeWeaponType::ThornedSabre:
         return sf::seconds(0.5f);
 
@@ -762,6 +763,10 @@ magicWeaponType_(magicWeaponType)
     case MagicWeaponType::InvincibilityStaff:
         SetItemName("Staff of Protection");
         break;
+
+    case MagicWeaponType::WaveStaff:
+        SetItemName("Wave Staff");
+        break;
     }
 }
 
@@ -782,10 +787,13 @@ u32 MagicWeapon::GetAttack() const
         return 0;
 
     case MagicWeaponType::FlameStaff:
-        return 300 + static_cast<u32>(125 * GetDifficultyMultiplier());
+        return 300 + static_cast<u32>(150 * GetDifficultyMultiplier());
 
     case MagicWeaponType::DrainStaff:
         return 40 + static_cast<u32>(28 * GetDifficultyMultiplier());
+
+    case MagicWeaponType::WaveStaff:
+        return 350 + static_cast<u32>(200 * GetDifficultyMultiplier());
     }
 }
 
@@ -798,6 +806,10 @@ float MagicWeapon::GetAttackRange() const
     case MagicWeaponType::FlameStaff:
     case MagicWeaponType::DrainStaff:
         return 125.0f;
+
+    // range is in projectile time (s)
+    case MagicWeaponType::WaveStaff:
+        return 2.0f;
 
     case MagicWeaponType::InvincibilityStaff:
         return 0.0f;
@@ -814,6 +826,9 @@ sf::Time MagicWeapon::GetUseDelay() const
     case MagicWeaponType::DrainStaff:
         return sf::seconds(1.0f);
 
+    case MagicWeaponType::WaveStaff:
+        return sf::seconds(0.8f);
+
     case MagicWeaponType::InvincibilityStaff:
         return sf::seconds(30.0f);
     }
@@ -829,6 +844,9 @@ u32 MagicWeapon::GetManaCost() const
 
     case MagicWeaponType::FlameStaff:
         return 200;
+
+    case MagicWeaponType::WaveStaff:
+        return 100;
 
     case MagicWeaponType::DrainStaff:
         return 300;
@@ -856,6 +874,9 @@ std::string MagicWeapon::GetShortDescription() const
 
     case MagicWeaponType::InvincibilityStaff:
         return "Grants 10s of invincibility";
+
+    case MagicWeaponType::WaveStaff:
+        return "Fires a powerful projectile";
     }
 }
 
@@ -872,6 +893,7 @@ void MagicWeapon::Use(PlayerEntity* player)
     // check for enough mana
     if (stats && stats->GetMana() < manaCost) {
         Game::Get().AddMessage("You need " + std::to_string(manaCost) + " Mana to use this.");
+        SetUseDelayTimeLeft(sf::seconds(0.5f));
         return;
     }
     else {
@@ -946,6 +968,38 @@ void MagicWeapon::Use(PlayerEntity* player)
         player->SetInvincibility(sf::seconds(10.0f));
         GameAssets::Get().invincibilitySound.play();
         break;
+
+    case MagicWeaponType::WaveStaff:
+        // projectile
+        sf::Vector2f projectileDir;
+
+        switch (player->GetFacingDirection()) {
+        case PlayerFacingDirection::Up:
+            projectileDir = sf::Vector2f(0.0f, -1.0f);
+            break;
+
+        case PlayerFacingDirection::Down:
+            projectileDir = sf::Vector2f(0.0f, 1.0f);
+            break;
+
+        case PlayerFacingDirection::Left:
+            projectileDir = sf::Vector2f(-1.0f, 0.0f);
+            break;
+
+        case PlayerFacingDirection::Right:
+            projectileDir = sf::Vector2f(1.0f, 0.0f);
+            break;
+        }
+
+        auto projectile = player->GetAssignedArea()->GetEntity<ProjectileEntity>(
+            player->GetAssignedArea()->EmplaceEntity<ProjectileEntity>(ProjectileType::PlayerMagicWave, projectileDir));
+        assert(projectile);
+
+        projectile->SetCenterPosition(player->GetCenterPosition() + projectileDir * 8.0f);
+        projectile->SetAttack(Helper::GenerateRandomInt<u32>(0, GetAttack()));
+
+        GameAssets::Get().waveSound.play();
+        break;
     }
 
     GameAssets::Get().attackSound.play();
@@ -972,6 +1026,10 @@ sf::Sprite MagicWeapon::GetSprite() const
 
     case MagicWeaponType::InvincibilityStaff:
         weaponSprite.setTextureRect(sf::IntRect(64, 16, 16, 16));
+        break;
+
+    case MagicWeaponType::WaveStaff:
+        weaponSprite.setTextureRect(sf::IntRect(80, 16, 16, 16));
         break;
 
     default:

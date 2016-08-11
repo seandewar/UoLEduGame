@@ -34,13 +34,13 @@ todo   = scheduled
 [Collision with ents func?]
 [Basic Enemy Entity that follows]
 >[Different Enemy Ents] more?
-?projectiles
+[projectiles]
 [Objective system finished + floor nav] 
 [Chest class rolls items when opened (dungeon gen only spawns special items in chest)]
-[game state, menu,] >win & [death + penalty]
+>[game state, menu,] win & [death + penalty]
 [GameFilesystemGen usr & lib & mnt & media]
 [Procedural ent alivestats based on difficulty and seed]
 [Questions for each item with UI and chest trigger]
 [altar + BETTER ALTAR SPRITE!!!1 Maybe change artefacts to pages & altar to tp book!!?!?!?]
 >Boss?
->[AUDIO]
+[AUDIO]

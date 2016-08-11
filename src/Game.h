@@ -40,9 +40,11 @@ struct GameAssets
     sf::Texture damageTypesSpriteSheet;
     sf::Texture effectSpriteSheet;
     sf::Texture sparkleSpriteSheet;
+    sf::Texture projectileSpriteSheet;
 
     sf::SoundBuffer drinkSoundBuffer;
     sf::SoundBuffer blastSoundBuffer;
+    sf::SoundBuffer waveSoundBuffer;
     sf::SoundBuffer drainSoundBuffer;
     sf::SoundBuffer zeroBlastSoundBuffer;
     sf::SoundBuffer hitSoundBuffer;
@@ -64,6 +66,7 @@ struct GameAssets
     sf::Sound selectSound;
     sf::Sound drinkSound;
     sf::Sound blastSound;
+    sf::Sound waveSound;
     sf::Sound drainSound;
     sf::Sound zeroBlastSound;
     sf::Sound pickupSound;

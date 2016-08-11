@@ -39,6 +39,8 @@ add_executable(UoLEduGame
     src/Player.cpp
     src/Enemy.h
     src/Enemy.cpp
+    src/Projectile.h
+    src/Projectile.cpp
     src/Item.h
     src/Item.cpp
     src/Chest.h

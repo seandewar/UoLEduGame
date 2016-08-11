@@ -462,8 +462,11 @@ void BasicEnemy::HandleDropItems()
 
             auto randNum = Helper::GenerateRandomInt(1, 100);
 
-            if (randNum <= 60) {
+            if (randNum <= 50) {
                 weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
+            }
+            else if (randNum <= 75) {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::WaveStaff);
             }
             else {
                 weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);

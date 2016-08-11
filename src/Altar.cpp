@@ -4,6 +4,40 @@
 #include "Helper.h"
 
 
+SparkleEntity::SparkleEntity() :
+WorldEntity()
+{
+    SetSize(sf::Vector2f(16.0f, 16.0f));
+
+    anim_.AddFrame(sf::Sprite(GameAssets::Get().sparkleSpriteSheet, sf::IntRect(0, 0, 16, 16)), sf::seconds(0.25f));
+    anim_.AddFrame(sf::Sprite(GameAssets::Get().sparkleSpriteSheet, sf::IntRect(16, 0, 16, 16)), sf::seconds(0.25f));
+    anim_.AddFrame(sf::Sprite(GameAssets::Get().sparkleSpriteSheet, sf::IntRect(32, 0, 16, 16)), sf::seconds(0.25f));
+    anim_.AddFrame(sf::Sprite(GameAssets::Get().sparkleSpriteSheet, sf::IntRect(48, 0, 16, 16)), sf::seconds(0.5f));
+
+    anim_.SetCurrentFrame(Helper::GenerateRandomInt<std::size_t>(0, anim_.GetFrameCount() - 1));
+}
+
+
+SparkleEntity::~SparkleEntity()
+{
+}
+
+
+void SparkleEntity::Tick()
+{
+    anim_.Tick();
+}
+
+
+void SparkleEntity::Render(sf::RenderTarget& target)
+{
+    sf::Sprite sparkleSprite(anim_.GetCurrentFrame());
+    sparkleSprite.setPosition(GetPosition());
+
+    target.draw(sparkleSprite);
+}
+
+
 AltarEntity::AltarEntity() :
 UnitEntity()
 {

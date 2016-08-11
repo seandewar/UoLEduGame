@@ -39,6 +39,7 @@ struct GameAssets
     sf::Texture enemySpriteSheet;
     sf::Texture damageTypesSpriteSheet;
     sf::Texture effectSpriteSheet;
+    sf::Texture sparkleSpriteSheet;
 
     sf::SoundBuffer drinkSoundBuffer;
     sf::SoundBuffer blastSoundBuffer;

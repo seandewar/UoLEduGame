@@ -39,6 +39,7 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(enemySpriteSheet, "assets/EnemySprites.png");
     LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/DamageTypeSprites.png");
     LOAD_FROM_FILE(effectSpriteSheet, "assets/EffectSprites.png");
+    LOAD_FROM_FILE(sparkleSpriteSheet, "assets/SparkleSprites.png");
 
     // sound buffers
     LOAD_FROM_FILE(drinkSoundBuffer, "assets/DrinkSound.wav");

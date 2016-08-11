@@ -154,6 +154,17 @@ bool DungeonAreaGen::PlaceEmptyRoom(WorldArea& area, Rng& rng, u32 topX, u32 top
             }
             else {
                 area.SetTile(x, y, floorType);
+
+                // place sparkles in gold room
+                if (goldRoom) {
+                    if (((y - topY) % 4 == 0 && (x - topX) % 4 == 0) ||
+                        ((y - topY) % 4 == 2 && (x - topX) % 4 == 2)) {
+                        auto sparkleEnt = area.GetEntity<SparkleEntity>(area.EmplaceEntity<SparkleEntity>());
+                        assert(sparkleEnt);
+
+                        sparkleEnt->SetPosition(sf::Vector2f(BaseTile::TileSize.x * x, BaseTile::TileSize.y * y));
+                    }
+                }
             }
         }
     }
@@ -500,7 +511,7 @@ bool DungeonAreaGen::PlaceDownStairs(WorldArea& area, Rng& rng)
                     );
 
                 if (area.CheckEntRectangleWalkable(desiredArea) &&
-                    area.GetFirstWorldEntInRectangle(desiredArea) == Entity::InvalidId) {
+                    area.GetFirstWorldEntInRectangle<UnitEntity>(desiredArea) == Entity::InvalidId) {
                     auto downstairEnt = area.GetEntity<DownStairEntity>(
                         area.EmplaceEntity<DownStairEntity>(childNode->GetName()));
                     
@@ -541,7 +552,7 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
                     );
 
                 if (area.CheckEntRectangleWalkable(desiredArea) &&
-                    area.GetFirstWorldEntInRectangle(desiredArea) == Entity::InvalidId) {
+                    area.GetFirstWorldEntInRectangle<UnitEntity>(desiredArea) == Entity::InvalidId) {
                     ChestType chestType;
 
                     switch (Helper::GenerateRandomInt(rng, 0, 2)) {
@@ -734,11 +745,13 @@ std::unique_ptr<WorldArea> DungeonAreaGen::GenerateNewArea(u32 w, u32 h)
     printf("DungeonAreaGen: Generating new area for node '%s'\n", GameFilesystem::GetNodePathString(node_).c_str());
 
     Rng rng(genSeed_);
-	auto area = std::make_unique<WorldArea>(&node_, w, h);
+    std::unique_ptr<WorldArea> area;
 
     int genTryCount = 0;
     while (true) {
         ++genTryCount;
+
+        area = std::make_unique<WorldArea>(&node_, w, h);
 
         currentStructureCount_ = 0;
         activePassages_.clear();
@@ -764,8 +777,6 @@ std::unique_ptr<WorldArea> DungeonAreaGen::GenerateNewArea(u32 w, u32 h)
             printf("DungeonAreaGen: Finished area generation: %d structure(s) [excludes start room]\n", currentStructureCount_);
             break;
         }
-
-        area->ClearTiles();
     }
 
 	return area;

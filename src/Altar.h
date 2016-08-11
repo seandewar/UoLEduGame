@@ -4,6 +4,23 @@
 #include "PlayerUsable.h"
 
 /**
+* Sparkles ent class.
+*/
+class SparkleEntity : public WorldEntity
+{
+    Animation anim_;
+
+public:
+    SparkleEntity();
+    virtual ~SparkleEntity();
+
+    virtual void Tick() override;
+    virtual void Render(sf::RenderTarget& target) override;
+
+    inline virtual std::string GetName() const override { return "SparkleEntity"; }
+};
+
+/**
 * Altar ent class.
 */
 class AltarEntity : public UnitEntity, public PlayerUsable

@@ -96,7 +96,8 @@ const sf::Time Game::FrameTimeStep = sf::microseconds(16667);
 Game::Game() :
 debugMode_(false),
 playerId_(Entity::InvalidId),
-state_(GameState::Menu1)
+state_(GameState::Menu1),
+mapMode_(false)
 {
     // add these so that they can be shuffled when the display question UI is invoked.
     displayedQuestionShuffledChoices_.emplace_back(GameQuestionAnswerChoice::CorrectChoice);
@@ -274,6 +275,7 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
 
     ResetDisplayedQuestion();
     director_.PlayerChangedArea(currentArea);
+    mapMode_ = false;
 
     GameAssets::Get().openChestSound.play();
     AddMessage("You are on floor " + GameFilesystem::GetNodePathString(*currentFsNode),
@@ -358,6 +360,7 @@ bool Game::NewGame()
 
     ResetPlayerStats();
     state_ = GameState::InGame;
+    mapMode_ = false;
     return true;
 }
 
@@ -372,12 +375,18 @@ void Game::UpdateCamera(sf::RenderTarget& target)
             area->GetRenderView().setCenter(0.5f * area->GetWidth() * BaseTile::TileSize.x,
                 0.5f * area->GetHeight() * BaseTile::TileSize.y);
         }
-        else {
-            area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 300.0f));
-        }
+        else if (state_ == GameState::InGame) {
+            if (mapMode_) {
+                // zoomed out for map mode
+                area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 1400.0f));
+            }
+            else {
+                area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 350.0f));
+            }
 
-        if (playerId_ != Entity::InvalidId) {
-            area->CenterViewOnWorldEntity(playerId_);
+            if (playerId_ != Entity::InvalidId) {
+                area->CenterViewOnWorldEntity(playerId_);
+            }
         }
     }
 }
@@ -490,12 +499,6 @@ void Game::HandleRespawnSacrificeInput()
                 pInv->GetMagicWeapon()->SetAmount(0);
             }
 
-            if (pInv->GetArmour() && pInv->GetArmour()->GetAmount() > 0) {
-                // armour weapon
-                AddMessage("You lose your " + pInv->GetArmour()->GetItemName(), sf::Color(100, 0, 0));
-                pInv->GetArmour()->SetAmount(0);
-            }
-
             if (pInv->GetHealthPotions() && pInv->GetHealthPotions()->GetAmount() > 0) {
                 // health potions
                 AddMessage("You lose your Health Potions", sf::Color(100, 0, 0));
@@ -517,6 +520,7 @@ void Game::HandleRespawnSacrificeInput()
 
         pstats->SetHealth(pstats->GetMaxHealth()); // restore health for respawn
         player->SetInvincibility(sf::seconds(5.0f)); // invincibility period so we're not insta dead again
+        mapMode_ = false; // force player out of map mode... maybe for convienience...?
     }
 }
 
@@ -657,6 +661,11 @@ void Game::Tick()
 
         // handle state specific input
         if (state_ == GameState::InGame) {
+            // handle map mode toggle
+            if (Game::IsKeyPressedFromEvent(sf::Keyboard::M) || Game::IsKeyPressedFromEvent(sf::Keyboard::Tab)) {
+                mapMode_ = !mapMode_;
+            }
+
             // handle input for player inputs, interfaces or inventory
             HandlePlayerMoveInput();
 
@@ -831,16 +840,23 @@ void Game::RenderUIControls(sf::RenderTarget& target)
     sf::Text moveControls("Press W, A, S, D to move", GameAssets::Get().gameFont, 8);
     moveControls.setColor(sf::Color(255, 255, 0));
     moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
-        target.getView().getSize().y - 85.0f);
+        target.getView().getSize().y - 100.0f);
 
     Helper::RenderTextWithDropShadow(target, moveControls);
 
     sf::Text invControls("Press 1-4 to use inventory item", GameAssets::Get().gameFont, 8);
     invControls.setColor(sf::Color(255, 255, 0));
     invControls.setPosition(target.getSize().x - invControls.getGlobalBounds().width - 5.0f,
-        target.getView().getSize().y - 70.0f);
+        target.getView().getSize().y - 85.0f);
 
     Helper::RenderTextWithDropShadow(target, invControls);
+
+    sf::Text mapControls("Press M or TAB to toggle map mode", GameAssets::Get().gameFont, 8);
+    mapControls.setColor(sf::Color(255, 255, 0));
+    mapControls.setPosition(target.getSize().x - mapControls.getGlobalBounds().width - 5.0f,
+        target.getView().getSize().y - 70.0f);
+
+    Helper::RenderTextWithDropShadow(target, mapControls);
 }
 
 
@@ -1226,7 +1242,7 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
     float sacrificeListItemY = 130.0f;
 
     // render list labels
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 4; ++i) {
         sf::Text uiSacrificeItemLabel(std::string(), GameAssets::Get().gameFont, 8);
         uiSacrificeItemLabel.setColor(sf::Color(255, 255, 255));
 
@@ -1247,14 +1263,6 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
                 uiSacrificeItemLabel.setString("Your " + pInv->GetMagicWeapon()->GetItemName());
             }
             else if (i == 2) {
-                // lose armour item
-                if (!pInv->GetArmour() || pInv->GetArmour()->GetAmount() <= 0) {
-                    continue;
-                }
-
-                uiSacrificeItemLabel.setString("Your " + pInv->GetArmour()->GetItemName());
-            }
-            else if (i == 3) {
                 // lose health potions
                 if (!pInv->GetHealthPotions() || pInv->GetHealthPotions()->GetAmount() <= 0) {
                     continue;
@@ -1263,7 +1271,7 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
                 uiSacrificeItemLabel.setString("All of your Health Potions");
                 uiSacrificeItemLabel.setColor(sf::Color(255, 100, 100));
             }
-            else if (i == 4) {
+            else if (i == 3) {
                 // lose magic potions
                 if (!pInv->GetMagicPotions() || pInv->GetMagicPotions()->GetAmount() <= 0) {
                     continue;
@@ -1290,6 +1298,22 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
     uiConfirmLabel.setColor(sf::Color(255, 255, 0));
 
     Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
+}
+
+
+void Game::RenderUIMapMode(sf::RenderTarget& target)
+{
+    sf::Text mapLabel("You are in Map Mode.", GameAssets::Get().gameFont, 16);
+    mapLabel.setColor(sf::Color(255, 255, 255));
+    mapLabel.setPosition(5.0f, target.getView().getSize().y - 40.0f);
+
+    Helper::RenderTextWithDropShadow(target, mapLabel);
+
+    sf::Text mapControls("Press M or TAB to disable.", GameAssets::Get().gameFont, 10);
+    mapControls.setColor(sf::Color(255, 255, 0));
+    mapControls.setPosition(5.0f, target.getView().getSize().y - 20.0f);
+
+    Helper::RenderTextWithDropShadow(target, mapControls);
 }
 
 
@@ -1477,9 +1501,16 @@ void Game::Render(sf::RenderTarget& target)
             RenderUILocation(target);
             RenderUIObjective(target);
             RenderUIPlayerStats(target);
-            RenderUIPlayerInventory(target);
-            RenderUIControls(target);
-            RenderUIMessages(target);
+
+            // hide some ui if in map mode to reduce screen clutter
+            if (mapMode_) {
+                RenderUIMapMode(target);
+            }
+            else {
+                RenderUIPlayerInventory(target);
+                RenderUIMessages(target);
+                RenderUIControls(target);
+            }
 
             auto player = GetPlayerEntity();
 

@@ -130,6 +130,8 @@ class Game
     std::unique_ptr<GameFilesystem> worldFs_;
 	std::unique_ptr<World> world_;
 
+    bool mapMode_;
+
     GameDirector director_;
 
     AliveStats playerStats_;
@@ -178,6 +180,7 @@ class Game
     void RenderUIRespawnSacrifice(sf::RenderTarget& target);
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
     void RenderUIControls(sf::RenderTarget& target);
+    void RenderUIMapMode(sf::RenderTarget& target);
 
     void RenderUIMenu(sf::RenderTarget& target);
 
@@ -228,6 +231,8 @@ public:
     inline void SetLevelChange(const std::string& fsNodePath) { scheduledLevelChangeFsNodePath_ = fsNodePath; }
 
     inline GameDirector& GetDirector() { return director_; }
+
+    inline bool IsInMapMode() const { return mapMode_; }
 
     inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
     inline bool IsInDebugMode() const { return debugMode_; }

@@ -18,6 +18,10 @@ timeLeft_(sf::seconds(2.0f))
     float speed = 1.0f;
 
     switch (projectileType_) {
+    case ProjectileType::EnemyMagicWave:
+        speed = 125.0f;
+        break;
+
     case ProjectileType::PlayerMagicWave:
         speed = 200.0f;
         break;
@@ -42,6 +46,13 @@ void ProjectileEntity::SetupAnimations()
         anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(16, 0, 16, 16)), sf::seconds(0.1f));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(32, 0, 16, 16)), sf::seconds(0.1f));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(48, 0, 16, 16)), sf::seconds(0.1f));
+        break;
+
+    case ProjectileType::EnemyMagicWave:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(0, 16, 16, 16)), sf::seconds(0.1f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(16, 16, 16, 16)), sf::seconds(0.1f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(32, 16, 16, 16)), sf::seconds(0.1f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(48, 16, 16, 16)), sf::seconds(0.1f));
         break;
     }
 }
@@ -107,12 +118,14 @@ void ProjectileEntity::Tick()
             switch (projectileType_) {
             default:
             case ProjectileType::PlayerMagicWave:
+            case ProjectileType::EnemyMagicWave:
                 isCollision = true;
                 hitEnt->Attack(GetAttack(), DamageType::Magic);
 
                 // hit effect
                 auto effectEnt = hitEnt->GetAssignedArea()->GetEntity<DamageEffectEntity>(
-                    hitEnt->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(DamageEffectType::Wave,
+                    hitEnt->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(
+                    projectileType_ == ProjectileType::PlayerMagicWave ? DamageEffectType::PlayerWave : DamageEffectType::EnemyWave,
                     sf::seconds(0.5f)));
                 effectEnt->SetCenterPosition(hitEnt->GetCenterPosition());
 

@@ -6,6 +6,7 @@
 
 #include "Game.h"
 #include "Helper.h"
+#include "Projectile.h"
 
 
 Enemy::Enemy() :
@@ -24,7 +25,7 @@ void Enemy::Render(sf::RenderTarget& target)
 {
     auto area = GetAssignedArea();
 
-    if (!area) {
+    if (!area || Game::Get().IsInMapMode()) {
         return;
     }
 
@@ -37,7 +38,7 @@ void Enemy::Render(sf::RenderTarget& target)
 
         if (maxHealth > 0) {
             // render health bar bg
-            auto healthBarBg = std::make_unique<sf::RectangleShape>(sf::Vector2f(22.0f, 3.0f));
+            auto healthBarBg = std::make_unique<sf::RectangleShape>(sf::Vector2f(26.0f, 3.0f));
             healthBarBg->setFillColor(sf::Color(20, 20, 20));
             healthBarBg->setPosition(GetCenterPosition().x - 0.5f * healthBarBg->getSize().x, GetPosition().y - 4.0f);
             healthBarBg->setOutlineThickness(0.5f);
@@ -80,7 +81,9 @@ droppedItems_(false)
         enemyType_ != EnemyType::RedBlobBasic &&
         enemyType_ != EnemyType::PinkBlobBasic &&
         enemyType_ != EnemyType::GhostBasic &&
-        enemyType_ != EnemyType::MagicFlameBasic) {
+        enemyType_ != EnemyType::MagicFlameBasic &&
+        enemyType_ != EnemyType::AncientWizardBasic &&
+        enemyType_ != EnemyType::DarkWizardBasic) {
         throw std::runtime_error("Bad BasicEnemy enemy type!");
     }
 
@@ -96,6 +99,8 @@ droppedItems_(false)
     case EnemyType::SkeletonBasic:
     case EnemyType::GhostBasic:
     case EnemyType::MagicFlameBasic:
+    case EnemyType::AncientWizardBasic:
+    case EnemyType::DarkWizardBasic:
         SetSize(sf::Vector2f(16.0f, 16.0f));
         break;
     }
@@ -150,6 +155,16 @@ void BasicEnemy::SetupAnimations()
     case EnemyType::MagicFlameBasic:
         anim_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(0, 96, 16, 16)), sf::seconds(0.2f));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 96, 16, 16)), sf::seconds(0.2f));
+        break;
+
+    case EnemyType::AncientWizardBasic:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(0, 112, 16, 16)), sf::seconds(0.4f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 112, 16, 16)), sf::seconds(0.4f));
+        break;
+
+    case EnemyType::DarkWizardBasic:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(0, 128, 16, 16)), sf::seconds(0.4f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 128, 16, 16)), sf::seconds(0.4f));
         break;
     }
 }
@@ -226,6 +241,24 @@ void BasicEnemy::ResetStats(float difficultyMul)
         stats_->SetMeleeDefence(85 + static_cast<u32>(62 * difficultyMul));
         stats_->SetMagicDefence(20 + static_cast<u32>(8 * difficultyMul));
         break;
+
+    case EnemyType::AncientWizardBasic:
+        stats_->SetMaxHealth(275 + static_cast<u32>(135 * difficultyMul));
+        stats_->SetMoveSpeed(40.0f);
+        stats_->SetMeleeAttack(65 + static_cast<u32>(35 * difficultyMul));
+        stats_->SetMagicAttack(90 + static_cast<u32>(48 * difficultyMul));
+        stats_->SetMeleeDefence(20 + static_cast<u32>(20 * difficultyMul));
+        stats_->SetMagicDefence(100 + static_cast<u32>(150 * difficultyMul));
+        break;
+
+    case EnemyType::DarkWizardBasic:
+        stats_->SetMaxHealth(275 + static_cast<u32>(135 * difficultyMul));
+        stats_->SetMoveSpeed(33.5f);
+        stats_->SetMeleeAttack(65 + static_cast<u32>(35 * difficultyMul));
+        stats_->SetMagicAttack(90 + static_cast<u32>(48 * difficultyMul));
+        stats_->SetMeleeDefence(20 + static_cast<u32>(20 * difficultyMul));
+        stats_->SetMagicDefence(90 + static_cast<u32>(125 * difficultyMul));
+        break;
     }
 
     stats_->SetHealth(stats_->GetMaxHealth());
@@ -241,6 +274,10 @@ float BasicEnemy::GetAggroDistance() const
 
     case EnemyType::SkeletonBasic:
         return 90.0f;
+
+    case EnemyType::AncientWizardBasic:
+    case EnemyType::DarkWizardBasic:
+        return 120.0f;
 
     case EnemyType::MagicFlameBasic:
         return 58.0f;
@@ -484,7 +521,103 @@ void BasicEnemy::HandleDropItems()
         }
         break;
 
-        // TODO give harder monsters chance to drop balance gear & staff of protection
+    case EnemyType::AncientWizardBasic:
+        // potions
+        if (Helper::GenerateRandomBool(1 / 7.0f)) {
+            itemsToDrop.emplace_back(std::make_unique<PotionItem>(ItemType::HealthPotion, 2));
+        }
+        if (Helper::GenerateRandomBool(1 / 7.0f)) {
+            itemsToDrop.emplace_back(std::make_unique<PotionItem>(ItemType::MagicPotion, 2));
+        }
+
+        // roll for magic weapon
+        if (Helper::GenerateRandomBool(1 / 10.0f)) {
+            std::unique_ptr<MagicWeapon> weapon;
+
+            auto randNum = Helper::GenerateRandomInt(1, 100);
+
+            if (randNum <= 10) {
+                // rare drop!
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
+            }
+            else if (randNum <= 70) {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::WaveStaff);
+            }
+            else if (randNum <= 85) {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
+            }
+            else {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
+            }
+
+            weapon->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+            itemsToDrop.emplace_back(std::move(weapon));
+        }
+
+        // roll for magic armour
+        if (Helper::GenerateRandomBool(1 / 10.0f)) {
+            std::unique_ptr<Armour> armour;
+
+            if (Helper::GenerateRandomBool(1 / 3.0f)) {
+                armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
+            }
+            else {
+                armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
+            }
+            
+            armour->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+            itemsToDrop.emplace_back(std::move(armour));
+        }
+        break;
+
+    case EnemyType::DarkWizardBasic:
+        // potions
+        if (Helper::GenerateRandomBool(1 / 7.0f)) {
+            itemsToDrop.emplace_back(std::make_unique<PotionItem>(ItemType::HealthPotion, 2));
+        }
+        if (Helper::GenerateRandomBool(1 / 7.0f)) {
+            itemsToDrop.emplace_back(std::make_unique<PotionItem>(ItemType::MagicPotion, 2));
+        }
+
+        // roll for magic weapon
+        if (Helper::GenerateRandomBool(1 / 9.0f)) {
+            std::unique_ptr<MagicWeapon> weapon;
+
+            auto randNum = Helper::GenerateRandomInt(1, 100);
+
+            if (randNum <= 15) {
+                // rare drop!
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
+            }
+            else if (randNum <= 70) {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::WaveStaff);
+            }
+            else if (randNum <= 85) {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
+            }
+            else {
+                weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
+            }
+
+            weapon->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+            itemsToDrop.emplace_back(std::move(weapon));
+        }
+
+        // roll for magic armour
+        if (Helper::GenerateRandomBool(1 / 9.0f)) {
+            std::unique_ptr<Armour> armour;
+
+            if (Helper::GenerateRandomBool(1 / 2.5f)) {
+                armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
+            }
+            else {
+                armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
+            }
+
+            armour->SetDifficultyMultiplier(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+            itemsToDrop.emplace_back(std::move(armour));
+        }
+        break;
     }
 
     // drop items below us
@@ -528,6 +661,37 @@ void BasicEnemy::Tick()
                 auto aggroMove = playerAggro->GetCenterPosition() - GetCenterPosition();
                 aggroMove /= sqrtf(aggroMove.x * aggroMove.x + aggroMove.y * aggroMove.y);
                 moveDir_ = aggroMove;
+
+                // chance to shoot player if aggro'd on them
+                if (enemyType_ == EnemyType::AncientWizardBasic &&
+                    Helper::GenerateRandomBool(0.3125f * Game::FrameTimeStep.asSeconds())) {
+                    auto projectileDir = moveDir_ + sf::Vector2f(Helper::GenerateRandomReal(-0.2f, 0.2f),
+                        Helper::GenerateRandomReal(-0.2f, 0.2f));
+
+                    auto projectile = area->GetEntity<ProjectileEntity>(
+                        area->EmplaceEntity<ProjectileEntity>(ProjectileType::EnemyMagicWave, projectileDir));
+                    assert(projectile);
+
+                    // push player and fire projectile
+                    projectile->SetCenterPosition(GetCenterPosition() + projectileDir * 8.0f);
+                    projectile->SetAttack(Helper::GenerateRandomInt<u32>(0, stats->GetMagicAttack()));
+
+                    GameAssets::Get().waveSound.play();
+                }
+                else if (enemyType_ == EnemyType::DarkWizardBasic &&
+                    Helper::GenerateRandomBool(0.2f * Game::FrameTimeStep.asSeconds())) {
+
+                    auto damageEffect = area->GetEntity<DamageEffectEntity>(area->EmplaceEntity<DamageEffectEntity>(
+                        DamageEffectType::EnemyBlackFlame, sf::seconds(0.5f)));
+                    damageEffect->SetCenterPosition(playerAggro->GetCenterPosition());
+
+                    // push player and damage them
+                    playerAggro->Attack(Helper::GenerateRandomInt<u32>(0, stats->GetMagicAttack()), DamageType::Magic);
+                    playerAggro->MoveWithCollision(sf::Vector2f(Helper::GenerateRandomReal(-8.0f, 8.0f),
+                        Helper::GenerateRandomReal(-8.0f, 8.0f)));
+
+                    GameAssets::Get().blastSound.play();
+                }
             }
             else {
                 // wander
@@ -620,6 +784,14 @@ void BasicEnemy::Render(sf::RenderTarget& target)
             case EnemyType::MagicFlameBasic:
                 enemySprite.setTextureRect(sf::IntRect(32, 96, 16, 16));
                 break;
+
+            case EnemyType::AncientWizardBasic:
+                enemySprite.setTextureRect(sf::IntRect(32, 112, 16, 16));
+                break;
+
+            case EnemyType::DarkWizardBasic:
+                enemySprite.setTextureRect(sf::IntRect(32, 128, 16, 16));
+                break;
             }
         }
 
@@ -658,5 +830,11 @@ std::string BasicEnemy::GetUnitName() const
 
     case EnemyType::MagicFlameBasic:
         return "Magic Flame";
+
+    case EnemyType::AncientWizardBasic:
+        return "Ancient Wizard";
+
+    case EnemyType::DarkWizardBasic:
+        return "Dark Wizard";
     }
 }

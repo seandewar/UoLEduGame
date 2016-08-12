@@ -130,10 +130,7 @@ void ChestEntity::Use(EntityId playerId)
 
                 auto randNum = Helper::GenerateRandomInt(1, 100);
 
-                if (randNum <= 10) {
-                    weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
-                }
-                else if (randNum <= 40) {
+                if (randNum <= 40) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
                 }
                 else if (randNum <= 75) {
@@ -241,15 +238,16 @@ void ChestEntity::Render(sf::RenderTarget& target)
 
         if (area) {
             auto chestText = std::make_unique<sf::Text>(chestFsNodeName_, GameAssets::Get().gameFont, 18);
-            chestText->setScale(0.15f, 0.15f);
-            chestText->setColor(isOpened_ ? sf::Color(150, 150, 150, 150) : sf::Color(255, 165, 0, 255));
+            chestText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.6f, 0.6f) : sf::Vector2f(0.15f, 0.15f));
+            chestText->setColor(isOpened_ ? sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150) : sf::Color(255, 165, 0, 255));
 
             auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
                 sf::Vector2f(0.5f * chestText->getGlobalBounds().width, 3.0f);
 
             chestText->setPosition(textPos);
 
-            area->AddFrameUIRenderable(Helper::GetTextDropShadow(*chestText, sf::Vector2f(0.5f, 0.5f),
+            area->AddFrameUIRenderable(Helper::GetTextDropShadow(*chestText,
+                Game::Get().IsInMapMode() ? sf::Vector2f(2.0f, 2.0f) : sf::Vector2f(0.5f, 0.5f),
                 isOpened_ ? sf::Color(0, 0, 0, 150) : sf::Color(0, 0, 0, 255)));
             area->AddFrameUIRenderable(chestText);
         }

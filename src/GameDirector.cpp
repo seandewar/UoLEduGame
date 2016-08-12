@@ -287,18 +287,20 @@ void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
 
         // select enemy types that can be spawned
         std::vector<EnemyType> spawnableEnemies;
-        spawnableEnemies.emplace_back(EnemyType::GreenBlobBasic);
-        
-        if (difficultyMul >= 1.0f) {
+
+        if (difficultyMul < 7.0f) {
+            spawnableEnemies.emplace_back(EnemyType::GreenBlobBasic);
+        }
+        if (difficultyMul >= 1.0f && difficultyMul < 8.0f) {
             spawnableEnemies.emplace_back(EnemyType::BlueBlobBasic);
         }
-        if (difficultyMul >= 2.0f) {
+        if (difficultyMul >= 2.0f && difficultyMul < 9.0f) {
             spawnableEnemies.emplace_back(EnemyType::RedBlobBasic);
         }
         if (difficultyMul >= 3.0f) {
             spawnableEnemies.emplace_back(EnemyType::PinkBlobBasic);
         }
-        if (difficultyMul >= 4.0f) {
+        if (difficultyMul >= 4.0f && difficultyMul < 10.0f) {
             spawnableEnemies.emplace_back(EnemyType::SkeletonBasic);
         }
         if (difficultyMul >= 5.0f) {
@@ -306,6 +308,12 @@ void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
         }
         if (difficultyMul >= 6.0f) {
             spawnableEnemies.emplace_back(EnemyType::MagicFlameBasic);
+        }
+        if (difficultyMul >= 7.0f) {
+            spawnableEnemies.emplace_back(EnemyType::AncientWizardBasic);
+        }
+        if (difficultyMul >= 9.0f) {
+            spawnableEnemies.emplace_back(EnemyType::DarkWizardBasic);
         }
 
         // try spawn enemies

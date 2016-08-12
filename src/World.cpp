@@ -224,9 +224,11 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
         playerEnt->Render(target);
     }
 
-    // render vignette
-    Helper::ResetTargetView(target);
-    RenderVignette(target);
+    // render vignette if not in map mode
+    if (!Game::Get().IsInMapMode()) {
+        Helper::ResetTargetView(target);
+        RenderVignette(target);
+    }
 
     // render frame ui renderables and clear list when done
     target.setView(renderView_);

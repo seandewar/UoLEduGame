@@ -17,7 +17,9 @@ enum class EnemyType
     RedBlobBasic,
     PinkBlobBasic,
     GhostBasic,
-    MagicFlameBasic
+    MagicFlameBasic,
+    AncientWizardBasic,
+    DarkWizardBasic
 };
 
 /**

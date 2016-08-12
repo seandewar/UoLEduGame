@@ -7,7 +7,8 @@
 */
 enum class ProjectileType
 {
-    PlayerMagicWave
+    PlayerMagicWave,
+    EnemyMagicWave
 };
 
 /**

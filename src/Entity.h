@@ -185,7 +185,9 @@ enum class DamageEffectType
     Zero,
     Flame,
     Drain,
-    Wave
+    PlayerWave,
+    EnemyWave,
+    EnemyBlackFlame
 };
 
 /**

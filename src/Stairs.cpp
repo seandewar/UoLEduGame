@@ -48,7 +48,7 @@ void UpStairEntity::Render(sf::RenderTarget& target)
 
     if (area) {
         auto stairTargetText = std::make_unique<sf::Text>("..", GameAssets::Get().gameFont, 18);
-        stairTargetText->setScale(0.15f, 0.15f);
+        stairTargetText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.6f, 0.6f) : sf::Vector2f(0.15f, 0.15f));
         stairTargetText->setColor(sf::Color(255, 255, 0));
 
         auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
@@ -56,7 +56,8 @@ void UpStairEntity::Render(sf::RenderTarget& target)
 
         stairTargetText->setPosition(textPos);
 
-        area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, sf::Vector2f(0.5f, 0.5f)));
+        area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, 
+            Game::Get().IsInMapMode() ? sf::Vector2f(2.0f, 2.0f) : sf::Vector2f(0.5f, 0.5f)));
         area->AddFrameUIRenderable(stairTargetText);
     }
 }
@@ -118,7 +119,7 @@ void DownStairEntity::Render(sf::RenderTarget& target)
 
         if (area) {
             auto stairTargetText = std::make_unique<sf::Text>(destinationFsNodeName_, GameAssets::Get().gameFont, 18);
-            stairTargetText->setScale(0.15f, 0.15f);
+            stairTargetText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.8f, 0.8f) : sf::Vector2f(0.15f, 0.15f));
             stairTargetText->setColor(sf::Color(255, 255, 0));
 
             auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
@@ -126,7 +127,8 @@ void DownStairEntity::Render(sf::RenderTarget& target)
 
             stairTargetText->setPosition(textPos);
 
-            area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, sf::Vector2f(0.5f, 0.5f)));
+            area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText,
+                Game::Get().IsInMapMode() ? sf::Vector2f(3.0f, 3.0f) : sf::Vector2f(0.5f, 0.5f)));
             area->AddFrameUIRenderable(stairTargetText);
         }
     }

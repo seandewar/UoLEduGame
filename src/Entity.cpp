@@ -186,11 +186,25 @@ void DamageEffectEntity::SetupAnimations()
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 32, 16, 16)));
         break;
 
-    case DamageEffectType::Wave:
+    case DamageEffectType::PlayerWave:
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(0, 48, 16, 16)));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 48, 16, 16)));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 48, 16, 16)));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 48, 16, 16)));
+        break;
+
+    case DamageEffectType::EnemyWave:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(0, 64, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 64, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 64, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 64, 16, 16)));
+        break;
+
+    case DamageEffectType::EnemyBlackFlame:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(0, 80, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 80, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 80, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 80, 16, 16)));
         break;
     }
 }

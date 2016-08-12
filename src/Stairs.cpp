@@ -18,6 +18,13 @@ StairEntity::~StairEntity()
 }
 
 
+bool StairEntity::IsAvailable() const
+{
+    return Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::BossFight &&
+        Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::Complete;
+}
+
+
 UpStairEntity::UpStairEntity() :
 StairEntity()
 {
@@ -34,7 +41,7 @@ void UpStairEntity::Render(sf::RenderTarget& target)
 {
     sf::Sprite stairSprite(GameAssets::Get().stairsSpriteSheet);
 
-    if (Game::Get().GetDirector().GetCurrentObjectiveType() == GameObjectiveType::BossFight) {
+    if (!IsAvailable()) {
         stairSprite.setTextureRect(sf::IntRect(16, 16, 16, 16));
     }
     else {
@@ -49,15 +56,31 @@ void UpStairEntity::Render(sf::RenderTarget& target)
     if (area) {
         auto stairTargetText = std::make_unique<sf::Text>("..", GameAssets::Get().gameFont, 18);
         stairTargetText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.6f, 0.6f) : sf::Vector2f(0.15f, 0.15f));
-        stairTargetText->setColor(sf::Color(255, 255, 0));
+
+        if (!IsAvailable()) {
+            stairTargetText->setColor(sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150));
+        }
+        else {
+            stairTargetText->setColor(sf::Color(255, 255, 0));
+        }
 
         auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
             sf::Vector2f(0.5f * stairTargetText->getGlobalBounds().width, 4.0f);
 
         stairTargetText->setPosition(textPos);
 
+        sf::Color shadowColor;
+
+        if (!IsAvailable()) {
+            shadowColor = sf::Color(0, 0, 0, 150);
+        }
+        else {
+            shadowColor = sf::Color(0, 0, 0, 255);
+        }
+
         area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, 
-            Game::Get().IsInMapMode() ? sf::Vector2f(2.0f, 2.0f) : sf::Vector2f(0.5f, 0.5f)));
+            Game::Get().IsInMapMode() ? sf::Vector2f(2.0f, 2.0f) : sf::Vector2f(0.5f, 0.5f),
+            shadowColor));
         area->AddFrameUIRenderable(stairTargetText);
     }
 }
@@ -65,7 +88,7 @@ void UpStairEntity::Render(sf::RenderTarget& target)
 
 bool UpStairEntity::IsUsable(EntityId playerId) const
 {
-    return Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::BossFight;
+    return IsAvailable();
 }
 
 
@@ -104,7 +127,7 @@ void DownStairEntity::Render(sf::RenderTarget& target)
 {
     sf::Sprite stairSprite(GameAssets::Get().stairsSpriteSheet);
 
-    if (Game::Get().GetDirector().GetCurrentObjectiveType() == GameObjectiveType::BossFight) {
+    if (!IsAvailable()) {
         stairSprite.setTextureRect(sf::IntRect(0, 16, 16, 16));
     }
     else {
@@ -120,15 +143,31 @@ void DownStairEntity::Render(sf::RenderTarget& target)
         if (area) {
             auto stairTargetText = std::make_unique<sf::Text>(destinationFsNodeName_, GameAssets::Get().gameFont, 18);
             stairTargetText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.8f, 0.8f) : sf::Vector2f(0.15f, 0.15f));
-            stairTargetText->setColor(sf::Color(255, 255, 0));
+
+            if (!IsAvailable()) {
+                stairTargetText->setColor(sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150));
+            }
+            else {
+                stairTargetText->setColor(sf::Color(255, 255, 0));
+            }
 
             auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
                 sf::Vector2f(0.5f * stairTargetText->getGlobalBounds().width, 4.0f);
 
             stairTargetText->setPosition(textPos);
 
+            sf::Color shadowColor;
+
+            if (!IsAvailable()) {
+                shadowColor = sf::Color(0, 0, 0, 150);
+            }
+            else {
+                shadowColor = sf::Color(0, 0, 0, 255);
+            }
+
             area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText,
-                Game::Get().IsInMapMode() ? sf::Vector2f(3.0f, 3.0f) : sf::Vector2f(0.5f, 0.5f)));
+                Game::Get().IsInMapMode() ? sf::Vector2f(3.0f, 3.0f) : sf::Vector2f(0.5f, 0.5f),
+                shadowColor));
             area->AddFrameUIRenderable(stairTargetText);
         }
     }
@@ -137,8 +176,7 @@ void DownStairEntity::Render(sf::RenderTarget& target)
 
 bool DownStairEntity::IsUsable(EntityId playerId) const
 {
-    return Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::BossFight &&
-        !destinationFsNodeName_.empty();
+    return IsAvailable() && !destinationFsNodeName_.empty();
 }
 
 

@@ -225,7 +225,7 @@ u32 Armour::GetMeleeDefense() const
         return 11 + static_cast<u32>(21 * difficultyMul_);
 
     case ArmourType::BalanceHeadgear:
-        return 22 + static_cast<u32>(42 * difficultyMul_);
+        return 22 + static_cast<u32>(45 * difficultyMul_);
     }
 }
 
@@ -243,7 +243,7 @@ u32 Armour::GetMagicDefense() const
         return 30 + static_cast<u32>(66 * difficultyMul_);
 
     case ArmourType::BalanceHeadgear:
-        return 22 + static_cast<u32>(42 * difficultyMul_);
+        return 22 + static_cast<u32>(45 * difficultyMul_);
     }
 }
 
@@ -500,7 +500,7 @@ sf::Time MeleeWeapon::GetUseDelay() const
         return sf::seconds(0.345f);
 
     case MeleeWeaponType::ThornedSabre:
-        return sf::seconds(0.5f);
+        return sf::seconds(0.425f);
 
     case MeleeWeaponType::GraniteBlade:
         return sf::seconds(1.15f);
@@ -805,7 +805,7 @@ float MagicWeapon::GetAttackRange() const
     case MagicWeaponType::ZeroStaff:
     case MagicWeaponType::FlameStaff:
     case MagicWeaponType::DrainStaff:
-        return 125.0f;
+        return 155.0f;
 
     // range is in projectile time (s)
     case MagicWeaponType::WaveStaff:
@@ -846,7 +846,7 @@ u32 MagicWeapon::GetManaCost() const
         return 200;
 
     case MagicWeaponType::WaveStaff:
-        return 100;
+        return 150;
 
     case MagicWeaponType::DrainStaff:
         return 300;
@@ -996,7 +996,7 @@ void MagicWeapon::Use(PlayerEntity* player)
         assert(projectile);
 
         projectile->SetCenterPosition(player->GetCenterPosition() + projectileDir * 8.0f);
-        projectile->SetAttack(Helper::GenerateRandomInt<u32>(0, GetAttack()));
+        projectile->SetDamage(Helper::GenerateRandomInt<u32>(0, GetAttack()));
 
         GameAssets::Get().waveSound.play();
         break;

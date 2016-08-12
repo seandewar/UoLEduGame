@@ -152,7 +152,7 @@ DamageEffectEntity::DamageEffectEntity(DamageEffectType type, const sf::Time& du
 effectType_(type),
 timeLeft_(duration)
 {
-    SetSize(sf::Vector2f(16.0f, 16.0f));
+    SetSize(effectType_ == DamageEffectType::EnemyMagicFlame ? sf::Vector2f(24.0f, 24.0f) : sf::Vector2f(16.0f, 16.0f));
     SetupAnimations();
 }
 
@@ -206,6 +206,20 @@ void DamageEffectEntity::SetupAnimations()
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 80, 16, 16)));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 80, 16, 16)));
         break;
+
+    case DamageEffectType::EnemyMagicFlame:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(0, 96, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 96, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 96, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 96, 16, 16)));
+        break;
+
+    case DamageEffectType::EnemySmoke:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(0, 112, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(16, 112, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(32, 112, 16, 16)));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().effectSpriteSheet, sf::IntRect(48, 112, 16, 16)));
+        break;
     }
 }
 
@@ -227,6 +241,10 @@ void DamageEffectEntity::Render(sf::RenderTarget& target)
 {
     auto effectSprite = std::make_unique<sf::Sprite>(anim_.GetCurrentFrame());
     effectSprite->setPosition(GetPosition());
+
+    if (effectType_ == DamageEffectType::EnemyMagicFlame) {
+        effectSprite->setScale(1.5f, 1.5f);
+    }
 
     GetAssignedArea()->AddFrameUIRenderable(effectSprite);
 }

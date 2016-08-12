@@ -8,7 +8,10 @@
 enum class ProjectileType
 {
     PlayerMagicWave,
-    EnemyMagicWave
+    EnemyMagicWave,
+    EnemyMagicFlame,
+    EnemySmoke,
+    EffectOrb
 };
 
 /**
@@ -20,7 +23,7 @@ class ProjectileEntity : public UnitEntity
 
     Animation anim_;
 
-    u32 attack_;
+    u32 damage_;
     sf::Vector2f velo_;
     sf::Time timeLeft_;
 
@@ -41,8 +44,8 @@ public:
     bool IsPlayerProjectile() const;
     bool CollidesWithTiles() const;
 
-    inline void SetAttack(u32 attack) { attack_ = attack; }
-    inline u32 GetAttack() const { return attack_; }
+    inline void SetDamage(u32 damage) { damage_ = damage; }
+    inline u32 GetDamage() const { return damage_; }
 
     inline sf::Time GetTimeLeft() const { return timeLeft_; }
 

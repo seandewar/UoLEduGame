@@ -339,7 +339,7 @@ void PlayerEntity::HandleMovement()
         return;
     }
 
-    if (dir_ != nextDir_ || moveDir_.x == 0.0f && moveDir_.y == 0.0f) {
+    if (dir_ != nextDir_ || (moveDir_.x == 0.0f && moveDir_.y == 0.0f)) {
         RestartAnimations();
     }
     else {

@@ -526,6 +526,42 @@ void GameDirector::FoundArtefact(WorldArea* currentArea)
 }
 
 
+void GameDirector::ReleaseTheBoss(WorldArea* spawnArea, const sf::Vector2f& pos)
+{
+    if (!spawnArea) {
+        return;
+    }
+
+    objective_ = GameObjectiveType::BossFight;
+
+    printf("GameDirector - RELEASING THE BOSS!!!!\n");
+    Game::Get().AddMessage("The gilded stairs are suddenly engulfed in a magical flame!", sf::Color(255, 0, 0));
+    Game::Get().AddMessage("The Dungeon Guardian has been awoken!", sf::Color(255, 0, 0));
+    
+    auto boss = spawnArea->GetEntity<DungeonGuardian>(spawnArea->EmplaceEntity<DungeonGuardian>());
+    assert(boss);
+
+    boss->SetPosition(pos);
+}
+
+
+void GameDirector::BossDefeated()
+{
+    if (objective_ != GameObjectiveType::BossFight) {
+        return;
+    }
+
+    objective_ = GameObjectiveType::Complete;
+
+    printf("GameDirector - BOSS DEFEATED!!!!\n");
+    Game::Get().AddMessage("Congratulations! The Dungeon Guardian has been defeated!", sf::Color(255, 150, 0));
+    Game::Get().AddMessage("The magical flames blocking the gilded stairs have been doused!", sf::Color(255, 0, 255));
+    Game::Get().AddMessage("Ascend the mysterious stairs to finally exit the dungeon!", sf::Color(255, 0, 255));
+
+    GameAssets::Get().successSound.play();
+}
+
+
 std::string GameDirector::GetObjectiveText() const
 {
     switch (objective_) {

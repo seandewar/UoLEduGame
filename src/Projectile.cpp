@@ -10,7 +10,7 @@
 ProjectileEntity::ProjectileEntity(ProjectileType projectileType, const sf::Vector2f& dir) :
 UnitEntity(),
 projectileType_(projectileType),
-attack_(0),
+damage_(0),
 timeLeft_(sf::seconds(2.0f))
 {
     SetSize(sf::Vector2f(14.0f, 14.0f));
@@ -18,6 +18,21 @@ timeLeft_(sf::seconds(2.0f))
     float speed = 1.0f;
 
     switch (projectileType_) {
+    case ProjectileType::EnemyMagicFlame:
+        SetSize(sf::Vector2f(18.0f, 18.0f));
+        speed = 185.0f;
+        break;
+
+    case ProjectileType::EffectOrb:
+        speed = 80.0f;
+        timeLeft_ = sf::seconds(6.0f);
+        break;
+
+    case ProjectileType::EnemySmoke:
+        speed = 150.0f;
+        timeLeft_ = sf::seconds(3.0f);
+        break;
+
     case ProjectileType::EnemyMagicWave:
         speed = 125.0f;
         break;
@@ -54,6 +69,27 @@ void ProjectileEntity::SetupAnimations()
         anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(32, 16, 16, 16)), sf::seconds(0.1f));
         anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(48, 16, 16, 16)), sf::seconds(0.1f));
         break;
+
+    case ProjectileType::EnemyMagicFlame:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(0, 32, 16, 16)), sf::seconds(0.2f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(16, 32, 16, 16)), sf::seconds(0.2f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(32, 32, 16, 16)), sf::seconds(0.2f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(48, 32, 16, 16)), sf::seconds(0.2f));
+        break;
+
+    case ProjectileType::EnemySmoke:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(0, 48, 16, 16)), sf::seconds(0.2f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(16, 48, 16, 16)), sf::seconds(0.2f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(32, 48, 16, 16)), sf::seconds(0.2f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(48, 48, 16, 16)), sf::seconds(0.2f));
+        break;
+
+    case ProjectileType::EffectOrb:
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(0, 64, 16, 16)), sf::seconds(0.4f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(16, 64, 16, 16)), sf::seconds(0.4f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(32, 64, 16, 16)), sf::seconds(0.4f));
+        anim_.AddFrame(sf::Sprite(GameAssets::Get().projectileSpriteSheet, sf::IntRect(48, 64, 16, 16)), sf::seconds(0.4f));
+        break;
     }
 }
 
@@ -62,6 +98,10 @@ bool ProjectileEntity::IsPlayerProjectile() const
 {
     switch (projectileType_) {
     default:
+    case ProjectileType::EffectOrb:
+    case ProjectileType::EnemyMagicWave:
+    case ProjectileType::EnemyMagicFlame:
+    case ProjectileType::EnemySmoke:
         return false;
 
     case ProjectileType::PlayerMagicWave:
@@ -74,7 +114,11 @@ bool ProjectileEntity::CollidesWithTiles() const
 {
     switch (projectileType_) {
     default:
+    case ProjectileType::EffectOrb:
     case ProjectileType::PlayerMagicWave:
+    case ProjectileType::EnemyMagicWave:
+    case ProjectileType::EnemyMagicFlame:
+    case ProjectileType::EnemySmoke:
         return false;
     }
 }
@@ -99,34 +143,60 @@ void ProjectileEntity::Tick()
     }
 
     // ent collision
-    std::vector<EntityId> hitEntIds;
+    if (projectileType_ != ProjectileType::EffectOrb) {
+        std::vector<EntityId> hitEntIds;
 
-    if (IsPlayerProjectile()) {
-        hitEntIds = area->GetAllWorldEntsInRectangle<Enemy>(GetRectangle());
-    }
-    else {
-        hitEntIds = area->GetAllWorldEntsInRectangle<PlayerEntity>(GetRectangle());
-    }
+        if (IsPlayerProjectile()) {
+            hitEntIds = area->GetAllWorldEntsInRectangle<Enemy>(GetRectangle());
+        }
+        else {
+            hitEntIds = area->GetAllWorldEntsInRectangle<PlayerEntity>(GetRectangle());
+        }
 
-    for (auto eId : hitEntIds) {
-        auto hitEnt = area->GetEntity<AliveEntity>(eId);
-        assert(hitEnt);
+        for (auto eId : hitEntIds) {
+            auto hitEnt = area->GetEntity<AliveEntity>(eId);
+            assert(hitEnt);
 
-        if (hitEnt->GetStats() && hitEnt->GetStats()->IsAlive()) {
-            // projectile type effect
-
-            switch (projectileType_) {
-            default:
-            case ProjectileType::PlayerMagicWave:
-            case ProjectileType::EnemyMagicWave:
+            if (hitEnt->GetStats() && hitEnt->GetStats()->IsAlive()) {
+                // projectile type effect
                 isCollision = true;
-                hitEnt->Attack(GetAttack(), DamageType::Magic);
+
+                // hit type
+                switch (projectileType_) {
+                case ProjectileType::PlayerMagicWave:
+                case ProjectileType::EnemyMagicWave:
+                case ProjectileType::EnemyMagicFlame:
+                    hitEnt->Attack(GetDamage(), DamageType::Magic);
+                    break;
+
+                case ProjectileType::EnemySmoke:
+                    hitEnt->Attack(GetDamage(), DamageType::Other);
+                    break;
+                }
 
                 // hit effect
+                DamageEffectType effectType;
+
+                switch (projectileType_) {
+                case ProjectileType::PlayerMagicWave:
+                    effectType = DamageEffectType::PlayerWave;
+                    break;
+
+                case ProjectileType::EnemyMagicWave:
+                    effectType = DamageEffectType::EnemyWave;
+                    break;
+
+                case ProjectileType::EnemyMagicFlame:
+                    effectType = DamageEffectType::EnemyMagicFlame;
+                    break;
+
+                case ProjectileType::EnemySmoke:
+                    effectType = DamageEffectType::EnemySmoke;
+                    break;
+                }
+
                 auto effectEnt = hitEnt->GetAssignedArea()->GetEntity<DamageEffectEntity>(
-                    hitEnt->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(
-                    projectileType_ == ProjectileType::PlayerMagicWave ? DamageEffectType::PlayerWave : DamageEffectType::EnemyWave,
-                    sf::seconds(0.5f)));
+                    hitEnt->GetAssignedArea()->EmplaceEntity<DamageEffectEntity>(effectType, sf::seconds(0.5f)));
                 effectEnt->SetCenterPosition(hitEnt->GetCenterPosition());
 
                 // push ent
@@ -154,7 +224,24 @@ void ProjectileEntity::Render(sf::RenderTarget& target)
         auto projectileSprite = std::make_unique<sf::Sprite>(anim_.GetCurrentFrame());
         projectileSprite->setPosition(GetPosition() + GetSize() * 0.5f);
         projectileSprite->setOrigin(GetSize() * 0.5f);
-        projectileSprite->setRotation(Helper::RadiansToDegrees(atan2f(velo_.y, velo_.x)));
+
+        switch (projectileType_) {
+        case ProjectileType::PlayerMagicWave:
+        case ProjectileType::EnemyMagicWave:
+            projectileSprite->setRotation(Helper::RadiansToDegrees(atan2f(velo_.y, velo_.x)));
+            break;
+
+        case ProjectileType::EnemyMagicFlame:
+            projectileSprite->setScale(1.5f, 1.5f);
+            break;
+
+        case ProjectileType::EffectOrb:
+            projectileSprite->setColor(sf::Color(
+                Helper::GenerateRandomInt(0, 255),
+                Helper::GenerateRandomInt(0, 255),
+                Helper::GenerateRandomInt(0, 255)));
+            break;
+        }
 
         area->AddFrameUIRenderable(projectileSprite);
     }

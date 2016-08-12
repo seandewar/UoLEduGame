@@ -108,4 +108,14 @@ public:
     {
         return rad / PI * 180.0f;
     }
+
+    static inline sf::Vector2f GetUnitVector(const sf::Vector2f& vec)
+    {
+        auto dot = vec.x * vec.x + vec.y * vec.y;
+        if (dot == 0.0f) {
+            return sf::Vector2f(1.0f, 0.0f);
+        }
+
+        return vec / sqrtf(dot);
+    }
 };

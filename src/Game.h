@@ -42,6 +42,38 @@ struct GameAssets
     sf::Texture sparkleSpriteSheet;
     sf::Texture projectileSpriteSheet;
 
+    sf::Sound selectSound;
+    sf::Sound drinkSound;
+    sf::Sound blastSound;
+    sf::Sound waveSound;
+    sf::Sound drainSound;
+    sf::Sound zeroBlastSound;
+    sf::Sound pickupSound;
+    sf::Sound artefactPickupSound;
+    sf::Sound attackSound;
+    sf::Sound hitSound;
+    sf::Sound specSound;
+    sf::Sound lowHealthSound;
+    sf::Sound deathSound;
+    sf::Sound playerHurtSound;
+    sf::Sound playerDeathSound;
+    sf::Sound successSound;
+    sf::Sound failureSound;
+    sf::Sound openChestSound;
+    sf::Sound blockSound;
+    sf::Sound armourPenSound;
+    sf::Sound invincibilitySound;
+    sf::Sound magicFireSound;
+    sf::Sound smokeSound;
+    sf::Sound bossSwordSound;
+    sf::Sound bossSpawnSound;
+    sf::Sound bossDyingSound;
+    sf::Sound bossDeadSound;
+    sf::Sound bossActionSound;
+
+    bool LoadAssets();
+
+private:
     sf::SoundBuffer drinkSoundBuffer;
     sf::SoundBuffer blastSoundBuffer;
     sf::SoundBuffer waveSoundBuffer;
@@ -49,6 +81,7 @@ struct GameAssets
     sf::SoundBuffer zeroBlastSoundBuffer;
     sf::SoundBuffer hitSoundBuffer;
     sf::SoundBuffer specSoundBuffer;
+    sf::SoundBuffer lowHealthSoundBuffer;
     sf::SoundBuffer deathSoundBuffer;
     sf::SoundBuffer playerHurtSoundBuffer;
     sf::SoundBuffer playerDeathSoundBuffer;
@@ -62,31 +95,14 @@ struct GameAssets
     sf::SoundBuffer blockSoundBuffer;
     sf::SoundBuffer armourPenSoundBuffer;
     sf::SoundBuffer invincibilitySoundBuffer;
+    sf::SoundBuffer magicFireSoundBuffer;
+    sf::SoundBuffer smokeSoundBuffer;
+    sf::SoundBuffer bossSpawnSoundBuffer;
+    sf::SoundBuffer bossSwordSoundBuffer;
+    sf::SoundBuffer bossDyingSoundBuffer;
+    sf::SoundBuffer bossDeadSoundBuffer;
+    sf::SoundBuffer bossActionSoundBuffer;
 
-    sf::Sound selectSound;
-    sf::Sound drinkSound;
-    sf::Sound blastSound;
-    sf::Sound waveSound;
-    sf::Sound drainSound;
-    sf::Sound zeroBlastSound;
-    sf::Sound pickupSound;
-    sf::Sound artefactPickupSound;
-    sf::Sound attackSound;
-    sf::Sound hitSound;
-    sf::Sound specSound;
-    sf::Sound deathSound;
-    sf::Sound playerHurtSound;
-    sf::Sound playerDeathSound;
-    sf::Sound successSound;
-    sf::Sound failureSound;
-    sf::Sound openChestSound;
-    sf::Sound blockSound;
-    sf::Sound armourPenSound;
-    sf::Sound invincibilitySound;
-
-    bool LoadAssets();
-
-private:
     GameAssets() { }
     ~GameAssets() { }
 };
@@ -145,12 +161,36 @@ class Game
     std::vector<GameQuestionAnswerChoice> displayedQuestionShuffledChoices_;
     int displayedQuestionSelectedChoice_;
 
+    sf::Time lowHealthNextBeepTimeLeft_;
+
     inline WorldArea* GetWorldArea() { return world_ ? world_->GetCurrentArea() : nullptr; }
+    inline const WorldArea* GetWorldArea() const { return world_ ? world_->GetCurrentArea() : nullptr; }
 
     inline PlayerEntity* GetPlayerEntity()
     {
         auto area = GetWorldArea();
         return area ? area->GetEntity<PlayerEntity>(playerId_) : nullptr;
+    }
+    inline const PlayerEntity* GetPlayerEntity() const
+    {
+        auto area = GetWorldArea();
+        return area ? area->GetEntity<PlayerEntity>(playerId_) : nullptr;
+    }
+
+    inline bool IsPlayerLowHealth() const
+    {
+        auto player = GetPlayerEntity();
+
+        return player && player->GetStats() &&
+            (player->GetStats()->GetHealth() <= player->GetStats()->GetMaxHealth() / 3);
+    }
+
+    inline bool IsPlayerLowMana() const
+    {
+        auto player = GetPlayerEntity();
+
+        return player && player->GetStats() &&
+            (player->GetStats()->GetMana() <= player->GetStats()->GetMaxMana() / 3);
     }
 
     void ResetPlayerStats();
@@ -167,6 +207,7 @@ class Game
     void HandleRespawnSacrificeInput();
     void HandleUseInventory();
     void HandlePlayerMoveInput();
+    void HandlePlayerLowHealthBeep();
 
     void RenderUIMessages(sf::RenderTarget& target);
     void RenderUILoadingArea(sf::RenderTarget& target);
@@ -175,6 +216,7 @@ class Game
     void RenderUIPlayerStats(sf::RenderTarget& target);
     void RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, const std::string& label,
         Item* item, bool isHighlighted = false);
+    void RenderUILowStatsWarning(sf::RenderTarget& target);
     void RenderUIPlayerInventory(sf::RenderTarget& target);
     void RenderUIDisplayedQuestion(sf::RenderTarget& target);
     void RenderUIRespawnSacrifice(sf::RenderTarget& target);

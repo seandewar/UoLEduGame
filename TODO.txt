@@ -33,7 +33,7 @@ todo   = scheduled
 [weapon base & attack]
 [Collision with ents func?]
 [Basic Enemy Entity that follows]
->[Different Enemy Ents] more?
+[Different Enemy Ents more?]
 [projectiles]
 [Objective system finished + floor nav] 
 [Chest class rolls items when opened (dungeon gen only spawns special items in chest)]
@@ -43,4 +43,5 @@ todo   = scheduled
 [Questions for each item with UI and chest trigger]
 [altar + BETTER ALTAR SPRITE!!!1 Maybe change artefacts to pages & altar to tp book!!?!?!?]
 >Boss?
+Linux port
 [AUDIO]

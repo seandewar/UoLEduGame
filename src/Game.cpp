@@ -25,44 +25,52 @@ bool GameAssets::LoadAssets()
     printf("Loading game assets...\n");
 
     // fonts
-    LOAD_FROM_FILE(gameFont, "assets/PressStart2P.ttf");
-    LOAD_FROM_FILE(altFont, "assets/prstart.ttf");
+    LOAD_FROM_FILE(gameFont, "assets/Fonts/PressStart2P.ttf");
+    LOAD_FROM_FILE(altFont, "assets/Fonts/prstart.ttf");
 
     // textures
-    LOAD_FROM_FILE(viewVignette, "assets/DarknessVignette.png");
-    LOAD_FROM_FILE(genericTilesSheet, "assets/GenericTiles.png");
-    LOAD_FROM_FILE(stairsSpriteSheet, "assets/StairSprites.png");
-    LOAD_FROM_FILE(playerSpriteSheet, "assets/PlayerSprites.png");
-    LOAD_FROM_FILE(chestsSpriteSheet, "assets/ChestSprites.png");
-    LOAD_FROM_FILE(itemsSpriteSheet, "assets/ItemSprites.png");
-    LOAD_FROM_FILE(altarSpriteSheet, "assets/AltarSprites.png");
-    LOAD_FROM_FILE(enemySpriteSheet, "assets/EnemySprites.png");
-    LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/DamageTypeSprites.png");
-    LOAD_FROM_FILE(effectSpriteSheet, "assets/EffectSprites.png");
-    LOAD_FROM_FILE(sparkleSpriteSheet, "assets/SparkleSprites.png");
-    LOAD_FROM_FILE(projectileSpriteSheet, "assets/ProjectileSprites.png");
+    LOAD_FROM_FILE(viewVignette, "assets/Textures/DarknessVignette.png");
+    LOAD_FROM_FILE(genericTilesSheet, "assets/Textures/GenericTiles.png");
+    LOAD_FROM_FILE(stairsSpriteSheet, "assets/Textures/StairSprites.png");
+    LOAD_FROM_FILE(playerSpriteSheet, "assets/Textures/PlayerSprites.png");
+    LOAD_FROM_FILE(chestsSpriteSheet, "assets/Textures/ChestSprites.png");
+    LOAD_FROM_FILE(itemsSpriteSheet, "assets/Textures/ItemSprites.png");
+    LOAD_FROM_FILE(altarSpriteSheet, "assets/Textures/AltarSprites.png");
+    LOAD_FROM_FILE(enemySpriteSheet, "assets/Textures/EnemySprites.png");
+    LOAD_FROM_FILE(damageTypesSpriteSheet, "assets/Textures/DamageTypeSprites.png");
+    LOAD_FROM_FILE(effectSpriteSheet, "assets/Textures/EffectSprites.png");
+    LOAD_FROM_FILE(sparkleSpriteSheet, "assets/Textures/SparkleSprites.png");
+    LOAD_FROM_FILE(projectileSpriteSheet, "assets/Textures/ProjectileSprites.png");
 
     // sound buffers
-    LOAD_FROM_FILE(drinkSoundBuffer, "assets/DrinkSound.wav");
-    LOAD_FROM_FILE(blastSoundBuffer, "assets/BlastSound.wav");
-    LOAD_FROM_FILE(waveSoundBuffer, "assets/WaveSound.wav");
-    LOAD_FROM_FILE(drainSoundBuffer, "assets/DrainSound.wav");
-    LOAD_FROM_FILE(zeroBlastSoundBuffer, "assets/ZeroBlastSound.wav");
-    LOAD_FROM_FILE(hitSoundBuffer, "assets/HitSound.wav");
-    LOAD_FROM_FILE(specSoundBuffer, "assets/SpecSound.wav");
-    LOAD_FROM_FILE(deathSoundBuffer, "assets/DeathSound.wav");
-    LOAD_FROM_FILE(playerHurtSoundBuffer, "assets/PlayerHurtSound.wav");
-    LOAD_FROM_FILE(playerDeathSoundBuffer, "assets/PlayerDeathSound.wav");
-    LOAD_FROM_FILE(pickupSoundBuffer, "assets/PickupSound.wav");
-    LOAD_FROM_FILE(pickup2SoundBuffer, "assets/Pickup2Sound.wav");
-    LOAD_FROM_FILE(selectSoundBuffer, "assets/SelectSound.wav");
-    LOAD_FROM_FILE(attackSoundBuffer, "assets/AttackSound.wav");
-    LOAD_FROM_FILE(successSoundBuffer, "assets/SuccessSound.wav");
-    LOAD_FROM_FILE(failureSoundBuffer, "assets/FailureSound.wav");
-    LOAD_FROM_FILE(openChestSoundBuffer, "assets/OpenChestSound.wav");
-    LOAD_FROM_FILE(blockSoundBuffer, "assets/BlockSound.wav");
-    LOAD_FROM_FILE(armourPenSoundBuffer, "assets/ArmourPenSound.wav");
-    LOAD_FROM_FILE(invincibilitySoundBuffer, "assets/InvincibilitySound.wav");
+    LOAD_FROM_FILE(drinkSoundBuffer, "assets/Sounds/DrinkSound.wav");
+    LOAD_FROM_FILE(blastSoundBuffer, "assets/Sounds/BlastSound.wav");
+    LOAD_FROM_FILE(waveSoundBuffer, "assets/Sounds/WaveSound.wav");
+    LOAD_FROM_FILE(drainSoundBuffer, "assets/Sounds/DrainSound.wav");
+    LOAD_FROM_FILE(zeroBlastSoundBuffer, "assets/Sounds/ZeroBlastSound.wav");
+    LOAD_FROM_FILE(hitSoundBuffer, "assets/Sounds/HitSound.wav");
+    LOAD_FROM_FILE(specSoundBuffer, "assets/Sounds/SpecSound.wav");
+    LOAD_FROM_FILE(lowHealthSoundBuffer, "assets/Sounds/LowHealthSound.wav");
+    LOAD_FROM_FILE(deathSoundBuffer, "assets/Sounds/DeathSound.wav");
+    LOAD_FROM_FILE(playerHurtSoundBuffer, "assets/Sounds/PlayerHurtSound.wav");
+    LOAD_FROM_FILE(playerDeathSoundBuffer, "assets/Sounds/PlayerDeathSound.wav");
+    LOAD_FROM_FILE(pickupSoundBuffer, "assets/Sounds/PickupSound.wav");
+    LOAD_FROM_FILE(pickup2SoundBuffer, "assets/Sounds/Pickup2Sound.wav");
+    LOAD_FROM_FILE(selectSoundBuffer, "assets/Sounds/SelectSound.wav");
+    LOAD_FROM_FILE(attackSoundBuffer, "assets/Sounds/AttackSound.wav");
+    LOAD_FROM_FILE(successSoundBuffer, "assets/Sounds/SuccessSound.wav");
+    LOAD_FROM_FILE(failureSoundBuffer, "assets/Sounds/FailureSound.wav");
+    LOAD_FROM_FILE(openChestSoundBuffer, "assets/Sounds/OpenChestSound.wav");
+    LOAD_FROM_FILE(blockSoundBuffer, "assets/Sounds/BlockSound.wav");
+    LOAD_FROM_FILE(armourPenSoundBuffer, "assets/Sounds/ArmourPenSound.wav");
+    LOAD_FROM_FILE(invincibilitySoundBuffer, "assets/Sounds/InvincibilitySound.wav");
+    LOAD_FROM_FILE(magicFireSoundBuffer, "assets/Sounds/MagicFireSound.wav");
+    LOAD_FROM_FILE(smokeSoundBuffer, "assets/Sounds/SmokeSound.wav");
+    LOAD_FROM_FILE(bossSwordSoundBuffer, "assets/Sounds/BossSwordSound.wav");
+    LOAD_FROM_FILE(bossSpawnSoundBuffer, "assets/Sounds/BossSpawnSound.wav");
+    LOAD_FROM_FILE(bossDyingSoundBuffer, "assets/Sounds/BossDyingSound.wav");
+    LOAD_FROM_FILE(bossDeadSoundBuffer, "assets/Sounds/BossDeadSound.wav");
+    LOAD_FROM_FILE(bossActionSoundBuffer, "assets/Sounds/BossActionSound.wav");
 
     // sounds init
     selectSound.setBuffer(selectSoundBuffer);
@@ -76,6 +84,7 @@ bool GameAssets::LoadAssets()
     attackSound.setBuffer(attackSoundBuffer);
     hitSound.setBuffer(hitSoundBuffer);
     specSound.setBuffer(specSoundBuffer);
+    lowHealthSound.setBuffer(lowHealthSoundBuffer);
     deathSound.setBuffer(deathSoundBuffer);
     playerHurtSound.setBuffer(playerHurtSoundBuffer);
     playerDeathSound.setBuffer(playerDeathSoundBuffer);
@@ -85,6 +94,13 @@ bool GameAssets::LoadAssets()
     blockSound.setBuffer(blockSoundBuffer);
     armourPenSound.setBuffer(armourPenSoundBuffer);
     invincibilitySound.setBuffer(invincibilitySoundBuffer);
+    magicFireSound.setBuffer(magicFireSoundBuffer);
+    smokeSound.setBuffer(smokeSoundBuffer);
+    bossSwordSound.setBuffer(bossSwordSoundBuffer);
+    bossSpawnSound.setBuffer(bossSpawnSoundBuffer);
+    bossDyingSound.setBuffer(bossDyingSoundBuffer);
+    bossDeadSound.setBuffer(bossDeadSoundBuffer);
+    bossActionSound.setBuffer(bossActionSoundBuffer);
 
     return true;
 }
@@ -140,7 +156,7 @@ void Game::ResetPlayerStats()
     playerStats_.SetMaxMana(1000);
     playerStats_.SetMana(1000);
 
-    playerStats_.SetMoveSpeed(65.0f);
+    playerStats_.SetMoveSpeed(75.0f);
 }
 
 
@@ -572,6 +588,31 @@ void Game::HandlePlayerMoveInput()
 }
 
 
+void Game::HandlePlayerLowHealthBeep()
+{
+    auto player = GetPlayerEntity();
+
+    if (!player || !player->GetStats()) {
+        return;
+    }
+
+    lowHealthNextBeepTimeLeft_ -= FrameTimeStep;
+
+    // beep if low health and not dead if timer is <= 0
+    if (IsPlayerLowHealth() && player->GetStats()->IsAlive()) {
+        if (lowHealthNextBeepTimeLeft_ <= sf::Time::Zero) {
+            GameAssets::Get().lowHealthSound.play();
+
+            lowHealthNextBeepTimeLeft_ = sf::seconds(1.0f);
+        }
+    }
+    else {
+        // immediately beep next time we hit the condition
+        lowHealthNextBeepTimeLeft_ = sf::Time::Zero;
+    }
+}
+
+
 void Game::Tick()
 {
     if (world_) {
@@ -623,28 +664,36 @@ void Game::Tick()
                     weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::AdventurerSword);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F4)) {
-                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::RoguesDagger);
-                }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F5)) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::FlameStaff);
                 }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F6)) {
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F5)) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::WaveStaff);
                 }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F7)) {
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F6)) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::DrainStaff);
                 }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F8)) {
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F7)) {
                     weapon = std::make_unique<MagicWeapon>(MagicWeaponType::InvincibilityStaff);
                 }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F9)) {
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F8)) {
                     armour = std::make_unique<Armour>(ArmourType::WarriorHelmet);
                 }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F10)) {
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F9)) {
                     armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
                 }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F11)) {
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F10)) {
                     armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F11) && GetWorldArea()) {
+                    // find all artefacts lol
+                    for (int i = 0; i < director_.GetMaxArtefacts(); ++i) {
+                        director_.FoundArtefact(GetWorldArea());
+                    }
+
+                    weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::ThornedSabre);
+                    armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
+                    player->PickupItem(&PotionItem(ItemType::HealthPotion, 10));
+                    player->PickupItem(&PotionItem(ItemType::MagicPotion, 10));
                 }
 
                 if (weapon) {
@@ -663,8 +712,12 @@ void Game::Tick()
         if (state_ == GameState::InGame) {
             // handle map mode toggle
             if (Game::IsKeyPressedFromEvent(sf::Keyboard::M) || Game::IsKeyPressedFromEvent(sf::Keyboard::Tab)) {
+                GameAssets::Get().selectSound.play();
                 mapMode_ = !mapMode_;
             }
+
+            // handle low player health beep
+            HandlePlayerLowHealthBeep();
 
             // handle input for player inputs, interfaces or inventory
             HandlePlayerMoveInput();
@@ -770,11 +823,20 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
     if (player && player->GetStats()) {
         // render health bar bg
         sf::RectangleShape healthBarBg(sf::Vector2f(300.0f, 20.0f));
-        healthBarBg.setFillColor(sf::Color(20, 20, 20));
         healthBarBg.setPosition(target.getView().getSize().x - healthBarBg.getSize().x - 5.0f,
             target.getView().getSize().y - 32.5f - healthBarBg.getSize().y);
         healthBarBg.setOutlineThickness(2.0f);
-        healthBarBg.setOutlineColor(sf::Color(0, 0, 0));
+
+        // low health flash
+        if (IsPlayerLowHealth() && player->GetStats()->IsAlive() &&
+            lowHealthNextBeepTimeLeft_ >= sf::seconds(0.75f)) {
+            healthBarBg.setOutlineColor(sf::Color(255, 0, 0));
+            healthBarBg.setFillColor(sf::Color(50, 20, 20));
+        }
+        else {
+            healthBarBg.setOutlineColor(sf::Color(0, 0, 0));
+            healthBarBg.setFillColor(sf::Color(20, 20, 20));
+        }
 
         target.draw(healthBarBg);
 
@@ -1301,6 +1363,35 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUILowStatsWarning(sf::RenderTarget& target)
+{
+    auto player = GetPlayerEntity();
+
+    if (!player || !player->GetStats() || !player->GetStats()->IsAlive()) {
+        return;
+    }
+
+    if (IsPlayerLowHealth()) {
+        sf::Text uiLowHealth("Low Health!", GameAssets::Get().gameFont, 12);
+        uiLowHealth.setColor(sf::Color(255, 0, 0));
+        uiLowHealth.setPosition(0.5f * (target.getView().getSize().x - uiLowHealth.getGlobalBounds().width),
+            0.8f * target.getView().getSize().y);
+
+        Helper::RenderTextWithDropShadow(target, uiLowHealth);
+    }
+
+    // TODO: rely on weapon mana cost instead?
+    //if (IsPlayerLowMana()) {
+    //    sf::Text uiLowMana("Low Mana!", GameAssets::Get().gameFont, 12);
+    //    uiLowMana.setColor(sf::Color(0, 0, 255));
+    //    uiLowMana.setPosition(0.5f * (target.getView().getSize().x - uiLowMana.getGlobalBounds().width),
+    //        0.8f * target.getView().getSize().y + 18.0f);
+
+    //    Helper::RenderTextWithDropShadow(target, uiLowMana);
+    //}
+}
+
+
 void Game::RenderUIMapMode(sf::RenderTarget& target)
 {
     sf::Text mapLabel("You are in Map Mode.", GameAssets::Get().gameFont, 16);
@@ -1513,6 +1604,8 @@ void Game::Render(sf::RenderTarget& target)
             }
 
             auto player = GetPlayerEntity();
+
+            RenderUILowStatsWarning(target);
 
             if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
                 RenderUIRespawnSacrifice(target);

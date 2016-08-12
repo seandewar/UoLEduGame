@@ -53,19 +53,439 @@ void Enemy::Render(sf::RenderTarget& target)
             healthBarFg->setPosition(healthBarBg->getPosition());
 
             // render health text label
-            auto healthLabelText = std::make_unique<sf::Text>(GetUnitName(), GameAssets::Get().gameFont, 12);
-            healthLabelText->setScale(0.15f, 0.2f);
+            auto healthLabelText = std::make_unique<sf::Text>(std::string("H: ") + std::to_string(stats->GetHealth()),
+                GameAssets::Get().gameFont, 12);
+            healthLabelText->setScale(0.2f, 0.25f);
             healthLabelText->setPosition(healthBarBg->getPosition() + 0.5f * healthBarBg->getSize() - 0.5f *
                 sf::Vector2f(healthLabelText->getGlobalBounds().width, healthLabelText->getGlobalBounds().height));
             healthLabelText->setColor(sf::Color(255, 255, 255));
 
             auto healthLabelShadow = Helper::GetTextDropShadow(*healthLabelText, sf::Vector2f(0.2f, 0.2f));
 
+            // render name text label
+            auto nameText = std::make_unique<sf::Text>(GetUnitName(), GameAssets::Get().gameFont, 12);
+            nameText->setScale(0.2f, 0.25f);
+            nameText->setPosition(healthBarBg->getPosition() + 0.5f * healthBarBg->getSize() - 0.5f *
+                sf::Vector2f(nameText->getGlobalBounds().width, 10.0f));
+            nameText->setColor(sf::Color(255, 255, 255));
+
+            auto nameTextShadow = Helper::GetTextDropShadow(*nameText, sf::Vector2f(0.2f, 0.2f));
+
             area->AddFrameUIRenderable(healthBarBg);
             area->AddFrameUIRenderable(healthBarFg);
             area->AddFrameUIRenderable(healthLabelShadow);
             area->AddFrameUIRenderable(healthLabelText);
+            area->AddFrameUIRenderable(nameTextShadow);
+            area->AddFrameUIRenderable(nameText);
         }
+    }
+}
+
+
+DungeonGuardian::DungeonGuardian() :
+Enemy(),
+form_(DungeonGuardianForm::MagicForm),
+rot_(Helper::GenerateRandomReal(0.0f, 360.0f)),
+handleDeathAnim_(false)
+{
+    SetSize(sf::Vector2f(32.0f, 32.0f));
+
+    SetupAnimations();
+    ResetStats(); 
+    ChangeForm(DungeonGuardianForm::MagicForm);
+
+    GameAssets::Get().bossSpawnSound.play();
+}
+
+
+DungeonGuardian::~DungeonGuardian()
+{
+}
+
+
+void DungeonGuardian::SetupAnimations()
+{
+    animMagicForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(48, 0, 32, 32)), sf::seconds(0.2f));
+    animMagicForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(80, 0, 32, 32)), sf::seconds(0.2f));
+    animMagicForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(112, 0, 32, 32)), sf::seconds(0.2f));
+    animMagicForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(80, 0, 32, 32)), sf::seconds(0.2f));
+
+    animSmokeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(48, 32, 32, 32)), sf::seconds(0.2f));
+    animSmokeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(80, 32, 32, 32)), sf::seconds(0.2f));
+    animSmokeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(112, 32, 32, 32)), sf::seconds(0.2f));
+    animSmokeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(80, 32, 32, 32)), sf::seconds(0.2f));
+
+    animMeleeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(48, 64, 32, 32)), sf::seconds(0.2f));
+    animMeleeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(80, 64, 32, 32)), sf::seconds(0.2f));
+    animMeleeForm_.AddFrame(sf::Sprite(GameAssets::Get().enemySpriteSheet, sf::IntRect(112, 64, 32, 32)), sf::seconds(0.2f));
+}
+
+
+void DungeonGuardian::ResetStats(float difficultyMul)
+{
+    stats_ = std::make_unique<AliveStats>();
+
+    stats_->SetMaxHealth(1500 + static_cast<u32>(1000 * difficultyMul));
+    stats_->SetMeleeAttack(90 + static_cast<u32>(40 * difficultyMul));
+    stats_->SetMagicAttack(90 + static_cast<u32>(50 * difficultyMul));
+    stats_->SetMeleeDefence(40 + static_cast<u32>(40 * difficultyMul));
+    stats_->SetMagicDefence(100 + static_cast<u32>(145 * difficultyMul));
+
+    stats_->SetHealth(stats_->GetMaxHealth());
+    SetStats(stats_.get());
+}
+
+
+void DungeonGuardian::ResetStats()
+{
+    ResetStats(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+}
+
+
+sf::Time DungeonGuardian::GetDefaultTimeForAction()
+{
+    switch (form_) {
+    default:
+        return sf::seconds(1.0f);
+
+    case DungeonGuardianForm::MagicForm:
+        return sf::seconds(2.5f);
+
+    case DungeonGuardianForm::SmokeForm:
+        return sf::seconds(5.0f);
+
+    case DungeonGuardianForm::MeleeForm:
+        return sf::seconds(7.5f);
+    }
+}
+
+
+void DungeonGuardian::ChangeForm(DungeonGuardianForm newForm)
+{
+    auto stats = GetStats();
+
+    if (!stats) {
+        return;
+    }
+
+    switch (newForm) {
+    default:
+        formActionsLeft_ = 0;
+        break;
+
+    case DungeonGuardianForm::MagicForm:
+        formActionsLeft_ = 5;
+        break;
+
+    case DungeonGuardianForm::SmokeForm:
+        stats->SetMoveSpeed(20.0f);
+        formActionsLeft_ = 5;
+        break;
+
+    case DungeonGuardianForm::MeleeForm:
+        stats->SetMoveSpeed(70.0f);
+        formActionsLeft_ = 1;
+        break;
+    }
+
+    form_ = newForm;
+    formSoundTimeLeft_ = sf::seconds(1.0f);
+    NewFormAction();
+    ResetAnimations();
+}
+
+
+void DungeonGuardian::ResetAnimations()
+{
+    animMagicForm_.Restart();
+    animSmokeForm_.Restart();
+    animMeleeForm_.Restart();
+}
+
+
+void DungeonGuardian::TickAnimations()
+{
+    animMagicForm_.Tick();
+    animSmokeForm_.Tick();
+    animMeleeForm_.Tick();
+}
+
+
+void DungeonGuardian::Tick()
+{
+    auto area = GetAssignedArea();
+    auto stats = GetStats();
+
+    if (!area || !stats) {
+        return;
+    }
+
+    // if dead, handle death anim flags
+    if (!stats->IsAlive()) {
+        if (!handleDeathAnim_) {
+            // handle death anim now by flashing for 4 seconds,
+            // then explode into orbs for effect!
+            actionTimeLeft_ = sf::seconds(3.0f);
+            handleDeathAnim_ = true;
+
+            GameAssets::Get().bossDyingSound.play();
+        }
+    }
+
+    // get player to aggro on - aggro dist is largest dimension in area so all players
+    // are considered
+    auto aggroDist = std::max(BaseTile::TileSize.x * area->GetWidth(), BaseTile::TileSize.y * area->GetHeight());
+
+    auto closePlayers = area->GetWorldEntitiesInRange<PlayerEntity>(GetCenterPosition(), aggroDist);
+    float playerDistSq = aggroDist * aggroDist + 1.0f;
+    PlayerEntity* playerAggro = nullptr;
+
+    if (stats->IsAlive()) {
+        for (auto pinfo : closePlayers) {
+            auto player = area->GetEntity<PlayerEntity>(pinfo.first);
+            assert(player);
+
+            if (player->GetStats() && player->GetStats()->IsAlive() && pinfo.second < playerDistSq) {
+                playerDistSq = pinfo.second;
+                playerAggro = player;
+            }
+        }
+
+        if (playerAggro) {
+            // handle actions for forms
+            if (!firedThisAction_ && actionTimeLeft_.asSeconds() < GetDefaultTimeForAction().asSeconds() * 0.5f) {
+                switch (form_) {
+                case DungeonGuardianForm::MagicForm: {
+                    // fire projectile in general direction of aggro'd player
+                    auto dirToPlayer = Helper::GetUnitVector(playerAggro->GetCenterPosition() - GetCenterPosition());
+                    auto projectileDir = dirToPlayer + sf::Vector2f(Helper::GenerateRandomReal(-0.1f, 0.1f),
+                        Helper::GenerateRandomReal(-0.1f, 0.1f));
+
+                    auto projectile = area->GetEntity<ProjectileEntity>(
+                        area->EmplaceEntity<ProjectileEntity>(ProjectileType::EnemyMagicFlame, projectileDir));
+                    assert(projectile);
+
+                    projectile->SetCenterPosition(GetCenterPosition() + projectileDir * 8.0f);
+                    projectile->SetDamage(Helper::GenerateRandomInt<u32>(0, stats->GetMagicAttack()));
+
+                    GameAssets::Get().magicFireSound.play();
+                    break;
+                }
+
+                case DungeonGuardianForm::SmokeForm:
+                    // fire projectiles in lots of directions around boss
+                    int numProjectiles = 12;
+                    auto projAngleRadsOffset = Helper::GenerateRandomReal(0.0f, 2.0f * PI);
+
+                    for (int i = 0; i < numProjectiles; ++i) {
+                        auto projAngleRads = 2.0f * PI * (i / static_cast<float>(numProjectiles)) + projAngleRadsOffset;
+                        sf::Vector2f projectileDir(cosf(projAngleRads), sinf(projAngleRads));
+
+                        auto projectile = area->GetEntity<ProjectileEntity>(
+                            area->EmplaceEntity<ProjectileEntity>(ProjectileType::EnemySmoke, projectileDir));
+                        assert(projectile);
+
+                        projectile->SetCenterPosition(GetCenterPosition() + projectileDir * 8.0f);
+                        projectile->SetDamage(Helper::GenerateRandomInt<u32>(stats->GetMagicAttack() / 4,
+                            stats->GetMagicAttack()));
+
+                        GameAssets::Get().smokeSound.play();
+                    }
+                    break;
+                }
+
+                firedThisAction_ = true;
+            }
+
+            // move depending on form
+            switch (form_) {
+            case DungeonGuardianForm::MeleeForm:
+            case DungeonGuardianForm::SmokeForm:
+                moveDir_ = Helper::GetUnitVector(
+                    moveDir_ + 0.1f * Helper::GetUnitVector(playerAggro->GetCenterPosition() - GetCenterPosition()));
+                break;
+
+            case DungeonGuardianForm::MagicForm:
+                moveDir_ = sf::Vector2f();
+                break;
+            }
+        }
+
+        // apply move
+        Move(moveDir_ * stats->GetMoveSpeed() * Game::FrameTimeStep.asSeconds());
+
+        // damage players touching us depending on form
+        auto touchingPlayers = area->GetAllWorldEntsInRectangle<PlayerEntity>(GetRectangle());
+
+        for (auto pid : touchingPlayers) {
+            auto player = area->GetEntity<PlayerEntity>(pid);
+            assert(player);
+
+            if (player->GetStats() && player->GetStats()->IsAlive() && !player->HasInvincibility()) {
+                switch (form_) {
+                case DungeonGuardianForm::MeleeForm:
+                    player->Attack(Helper::GenerateRandomInt<u32>(0, stats->GetMeleeAttack()), DamageType::Melee);
+                    break;
+
+                case DungeonGuardianForm::MagicForm:
+                    player->Attack(Helper::GenerateRandomInt<u32>(0, stats->GetMeleeAttack() / 2), DamageType::Magic);
+                    break;
+
+                case DungeonGuardianForm::SmokeForm:
+                    player->Attack(Helper::GenerateRandomInt<u32>(stats->GetMeleeAttack() / 4, stats->GetMeleeAttack() / 2),
+                        DamageType::Other);
+                    break;
+                }
+                player->MoveWithCollision(moveDir_ * 5.0f); // push player
+            }
+        }
+
+        // tick animss
+        TickAnimations();
+        rot_ += 500.0f * Game::FrameTimeStep.asSeconds();
+    }
+
+    // handle form time tick & switch
+    if (actionTimeLeft_ <= sf::Time::Zero) {
+        if (stats->IsAlive()) {
+            // handle next action / form switching if alive
+            if (--formActionsLeft_ <= 0) {
+                // next form
+                switch (form_) {
+                case DungeonGuardianForm::MagicForm:
+                    ChangeForm(DungeonGuardianForm::SmokeForm);
+                    break;
+
+                case DungeonGuardianForm::SmokeForm:
+                    ChangeForm(DungeonGuardianForm::MeleeForm);
+                    break;
+
+                default:
+                case DungeonGuardianForm::MeleeForm:
+                    ChangeForm(DungeonGuardianForm::MagicForm);
+                    break;
+                }
+            }
+            else {
+                NewFormAction();
+            }
+
+            GameAssets::Get().bossActionSound.play();
+
+            // tp in rad around player if player exists
+            auto center = playerAggro ? playerAggro->GetCenterPosition() : GetCenterPosition();
+            SetCenterPosition(center + Helper::GenerateRandomReal(75.0f, 110.0f) * Helper::GetUnitVector(
+                sf::Vector2f(Helper::GenerateRandomReal(-1.0f, 1.0f), Helper::GenerateRandomReal(-1.0f, 1.0f))));
+        }
+        else {
+            // handle death and explode into orbs for effect
+            // and mark ent delete
+            int numProjectiles = 20;
+
+            for (int i = 0; i < numProjectiles; ++i) {
+                auto projAngleRads = 2.0f * PI * (i / static_cast<float>(numProjectiles));
+                sf::Vector2f projectileDir(cosf(projAngleRads), sinf(projAngleRads));
+
+                auto projectile = area->GetEntity<ProjectileEntity>(
+                    area->EmplaceEntity<ProjectileEntity>(ProjectileType::EffectOrb, projectileDir));
+                assert(projectile);
+
+                projectile->SetCenterPosition(GetCenterPosition() + projectileDir * 12.0f);
+            }
+
+            GameAssets::Get().bossDeadSound.play();
+            Game::Get().GetDirector().BossDefeated();
+
+            MarkForDeletion();
+            return;
+        }
+    }
+    else {
+        actionTimeLeft_ -= Game::FrameTimeStep;
+    }
+
+    // handle form sound timer NOTE: (only used for melee form right now, may or may not be used)
+    // for other forms
+    if (formSoundTimeLeft_ <= sf::Time::Zero) {
+        switch (form_) {
+        case DungeonGuardianForm::MeleeForm:
+            GameAssets::Get().bossSwordSound.play();
+            break;
+        }
+
+        formSoundTimeLeft_ = sf::seconds(0.8f);
+    }
+    else {
+        formSoundTimeLeft_ -= Game::FrameTimeStep;
+    }
+}
+
+
+void DungeonGuardian::Render(sf::RenderTarget& target)
+{
+    auto area = GetAssignedArea();
+
+    if (!area) {
+        return;
+    }
+
+    // render boss
+    std::unique_ptr<sf::Sprite> bossSprite;
+
+    switch (form_) {
+    case DungeonGuardianForm::MagicForm:
+        bossSprite = std::make_unique<sf::Sprite>(animMagicForm_.GetCurrentFrame());
+        break;
+
+    case DungeonGuardianForm::SmokeForm:
+        bossSprite = std::make_unique<sf::Sprite>(animSmokeForm_.GetCurrentFrame());
+        break;
+
+    case DungeonGuardianForm::MeleeForm:
+        bossSprite = std::make_unique<sf::Sprite>(animMeleeForm_.GetCurrentFrame());
+        bossSprite->setRotation(rot_);
+        break;
+    }
+
+    bossSprite->setOrigin(0.5f * GetSize());
+    bossSprite->setPosition(GetCenterPosition());
+
+    // calc fade amount
+    float opacityMul = 1.0f;
+
+    if (GetStats() && !GetStats()->IsAlive()) {
+        // dead - flash
+        bossSprite->setColor(sf::Color(
+            Helper::GenerateRandomInt(0, 255),
+            Helper::GenerateRandomInt(0, 255),
+            Helper::GenerateRandomInt(0, 255)));
+    }
+    else {
+        // alive
+        if (actionTimeLeft_ <= sf::seconds(0.75f)) {
+            opacityMul = std::max(0.0f, actionTimeLeft_.asSeconds() / 0.75f);
+        }
+        else if (actionTimeLeft_ >= GetDefaultTimeForAction() - sf::seconds(0.75f)) {
+            opacityMul = std::max(0.0f, (GetDefaultTimeForAction() - actionTimeLeft_).asSeconds() / 0.75f);
+        }
+
+        bossSprite->setColor(sf::Color(255, 255, 255, static_cast<sf::Uint8>(opacityMul * 255)));
+    }
+
+    // calc sprite size amount
+    // oversize to make hitbox seem encapsulated
+    float scale = std::min(form_ == DungeonGuardianForm::MeleeForm ? 1.25f : 2.0f, opacityMul * 2.15f);
+    bossSprite->setScale(scale, scale);
+
+    // render dead effect
+    if (GetStats() && !GetStats()->IsAlive()) {
+        area->AddFrameUIRenderable(bossSprite);
+    }
+    else {
+        target.draw(*bossSprite);
+
+        // render stats
+        Enemy::Render(target);
     }
 }
 
@@ -181,7 +601,7 @@ void BasicEnemy::ResetStats(float difficultyMul)
 
     case EnemyType::SkeletonBasic:
         stats_->SetMaxHealth(500 + static_cast<u32>(180 * difficultyMul));
-        stats_->SetMoveSpeed(40.0f);
+        stats_->SetMoveSpeed(42.5f);
         stats_->SetMeleeAttack(90 + static_cast<u32>(40 * difficultyMul));
         stats_->SetMagicAttack(0);
         stats_->SetMeleeDefence(30 + static_cast<u32>(30 * difficultyMul));
@@ -225,8 +645,8 @@ void BasicEnemy::ResetStats(float difficultyMul)
         break;
 
     case EnemyType::GhostBasic:
-        stats_->SetMaxHealth(600 + static_cast<u32>(220 * difficultyMul));
-        stats_->SetMoveSpeed(30.0f);
+        stats_->SetMaxHealth(600 + static_cast<u32>(200 * difficultyMul));
+        stats_->SetMoveSpeed(32.5f);
         stats_->SetMeleeAttack(100 + static_cast<u32>(50 * difficultyMul));
         stats_->SetMagicAttack(0);
         stats_->SetMeleeDefence(80 + static_cast<u32>(60 * difficultyMul));
@@ -235,7 +655,7 @@ void BasicEnemy::ResetStats(float difficultyMul)
 
     case EnemyType::MagicFlameBasic:
         stats_->SetMaxHealth(50 + static_cast<u32>(45 * difficultyMul));
-        stats_->SetMoveSpeed(62.5f);
+        stats_->SetMoveSpeed(67.5f);
         stats_->SetMeleeAttack(0);
         stats_->SetMagicAttack(115 + static_cast<u32>(55 * difficultyMul));
         stats_->SetMeleeDefence(85 + static_cast<u32>(62 * difficultyMul));
@@ -266,6 +686,12 @@ void BasicEnemy::ResetStats(float difficultyMul)
 }
 
 
+void BasicEnemy::ResetStats()
+{
+    ResetStats(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
+}
+
+
 float BasicEnemy::GetAggroDistance() const
 {
     switch (enemyType_) {
@@ -285,12 +711,6 @@ float BasicEnemy::GetAggroDistance() const
     case EnemyType::GhostBasic:
         return 200.0f;
     }
-}
-
-
-void BasicEnemy::ResetStats()
-{
-    BasicEnemy::ResetStats(Game::Get().GetDirector().GetCurrentDifficultyMultiplier());
 }
 
 
@@ -658,9 +1078,7 @@ void BasicEnemy::Tick()
 
             if (playerAggro) {
                 // aggro on this player
-                auto aggroMove = playerAggro->GetCenterPosition() - GetCenterPosition();
-                aggroMove /= sqrtf(aggroMove.x * aggroMove.x + aggroMove.y * aggroMove.y);
-                moveDir_ = aggroMove;
+                moveDir_ = Helper::GetUnitVector(playerAggro->GetCenterPosition() - GetCenterPosition());
 
                 // chance to shoot player if aggro'd on them
                 if (enemyType_ == EnemyType::AncientWizardBasic &&
@@ -674,12 +1092,12 @@ void BasicEnemy::Tick()
 
                     // push player and fire projectile
                     projectile->SetCenterPosition(GetCenterPosition() + projectileDir * 8.0f);
-                    projectile->SetAttack(Helper::GenerateRandomInt<u32>(0, stats->GetMagicAttack()));
+                    projectile->SetDamage(Helper::GenerateRandomInt<u32>(0, stats->GetMagicAttack()));
 
                     GameAssets::Get().waveSound.play();
                 }
                 else if (enemyType_ == EnemyType::DarkWizardBasic &&
-                    Helper::GenerateRandomBool(0.2f * Game::FrameTimeStep.asSeconds())) {
+                    Helper::GenerateRandomBool(0.215f * Game::FrameTimeStep.asSeconds())) {
 
                     auto damageEffect = area->GetEntity<DamageEffectEntity>(area->EmplaceEntity<DamageEffectEntity>(
                         DamageEffectType::EnemyBlackFlame, sf::seconds(0.5f)));

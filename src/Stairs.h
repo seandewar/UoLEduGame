@@ -17,11 +17,15 @@ enum class StairEntityType
 */
 class StairEntity : public UnitEntity, public PlayerUsable
 {
+protected:
+    bool IsAvailable() const;
+
 public:
     StairEntity();
     virtual ~StairEntity();
 
     inline virtual bool IsUsable(EntityId playerId) const override { return true; }
+    inline virtual std::string GetCannotUseText() const override { return "You can't use these stairs right now..."; }
 
     virtual StairEntityType GetStairType() const = 0;
 };

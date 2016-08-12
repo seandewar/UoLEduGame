@@ -98,9 +98,11 @@ void AltarEntity::Tick()
             auto player = area->GetEntity<PlayerEntity>(pid);
             assert(player);
 
-            player->Attack(Helper::GenerateRandomInt<u32>(0, 250), DamageType::Magic);
-            player->MoveWithCollision(sf::Vector2f(Helper::GenerateRandomReal(-5.0f, 5.0f),
-                Helper::GenerateRandomReal(-5.0f, 5.0f))); // push player
+            if (player->GetInvincibilityTimeLeft() <= sf::Time::Zero) {
+                player->Attack(Helper::GenerateRandomInt<u32>(0, 250), DamageType::Magic);
+                player->MoveWithCollision(sf::Vector2f(Helper::GenerateRandomReal(-5.0f, 5.0f),
+                    Helper::GenerateRandomReal(-5.0f, 5.0f))); // push player
+            }
         }
     }
 }
@@ -152,8 +154,8 @@ void AltarEntity::Use(EntityId playerId)
         }
     }
     else if (director.GetCurrentObjectiveType() == GameObjectiveType::RootArtefactAltar) {
-        // TODO trigger boss fight
-        Game::Get().AddMessage("TODO SUMMON BOSS NOW OK");
+        Game::Get().GetDirector().ReleaseTheBoss(area, GetPosition() - sf::Vector2f(8.0f, 100.0f));
+        GameAssets::Get().magicFireSound.play();
     }
     else if (director.GetCurrentObjectiveType() == GameObjectiveType::BossFight) {
         Game::Get().AddMessage("The staircase has been blocked off by magical flames!");
@@ -161,5 +163,6 @@ void AltarEntity::Use(EntityId playerId)
     }
     else if (director.GetCurrentObjectiveType() == GameObjectiveType::Complete) {
         // TODO ascend stairs and win game!
+        Game::Get().AddMessage("YOU'RE WINNER!");
     }
 }

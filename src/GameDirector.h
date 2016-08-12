@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <SFML/System/Vector2.hpp>
+
 #include "GameFilesystem.h"
 
 /**
@@ -125,6 +127,8 @@ public:
     void StartNewSession(int maxArtefacts, WorldArea* currentArea, GameFilesystem* fs);
     void FoundArtefact(WorldArea* currentArea);
     void ChooseNewArtefactLocation(WorldArea* newArea);
+    void ReleaseTheBoss(WorldArea* spawnArea, const sf::Vector2f& pos);
+    void BossDefeated();
 
     inline GameFilesystemNode* GetCurrentArtefactNode()
     { 

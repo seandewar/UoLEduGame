@@ -20,8 +20,15 @@ StairEntity::~StairEntity()
 
 bool StairEntity::IsAvailable() const
 {
-    return Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::BossFight &&
-        Game::Get().GetDirector().GetCurrentObjectiveType() != GameObjectiveType::Complete;
+    switch (Game::Get().GetDirector().GetCurrentObjectiveType()) {
+    case GameObjectiveType::BossFight:
+    case GameObjectiveType::Complete:
+    case GameObjectiveType::End:
+        return false;
+
+    default:
+        return true;
+    }
 }
 
 

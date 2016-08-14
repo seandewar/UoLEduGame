@@ -562,6 +562,21 @@ void GameDirector::BossDefeated()
 }
 
 
+void GameDirector::EndGame()
+{
+    if (objective_ == GameObjectiveType::End) {
+        return;
+    }
+
+    objective_ = GameObjectiveType::End;
+
+    printf("GameDirector - Game ended!\n");
+    Game::Get().AddMessage("Well done - you win!");
+
+    GameAssets::Get().invincibilitySound.play();
+}
+
+
 std::string GameDirector::GetObjectiveText() const
 {
     switch (objective_) {
@@ -569,10 +584,11 @@ std::string GameDirector::GetObjectiveText() const
         std::string();
 
     case GameObjectiveType::NotStarted:
+    case GameObjectiveType::End:
         return "No objective.";
 
     case GameObjectiveType::Complete:
-        return "Ascend the mysterious staircase to exit the dungeon.";
+        return "Ascend the mysterious staircase in the gilded room to exit the dungeon!";
 
     case GameObjectiveType::CollectArtefact:
         if (!objectiveFsNode_) {

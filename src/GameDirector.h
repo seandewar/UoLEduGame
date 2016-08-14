@@ -71,7 +71,8 @@ enum class GameObjectiveType
     CollectArtefact,
     RootArtefactAltar,
     BossFight,
-    Complete
+    Complete,
+    End
 };
 
 /**
@@ -129,6 +130,7 @@ public:
     void ChooseNewArtefactLocation(WorldArea* newArea);
     void ReleaseTheBoss(WorldArea* spawnArea, const sf::Vector2f& pos);
     void BossDefeated();
+    void EndGame();
 
     inline GameFilesystemNode* GetCurrentArtefactNode()
     { 

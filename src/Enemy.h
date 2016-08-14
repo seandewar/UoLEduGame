@@ -32,6 +32,8 @@ public:
     Enemy();
     virtual ~Enemy();
 
+    virtual u32 Damage(u32 damageAmount, DamageType type) override;
+
     virtual void Render(sf::RenderTarget& target) override;
 
     virtual EnemyType GetEnemyType() const = 0;

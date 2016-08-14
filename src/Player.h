@@ -61,6 +61,19 @@ public:
     PlayerInventory();
     ~PlayerInventory();
 
+    inline void ResetInventory()
+    {
+        selectedWeapon_ = PlayerSelectedWeapon::Melee;
+
+        meleeWeapon_ = std::move(std::make_unique<MeleeWeapon>(MeleeWeaponType::BasicSword));
+        magicWeapon_.reset();
+
+        armour_.reset();
+
+        healthPotions_ = std::move(std::make_unique<PotionItem>(ItemType::HealthPotion));
+        magicPotions_ = std::move(std::make_unique<PotionItem>(ItemType::MagicPotion));
+    }
+
     inline void SetSelectedWeapon(PlayerSelectedWeapon selected) { selectedWeapon_ = selected; }
     inline PlayerSelectedWeapon GetSelectedWeapon() const { return selectedWeapon_; }
 

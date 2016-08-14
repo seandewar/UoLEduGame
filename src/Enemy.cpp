@@ -21,6 +21,13 @@ Enemy::~Enemy()
 }
 
 
+u32 Enemy::Damage(u32 damageAmount, DamageType type)
+{
+    Game::Get().NotifyPlayerDamageGiven(damageAmount);
+    return AliveEntity::Damage(damageAmount, type);
+}
+
+
 void Enemy::Render(sf::RenderTarget& target)
 {
     auto area = GetAssignedArea();
@@ -1171,6 +1178,12 @@ void BasicEnemy::Render(sf::RenderTarget& target)
             enemySprite = anim_.GetCurrentFrame();
         }
         else {
+            // don't bother rendering us if we're dead
+            // and in map mode
+            if (Game::Get().IsInMapMode()) {
+                return;
+            }
+
             // dead sprites
             enemySprite.setTexture(GameAssets::Get().enemySpriteSheet);
 

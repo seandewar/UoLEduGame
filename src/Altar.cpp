@@ -162,7 +162,7 @@ void AltarEntity::Use(EntityId playerId)
         Game::Get().AddMessage("Defeat the Dungeon Guardian to extinguish them.");
     }
     else if (director.GetCurrentObjectiveType() == GameObjectiveType::Complete) {
-        // TODO ascend stairs and win game!
-        Game::Get().AddMessage("YOU'RE WINNER!");
+        player->MarkForDeletion();
+        Game::Get().GetDirector().EndGame();
     }
 }

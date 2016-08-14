@@ -29,6 +29,9 @@ struct GameAssets
     sf::Font gameFont;
     sf::Font altFont;
 
+    sf::Texture sfmlLogo;
+    sf::Texture uolLogo;
+
     sf::Texture viewVignette;
     sf::Texture genericTilesSheet;
     sf::Texture stairsSpriteSheet;
@@ -113,6 +116,7 @@ private:
 enum class GameState
 {
     Menu1,
+    MenuCredits,
     InGame
 };
 
@@ -156,12 +160,19 @@ class Game
     EntityId playerId_;
 
     std::string scheduledLevelChangeFsNodePath_;
+    bool scheduledNewGame_;
 
     const IGameQuestion* displayedQuestion_;
     std::vector<GameQuestionAnswerChoice> displayedQuestionShuffledChoices_;
     int displayedQuestionSelectedChoice_;
 
     sf::Time lowHealthNextBeepTimeLeft_;
+
+    int endPlayerNumDeaths_;
+    u32 endPlayerNumDamageTaken_;
+    u32 endPlayerNumDamageGiven_;
+    u32 endPlayerNumQuestionsWrong_;
+    sf::Time endPlayerTimeTaken_;
 
     inline WorldArea* GetWorldArea() { return world_ ? world_->GetCurrentArea() : nullptr; }
     inline const WorldArea* GetWorldArea() const { return world_ ? world_->GetCurrentArea() : nullptr; }
@@ -200,6 +211,7 @@ class Game
     bool TeleportPlayerToObjective();
 
     bool ChangeLevel(const std::string& fsNodePath);
+    bool NewGame();
 
     void UpdateCamera(sf::RenderTarget& target);
 
@@ -210,6 +222,7 @@ class Game
     void HandlePlayerLowHealthBeep();
 
     void RenderUIMessages(sf::RenderTarget& target);
+    void RenderUILoadingNewGame(sf::RenderTarget& target);
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
     void RenderUIObjective(sf::RenderTarget& target);
@@ -223,6 +236,7 @@ class Game
     void RenderUIPlayerUseTargetText(sf::RenderTarget& target);
     void RenderUIControls(sf::RenderTarget& target);
     void RenderUIMapMode(sf::RenderTarget& target);
+    void RenderUIEndStats(sf::RenderTarget& target);
 
     void RenderUIMenu(sf::RenderTarget& target);
 
@@ -263,14 +277,38 @@ public:
         messages_.emplace_back(message, color);
     }
 
+    inline void NotifyPlayerDeath()
+    {
+        if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
+            director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
+            ++endPlayerNumDeaths_;
+        }
+    }
+
+    inline void NotifyPlayerDamaged(u32 damageAmount)
+    {
+        if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
+            director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
+            endPlayerNumDamageTaken_ += damageAmount;
+        }
+    }
+
+    inline void NotifyPlayerDamageGiven(u32 damageGiven)
+    {
+        if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
+            director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
+            endPlayerNumDamageGiven_ += damageGiven;
+        }
+    }
+
     inline const IGameQuestion* GetDisplayedQuestion() const { return displayedQuestion_; }
     void ResetDisplayedQuestion();
     void SetDisplayedQuestion(const IGameQuestion* question);
 
     void RunFrame(sf::RenderTarget& target);
 
-    bool NewGame();
     inline void SetLevelChange(const std::string& fsNodePath) { scheduledLevelChangeFsNodePath_ = fsNodePath; }
+    inline void ScheduleNewGame() { scheduledNewGame_ = true; }
 
     inline GameDirector& GetDirector() { return director_; }
 

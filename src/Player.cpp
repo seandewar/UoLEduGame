@@ -21,16 +21,9 @@ PlayerDefaultStartEntity::~PlayerDefaultStartEntity()
 }
 
 
-PlayerInventory::PlayerInventory() :
-selectedWeapon_(PlayerSelectedWeapon::Melee),
-meleeWeapon_(std::make_unique<MeleeWeapon>(MeleeWeaponType::BasicSword)),
-//magicWeapon_(std::make_unique<MagicWeapon>(MagicWeaponType::ZeroStaff)),
-//armour_(std::make_unique<Armour>(ArmourType::WarriorHelmet)),
-healthPotions_(std::make_unique<PotionItem>(ItemType::HealthPotion)),
-magicPotions_(std::make_unique<PotionItem>(ItemType::MagicPotion))
+PlayerInventory::PlayerInventory()
 {
-    // TODO dbg
-    //armour_->SetDifficultyMultiplier(10.0f);
+    ResetInventory();
 }
 
 
@@ -431,6 +424,8 @@ u32 PlayerEntity::Attack(u32 initialDamage, DamageType source)
 u32 PlayerEntity::DamageWithoutInvincibility(u32 amount, DamageType source)
 {
     Game::Get().ResetDisplayedQuestion(); // interrupt question interface if it's up
+    Game::Get().NotifyPlayerDamaged(amount);
+
     GameAssets::Get().playerHurtSound.play();
     return AliveEntity::Damage(amount, source);
 }
@@ -453,6 +448,7 @@ void PlayerEntity::Tick()
             GameAssets::Get().playerDeathSound.play();
             Game::Get().AddMessage("Oh dear - you have been knocked out!", sf::Color(255, 0, 0));
 
+            Game::Get().NotifyPlayerDeath();
             handledDeath_ = true;
         }
 

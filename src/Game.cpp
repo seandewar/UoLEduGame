@@ -29,6 +29,9 @@ bool GameAssets::LoadAssets()
     LOAD_FROM_FILE(altFont, "assets/Fonts/prstart.ttf");
 
     // textures
+    LOAD_FROM_FILE(sfmlLogo, "assets/Textures/Credits/sfml-logo-small.png");
+    LOAD_FROM_FILE(uolLogo, "assets/Textures/Credits/UniOfLeicesterLogo.png");
+
     LOAD_FROM_FILE(viewVignette, "assets/Textures/DarknessVignette.png");
     LOAD_FROM_FILE(genericTilesSheet, "assets/Textures/GenericTiles.png");
     LOAD_FROM_FILE(stairsSpriteSheet, "assets/Textures/StairSprites.png");
@@ -113,7 +116,8 @@ Game::Game() :
 debugMode_(false),
 playerId_(Entity::InvalidId),
 state_(GameState::Menu1),
-mapMode_(false)
+mapMode_(false),
+scheduledNewGame_(false)
 {
     // add these so that they can be shuffled when the display question UI is invoked.
     displayedQuestionShuffledChoices_.emplace_back(GameQuestionAnswerChoice::CorrectChoice);
@@ -354,7 +358,11 @@ bool Game::TeleportPlayerToObjective()
 
 bool Game::NewGame()
 {
+    scheduledLevelChangeFsNodePath_ = std::string();
+    scheduledNewGame_ = false;
+
     messages_.clear();
+    RemovePlayer();
 
     GameFilesystemGen gen;
     if (!(worldFs_ = std::move(gen.GenerateNewFilesystem()))) {
@@ -377,6 +385,13 @@ bool Game::NewGame()
     ResetPlayerStats();
     state_ = GameState::InGame;
     mapMode_ = false;
+
+    playerInv_.ResetInventory();
+
+    endPlayerNumDeaths_ = 0;
+    endPlayerNumDamageTaken_ = 0;
+    endPlayerNumQuestionsWrong_ = 0;
+    endPlayerTimeTaken_ = sf::Time::Zero;
     return true;
 }
 
@@ -386,7 +401,7 @@ void Game::UpdateCamera(sf::RenderTarget& target)
     auto area = GetWorldArea();
 
     if (area) {
-        if (state_ == GameState::Menu1) {
+        if (state_ == GameState::Menu1 || state_ == GameState::MenuCredits) {
             area->GetRenderView().setSize(Helper::ComputeGoodAspectSize(target, 1000.0f));
             area->GetRenderView().setCenter(0.5f * area->GetWidth() * BaseTile::TileSize.x,
                 0.5f * area->GetHeight() * BaseTile::TileSize.y);
@@ -472,11 +487,18 @@ void Game::HandleDisplayedQuestionInput()
         
         if (selectedChoice == GameQuestionAnswerChoice::CorrectChoice) {
             GameAssets::Get().successSound.play();
+
             director_.AnswerQuestionResult(GameQuestionAnswerResult::Correct, GetWorldArea());
         }
         else {
             GameAssets::Get().failureSound.play();
+
             director_.AnswerQuestionResult(GameQuestionAnswerResult::Wrong, GetWorldArea());
+
+            if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
+                director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
+                ++endPlayerNumQuestionsWrong_;
+            }
         }
 
         ResetDisplayedQuestion();
@@ -615,6 +637,13 @@ void Game::HandlePlayerLowHealthBeep()
 
 void Game::Tick()
 {
+    // check if we have a scheduled new game
+    if (scheduledNewGame_) {
+        if (!NewGame()) {
+            throw std::runtime_error("Failed to start new game!");
+        }
+    }
+
     if (world_) {
         // check if we have a scheduled level change
         if (!scheduledLevelChangeFsNodePath_.empty()) {
@@ -682,9 +711,6 @@ void Game::Tick()
                     armour = std::make_unique<Armour>(ArmourType::AntiMagicVisor);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F10)) {
-                    armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
-                }
-                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F11) && GetWorldArea()) {
                     // find all artefacts lol
                     for (int i = 0; i < director_.GetMaxArtefacts(); ++i) {
                         director_.FoundArtefact(GetWorldArea());
@@ -694,6 +720,9 @@ void Game::Tick()
                     armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
                     player->PickupItem(&PotionItem(ItemType::HealthPotion, 10));
                     player->PickupItem(&PotionItem(ItemType::MagicPotion, 10));
+                }
+                else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F11) && GetWorldArea()) {
+                    director_.EndGame();
                 }
 
                 if (weapon) {
@@ -716,13 +745,26 @@ void Game::Tick()
                 mapMode_ = !mapMode_;
             }
 
+            // increment end timer if game still going
+            if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
+                director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
+                endPlayerTimeTaken_ += FrameTimeStep;
+            }
+
             // handle low player health beep
             HandlePlayerLowHealthBeep();
 
             // handle input for player inputs, interfaces or inventory
             HandlePlayerMoveInput();
 
-            if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
+            // interface input
+            if (director_.GetCurrentObjectiveType() == GameObjectiveType::End &&
+                Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+                // return to menu1
+                GameAssets::Get().successSound.play();
+                state_ = GameState::Menu1;
+            }
+            else if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
                 HandleRespawnSacrificeInput();
             }
             else if (displayedQuestion_) {
@@ -737,14 +779,23 @@ void Game::Tick()
                 }
             }
         }
-        else if (state_ == GameState::Menu1) {
-            // enter to start game
+        else if (state_ == GameState::Menu1 || state_ == GameState::MenuCredits) {
             if (Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+                // play
                 GameAssets::Get().successSound.play();
 
-                if (!NewGame()) {
-                    throw std::runtime_error("Failed to start new game!");
+                ScheduleNewGame();
+            }
+            else if (Game::IsKeyPressedFromEvent(sf::Keyboard::Escape)) {
+                // toggle credits/menu1
+                if (state_ == GameState::Menu1) {
+                    state_ = GameState::MenuCredits;
                 }
+                else {
+                    state_ = GameState::Menu1;
+                }
+
+                GameAssets::Get().selectSound.play();
             }
         }
 
@@ -770,7 +821,7 @@ void Game::RenderUIObjective(sf::RenderTarget& target)
 {
     if (world_ &&
         director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted &&
-        director_.GetCurrentObjectiveType() != GameObjectiveType::Complete) {
+        director_.GetCurrentObjectiveType() != GameObjectiveType::End) {
         sf::Text objText("Objective: " + director_.GetObjectiveText(), GameAssets::Get().gameFont, 8);
         objText.setPosition(5.0f, 35.0f);
         objText.setColor(sf::Color(255, 150, 0));
@@ -899,6 +950,10 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 
 void Game::RenderUIControls(sf::RenderTarget& target)
 {
+    if (!GetPlayerEntity()) {
+        return;
+    }
+
     sf::Text moveControls("Press W, A, S, D to move", GameAssets::Get().gameFont, 8);
     moveControls.setColor(sf::Color(255, 255, 0));
     moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
@@ -922,8 +977,38 @@ void Game::RenderUIControls(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUILoadingNewGame(sf::RenderTarget& target)
+{
+    // render window bg
+    sf::RectangleShape uiBg(sf::Vector2f(320.0f, 60.0f));
+    uiBg.setFillColor(sf::Color(20, 20, 20, 250));
+    uiBg.setOutlineColor(sf::Color(0, 0, 0));
+    uiBg.setOutlineThickness(-2.0f);
+    uiBg.setPosition(0.5f * (target.getView().getSize() - uiBg.getSize()));
+
+    target.draw(uiBg);
+    
+    // render text
+    sf::Text loadingText("Loading New Game...", GameAssets::Get().gameFont, 16);
+    loadingText.setPosition(target.getView().getCenter() - 0.5f *
+        sf::Vector2f(loadingText.getGlobalBounds().width, loadingText.getGlobalBounds().height));
+
+    Helper::RenderTextWithDropShadow(target, loadingText);
+}
+
+
 void Game::RenderUILoadingArea(sf::RenderTarget& target)
 {
+    // render window bg
+    sf::RectangleShape uiBg(sf::Vector2f(280.0f, 60.0f));
+    uiBg.setFillColor(sf::Color(20, 20, 20, 250));
+    uiBg.setOutlineColor(sf::Color(0, 0, 0));
+    uiBg.setOutlineThickness(-2.0f);
+    uiBg.setPosition(0.5f * (target.getView().getSize() - uiBg.getSize()));
+
+    target.draw(uiBg);
+
+    // render text
     sf::Text loadingText("Loading Area...", GameAssets::Get().gameFont, 16);
     loadingText.setPosition(target.getView().getCenter() - 0.5f *
         sf::Vector2f(loadingText.getGlobalBounds().width, loadingText.getGlobalBounds().height));
@@ -1419,142 +1504,314 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
     sf::Text menuTitleThe("The", GameAssets::Get().gameFont, 18);
     menuTitleThe.setColor(sf::Color(200, 200, 200));
     menuTitleThe.setPosition(0.5f * (target.getView().getSize().x - menuTitleThe.getGlobalBounds().width),
-        50.0f);
+        30.0f);
 
     Helper::RenderTextWithDropShadow(target, menuTitleThe, sf::Vector2f(5.0f, 5.0f));
 
     sf::Text menuTitleFs("File System Dungeon", GameAssets::Get().gameFont, 32);
     menuTitleFs.setColor(sf::Color(255, 255, 255));
     menuTitleFs.setPosition(0.5f * (target.getView().getSize().x - menuTitleFs.getGlobalBounds().width),
-        80.0f);
+        60.0f);
 
     Helper::RenderTextWithDropShadow(target, menuTitleFs, sf::Vector2f(5.0f, 5.0f));
 
     sf::Text menuCreds("By Sean Dewar", GameAssets::Get().altFont, 10);
     menuCreds.setColor(sf::Color(200, 200, 200));
     menuCreds.setPosition(0.5f * (target.getView().getSize().x - menuCreds.getGlobalBounds().width),
-        125.0f);
+        105.0f);
 
     Helper::RenderTextWithDropShadow(target, menuCreds);
 
-    sf::Text menuCont("Press ENTER to play!", GameAssets::Get().gameFont, 12);
+    sf::Text menuCont("Press ENTER to generate the dungeon & play!", GameAssets::Get().gameFont, 12);
     menuCont.setColor(sf::Color(255, 255, 0));
     menuCont.setPosition(0.5f * (target.getView().getSize().x - menuCont.getGlobalBounds().width),
-        155.0f);
+        135.0f);
 
     Helper::RenderTextWithDropShadow(target, menuCont);
 
-    sf::Sprite menuBob(GameAssets::Get().playerSpriteSheet, sf::IntRect(0, 0, 16, 16));
-    menuBob.setScale(5.0f, 5.0f);
-    menuBob.setPosition(0.5f * (target.getView().getSize().x - menuBob.getGlobalBounds().width), 175.0f);
+    // menu1
+    if (state_ == GameState::Menu1) {
+        sf::Text menuCredits("Press ESC for about & credits.", GameAssets::Get().gameFont, 9);
+        menuCredits.setColor(sf::Color(200, 200, 0));
+        menuCredits.setPosition(0.5f * (target.getView().getSize().x - menuCredits.getGlobalBounds().width),
+            155.0f);
 
-    target.draw(menuBob);
+        Helper::RenderTextWithDropShadow(target, menuCredits);
 
+        sf::Sprite menuBob(GameAssets::Get().playerSpriteSheet, sf::IntRect(0, 0, 16, 16));
+        menuBob.setScale(5.0f, 5.0f);
+        menuBob.setPosition(0.5f * (target.getView().getSize().x - menuBob.getGlobalBounds().width), 175.0f);
+
+        target.draw(menuBob);
+
+        std::ostringstream oss;
+        oss << "This is Bob; an archaeologist who specializes in\n";
+        oss << "exploring lost ruins to find all sorts of valuable\n";
+        oss << "artefacts and other treasures.\n\n";
+
+        oss << "In his most recent archaeological venture however,\n";
+        oss << "Bob managed to get himself trapped within a large\n";
+        oss << "underground dungeon containing a disorienting amount\n";
+        oss << "of winding passages and staircases that seemingly\n";
+        oss << "led to everywhere other than the exit he wished to find.\n\n";
+
+        oss << "What Bob doesn't know however, is that this dungeon is\n";
+        oss << "very special, as its structure reflects the layout of\n";
+        oss << "files and directories within a UNIX-style file system.\n";
+        oss << "This is unfortunate for Bob, as he knows nothing about\n";
+        oss << "computers whatsoever!";
+
+        sf::Text menuDesc1(oss.str(), GameAssets::Get().altFont, 12);
+        menuDesc1.setColor(sf::Color(200, 200, 200));
+        menuDesc1.setPosition(0.5f * (target.getView().getSize().x - menuDesc1.getGlobalBounds().width),
+            275.0f);
+
+        Helper::RenderTextWithDropShadow(target, menuDesc1);
+
+        sf::Sprite menuChest(GameAssets::Get().chestsSpriteSheet, sf::IntRect(16, 0, 16, 16));
+        menuChest.setScale(5.0f, 5.0f);
+        menuChest.setPosition(0.5f * (target.getView().getSize().x - menuChest.getGlobalBounds().width),
+            465.0f);
+
+        target.draw(menuChest);
+
+        sf::Sprite menuArt1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 32, 16, 16));
+        menuArt1.setScale(4.0f, 4.0f);
+        menuArt1.setPosition(0.5f * (target.getView().getSize().x - 130.0f), 495.0f);
+
+        target.draw(menuArt1);
+
+        sf::Sprite menuArt2(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 64, 16, 16));
+        menuArt2.setScale(4.0f, 4.0f);
+        menuArt2.setPosition(0.5f * (target.getView().getSize().x + 30.0f), 490.0f);
+
+        target.draw(menuArt2);
+
+        sf::Sprite menuStaff1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(32, 16, 16, 16));
+        menuStaff1.setScale(4.0f, 4.0f);
+        menuStaff1.setPosition(0.5f * (target.getView().getSize().x + 100.0f), 480.0f);
+
+        target.draw(menuStaff1);
+
+        sf::Sprite menuSword1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(32, 0, 16, 16));
+        menuSword1.setScale(4.0f, 4.0f);
+        menuSword1.setPosition(0.5f * (target.getView().getSize().x + 180.0f), 480.0f);
+
+        target.draw(menuSword1);
+
+        sf::Sprite menuArm1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(48, 32, 16, 16));
+        menuArm1.setScale(4.0f, 4.0f);
+        menuArm1.setPosition(0.5f * (target.getView().getSize().x - 64.5f), 505.0f);
+
+        target.draw(menuArm1);
+
+        sf::Sprite menuHPot(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 0, 16, 16));
+        menuHPot.setScale(4.0f, 4.0f);
+        menuHPot.setPosition(0.5f * (target.getView().getSize().x - 220.0f), 480.0f);
+
+        target.draw(menuHPot);
+
+        sf::Sprite menuMPot(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 16, 16, 16));
+        menuMPot.setScale(4.0f, 4.0f);
+        menuMPot.setPosition(0.5f * (target.getView().getSize().x - 300.0f), 480.0f);
+
+        target.draw(menuMPot);
+
+        sf::Sprite menuBad1(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 0, 16, 16));
+        menuBad1.setScale(5.0f, 5.0f);
+        menuBad1.setPosition(0.5f * (target.getView().getSize().x - 500.0f), 475.0f);
+
+        target.draw(menuBad1);
+
+        sf::Sprite menuBad2(GameAssets::Get().enemySpriteSheet, sf::IntRect(0, 80, 16, 16));
+        menuBad2.setScale(5.0f, 5.0f);
+        menuBad2.setPosition(0.5f * (target.getView().getSize().x + 350.0f), 475.0f);
+
+        target.draw(menuBad2);
+
+        oss = std::ostringstream();
+        oss << "Here's where you come in: your job is to help Bob\n";
+        oss << "escape by locating 9 magical artefact pieces from within\n";
+        oss << "the dungeon while protecting Bob from the baddies inside!\n\n";
+
+        oss << "Be warned however, as you will need to know how to\n";
+        oss << "interpret UNIX path names in order to locate the artefact\n";
+        oss << "pieces while also being able to correctly answer some\n";
+        oss << "questions relating to the structure of UNIX-style file\n";
+        oss << "systems and their properties!\n\n";
+
+        oss << "This is nothing that a bit of research can't solve -\n";
+        oss << "Good luck!";
+
+        sf::Text menuDesc2(oss.str(), GameAssets::Get().altFont, 12);
+        menuDesc2.setColor(sf::Color(200, 200, 200));
+        menuDesc2.setPosition(0.5f * (target.getView().getSize().x - menuDesc2.getGlobalBounds().width),
+            570.0f);
+
+        Helper::RenderTextWithDropShadow(target, menuDesc2);
+    }
+    else if (state_ == GameState::MenuCredits) {
+        sf::Text menuMain("Press ESC to return to main title.", GameAssets::Get().gameFont, 9);
+        menuMain.setColor(sf::Color(200, 200, 0));
+        menuMain.setPosition(0.5f * (target.getView().getSize().x - menuMain.getGlobalBounds().width),
+            155.0f);
+
+        Helper::RenderTextWithDropShadow(target, menuMain);
+
+        sf::Sprite menuSpr(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 128, 16, 16));
+        menuSpr.setScale(5.0f, 5.0f);
+        menuSpr.setPosition(0.5f * (target.getView().getSize().x - menuSpr.getGlobalBounds().width), 175.0f);
+
+        target.draw(menuSpr);
+
+        std::ostringstream oss;
+
+        oss << "The File System Dungeon is a game made in 2016 by\n";
+        oss << "Sean Dewar for the University of Leicester.\n\n";
+
+        oss << "The game is written in C++ and uses SFML, which is\n";
+        oss << "distributed under the zlib/png license.\n\n";
+
+        oss << "as3sfxr was used for the creation of sounds used\n";
+        oss << "within the game. Sounds created using as3sfxr are\n";
+        oss << "distributed under the CC0 license.\n\n";
+
+        oss << "Special thanks to my good friend Joshua Pitcher for\n";
+        oss << "providing the chest sprites used within the game!\n\n";
+
+        sf::Text menuAbout(oss.str(), GameAssets::Get().altFont, 12);
+        menuAbout.setColor(sf::Color(200, 200, 200));
+        menuAbout.setPosition(0.5f * (target.getView().getSize().x - menuAbout.getGlobalBounds().width),
+            275.0f);
+
+        Helper::RenderTextWithDropShadow(target, menuAbout);
+
+        sf::Sprite menuUoLLogo(GameAssets::Get().uolLogo);
+        menuUoLLogo.setScale(0.5f, 0.5f);
+        menuUoLLogo.setPosition(0.5f * (target.getView().getSize().x - menuUoLLogo.getGlobalBounds().width) -
+            125.0f, 450.0f);
+
+        target.draw(menuUoLLogo);
+
+        sf::Sprite menuSfmlLogo(GameAssets::Get().sfmlLogo);
+        menuSfmlLogo.setScale(0.5f, 0.5f);
+        menuSfmlLogo.setPosition(0.5f * (target.getView().getSize().x - menuSfmlLogo.getGlobalBounds().width) +
+            125.0f, 450.0f);
+
+        target.draw(menuSfmlLogo);
+    }
+}
+
+
+void Game::RenderUIEndStats(sf::RenderTarget& target)
+{
+    if (director_.GetCurrentObjectiveType() != GameObjectiveType::End) {
+        return;
+    }
+
+    // render window bg
+    sf::RectangleShape uiBg(sf::Vector2f(600.0f, 250.0f));
+    uiBg.setFillColor(sf::Color(20, 20, 20, 250));
+    uiBg.setOutlineColor(sf::Color(0, 0, 0));
+    uiBg.setOutlineThickness(-2.0f);
+    uiBg.setPosition(0.5f * (target.getView().getSize() - uiBg.getSize()));
+
+    target.draw(uiBg);
+
+    // render window label
+    sf::Text uiLabel("Congratulations!", GameAssets::Get().gameFont, 16);
+    uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width),
+        20.0f));
+    uiLabel.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiLabel);
+
+    // render text label
+    sf::Text uiText1("Thanks to you, Bob has made it out of the dungeon in one piece!", GameAssets::Get().gameFont, 8);
+    uiText1.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiText1.getGlobalBounds().width),
+        50.0f));
+    uiText1.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiText1);
+
+    sf::Text uiText2("Here are some of the stats for your journey:", GameAssets::Get().gameFont, 8);
+    uiText2.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiText2.getGlobalBounds().width),
+        62.0f));
+    uiText2.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiText2);
+
+    // render stats labels
     std::ostringstream oss;
-    oss << "This is Bob; an archaeologist who specializes in\n";
-    oss << "exploring lost ruins to find all sorts of valuable\n";
-    oss << "artefacts and other treasures.\n\n";
 
-    oss << "In his most recent archaeological venture however,\n";
-    oss << "Bob managed to get himself trapped within a large\n";
-    oss << "underground dungeon containing a disorienting amount\n";
-    oss << "of winding passages and staircases that seemingly\n";
-    oss << "led to everywhere other than the exit he wished to find.\n\n";
+    oss << "You spent " << std::fixed << std::setprecision(2) << endPlayerTimeTaken_.asSeconds() / 60.0f
+        << " minutes within the dungeon.";
 
-    oss << "What Bob doesn't know however, is that this dungeon is\n";
-    oss << "very special, as its structure reflects the layout of\n";
-    oss << "files and directories within a UNIX-style file system.\n";
-    oss << "This is unfortunate for Bob, as he knows nothing about\n";
-    oss << "computers whatsoever!";
+    sf::Text uiTime(oss.str(), GameAssets::Get().gameFont, 8);
+    uiTime.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiTime.getGlobalBounds().width),
+        90.0f));
+    uiTime.setColor(sf::Color(255, 145, 0));
 
-    sf::Text menuDesc1(oss.str(), GameAssets::Get().altFont, 12);
-    menuDesc1.setColor(sf::Color(200, 200, 200));
-    menuDesc1.setPosition(0.5f * (target.getView().getSize().x - menuDesc1.getGlobalBounds().width),
-        275.0f);
-
-    Helper::RenderTextWithDropShadow(target, menuDesc1);
-
-    sf::Sprite menuChest(GameAssets::Get().chestsSpriteSheet, sf::IntRect(16, 0, 16, 16));
-    menuChest.setScale(5.0f, 5.0f);
-    menuChest.setPosition(0.5f * (target.getView().getSize().x - menuChest.getGlobalBounds().width),
-        465.0f);
-
-    target.draw(menuChest);
-
-    sf::Sprite menuArt1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 32, 16, 16));
-    menuArt1.setScale(4.0f, 4.0f);
-    menuArt1.setPosition(0.5f * (target.getView().getSize().x - 130.0f), 495.0f);
-
-    target.draw(menuArt1);
-
-    sf::Sprite menuArt2(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 64, 16, 16));
-    menuArt2.setScale(4.0f, 4.0f);
-    menuArt2.setPosition(0.5f * (target.getView().getSize().x + 30.0f), 490.0f);
-
-    target.draw(menuArt2);
-
-    sf::Sprite menuStaff1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(32, 16, 16, 16));
-    menuStaff1.setScale(4.0f, 4.0f);
-    menuStaff1.setPosition(0.5f * (target.getView().getSize().x + 100.0f), 480.0f);
-
-    target.draw(menuStaff1);
-
-    sf::Sprite menuSword1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(32, 0, 16, 16));
-    menuSword1.setScale(4.0f, 4.0f);
-    menuSword1.setPosition(0.5f * (target.getView().getSize().x + 180.0f), 480.0f);
-
-    target.draw(menuSword1);
-
-    sf::Sprite menuArm1(GameAssets::Get().itemsSpriteSheet, sf::IntRect(48, 32, 16, 16));
-    menuArm1.setScale(4.0f, 4.0f);
-    menuArm1.setPosition(0.5f * (target.getView().getSize().x - 64.5f), 505.0f);
-
-    target.draw(menuArm1);
-
-    sf::Sprite menuHPot(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 0, 16, 16));
-    menuHPot.setScale(4.0f, 4.0f);
-    menuHPot.setPosition(0.5f * (target.getView().getSize().x - 220.0f), 480.0f);
-
-    target.draw(menuHPot);
-
-    sf::Sprite menuMPot(GameAssets::Get().itemsSpriteSheet, sf::IntRect(0, 16, 16, 16));
-    menuMPot.setScale(4.0f, 4.0f);
-    menuMPot.setPosition(0.5f * (target.getView().getSize().x - 300.0f), 480.0f);
-
-    target.draw(menuMPot);
-
-    sf::Sprite menuBad1(GameAssets::Get().enemySpriteSheet, sf::IntRect(16, 0, 16, 16));
-    menuBad1.setScale(5.0f, 5.0f);
-    menuBad1.setPosition(0.5f * (target.getView().getSize().x - 500.0f), 475.0f);
-
-    target.draw(menuBad1);
-
-    sf::Sprite menuBad2(GameAssets::Get().enemySpriteSheet, sf::IntRect(0, 80, 16, 16));
-    menuBad2.setScale(5.0f, 5.0f);
-    menuBad2.setPosition(0.5f * (target.getView().getSize().x + 350.0f), 475.0f);
-
-    target.draw(menuBad2);
+    Helper::RenderTextWithDropShadow(target, uiTime);
 
     oss = std::ostringstream();
-    oss << "Here's where you come in: your job is to help Bob\n";
-    oss << "escape by locating 9 magical artefact pieces from within\n";
-    oss << "the dungeon while protecting Bob from the baddies inside!\n\n";
 
-    oss << "Be warned however, as you will need to know how to\n";
-    oss << "interpret UNIX path names in order to locate the artefact\n";
-    oss << "pieces while also being able to correctly answer some\n";
-    oss << "questions relating to the structure of UNIX-style file\n";
-    oss << "systems and their properties!\n\n";
-    
-    oss << "This is nothing that a bit of research can't solve -\n";
-    oss << "Good luck!";
+    oss << "You dealt " << endPlayerNumDamageGiven_ << " damage to enemies and took " << endPlayerNumDamageTaken_
+        << " damage in return.";
 
-    sf::Text menuDesc2(oss.str(), GameAssets::Get().altFont, 12);
-    menuDesc2.setColor(sf::Color(200, 200, 200));
-    menuDesc2.setPosition(0.5f * (target.getView().getSize().x - menuDesc2.getGlobalBounds().width),
-        570.0f);
+    sf::Text uiDamage(oss.str(), GameAssets::Get().gameFont, 8);
+    uiDamage.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiDamage.getGlobalBounds().width),
+        102.0f));
+    uiDamage.setColor(sf::Color(255, 145, 0));
 
-    Helper::RenderTextWithDropShadow(target, menuDesc2);
+    Helper::RenderTextWithDropShadow(target, uiDamage);
+
+    oss = std::ostringstream();
+
+    oss << "You were knocked out " << endPlayerNumDeaths_ << (endPlayerNumDeaths_ == 1 ? " time." : " times.");
+
+    sf::Text uiDeaths(oss.str(), GameAssets::Get().gameFont, 8);
+    uiDeaths.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiDeaths.getGlobalBounds().width),
+        114.0f));
+    uiDeaths.setColor(sf::Color(255, 145, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiDeaths);
+
+    oss = std::ostringstream();
+
+    oss << "You answered " << endPlayerNumQuestionsWrong_
+        << (endPlayerNumQuestionsWrong_ == 1 ? " question" : " questions") << " incorrectly.";
+
+    sf::Text uiQWrong(oss.str(), GameAssets::Get().gameFont, 8);
+    uiQWrong.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiQWrong.getGlobalBounds().width),
+        126.0f));
+    uiQWrong.setColor(sf::Color(255, 145, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiQWrong);
+
+    // render more text labels
+    sf::Text uiText3("Thanks for playing!", GameAssets::Get().gameFont, 10);
+    uiText3.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiText3.getGlobalBounds().width) +
+        30.0f, 170.0f));
+    uiText3.setColor(sf::Color(255, 255, 255));
+
+    Helper::RenderTextWithDropShadow(target, uiText3);
+
+    // render images
+    sf::Sprite uiSpr1(GameAssets::Get().playerSpriteSheet, sf::IntRect(64, 48, 16, 16));
+    uiSpr1.setScale(3.0f, 3.0f);
+    uiSpr1.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiSpr1.getGlobalBounds().width) -
+        100.0f, 148.0f));
+
+    target.draw(uiSpr1);
+
+    // render confirm label
+    sf::Text uiConfirmLabel("Press ENTER to return to the title screen.", GameAssets::Get().gameFont, 8);
+    uiConfirmLabel.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiConfirmLabel.getGlobalBounds().width), 220.0f));
+    uiConfirmLabel.setColor(sf::Color(255, 255, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
 }
 
 
@@ -1607,7 +1864,11 @@ void Game::Render(sf::RenderTarget& target)
 
             RenderUILowStatsWarning(target);
 
-            if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
+            // interfaces
+            if (director_.GetCurrentObjectiveType() == GameObjectiveType::End) {
+                RenderUIEndStats(target);
+            }
+            else if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
                 RenderUIRespawnSacrifice(target);
             }
             else if (displayedQuestion_) {
@@ -1617,12 +1878,15 @@ void Game::Render(sf::RenderTarget& target)
                 RenderUIPlayerUseTargetText(target);
             }
         }
-        else if (state_ == GameState::Menu1) {
+        else if (state_ == GameState::Menu1 || state_ == GameState::MenuCredits) {
             RenderUIMenu(target);
         }
 
-        // if level is going to change next frame, display loading text
-        if (!scheduledLevelChangeFsNodePath_.empty()) {
+        // if new game or level is going to change next frame, display loading text
+        if (scheduledNewGame_) {
+            RenderUILoadingNewGame(target);
+        }
+        else if (!scheduledLevelChangeFsNodePath_.empty()) {
             RenderUILoadingArea(target);
         }
     }

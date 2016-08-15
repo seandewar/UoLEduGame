@@ -120,7 +120,7 @@ GameFilesystemGen::~GameFilesystemGen()
 
 
 GameFilesystemNode* GameFilesystemGen::AddNodeWithUniqueName(GameFilesystemNode& parent,
-    std::unique_ptr<GameFilesystemNode> node)
+    std::unique_ptr<GameFilesystemNode>&& node)
 {
     // attempt to add the file node with this name.
     // if the name already exists, try with a new unique name by appending

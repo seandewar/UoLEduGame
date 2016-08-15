@@ -75,6 +75,9 @@ class WorldArea
     sf::View renderView_;
     std::vector<DebugRenderableInfo> debugRenderables_;
 
+    void AddDebugRenderableImpl(const sf::Time& timeToDraw, std::unique_ptr<sf::Drawable> drawable, const std::string& labelString = std::string());
+    void AddDebugRenderableImpl(std::unique_ptr<sf::Drawable> drawable, const std::string& labelString = std::string());
+
     inline std::size_t GetTileIndex(u32 x, u32 y) const { return (y * w_) + x; }
 
 	inline std::unique_ptr<BaseTile>& GetTileElement(u32 x, u32 y) { return tiles_[GetTileIndex(x, y)]; }
@@ -90,17 +93,13 @@ public:
     inline void AddDebugRenderable(const sf::Time& timeToDraw, std::unique_ptr<T> drawable,
         const std::string& labelString = std::string())
     {
-        if (drawable) {
-            // TODO: No idea why I have to perform a move for the conversion...?
-            // probably due to DebugRenderableInfo's definition...
-            debugRenderables_.emplace_back(timeToDraw, std::move(drawable), labelString);
-        }
+        AddDebugRenderableImpl(timeToDraw, std::move(drawable), labelString);
     }
 
     template <typename T>
     inline void AddDebugRenderable(std::unique_ptr<T> drawable, const std::string& labelString = std::string())
     {
-        AddDebugRenderable<T>(Game::FrameTimeStep, std::move(drawable), labelString);
+        AddDebugRenderableImpl(std::move(drawable), labelString);
     }
 
     template <typename T>
@@ -115,7 +114,7 @@ public:
 
 	void ClearTiles();
 
-	BaseTile* SetTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile);
+	BaseTile* SetTile(u32 x, u32 y, std::unique_ptr<BaseTile>&& tile);
 	inline BaseTile* SetTile(u32 x, u32 y, GenericTileType type)
 	{
         return SetTile(x, y, std::make_unique<GenericTile>(type));
@@ -124,60 +123,13 @@ public:
     /**
     * PlaceTile() acts like SetTile(), but fails if a tile is already at the position.
     */
-    BaseTile* PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile);
+    BaseTile* PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile>&& tile);
     inline BaseTile* PlaceTile(u32 x, u32 y, GenericTileType type)
     {
         return PlaceTile(x, y, std::make_unique<GenericTile>(type));
     }
 
 	bool RemoveTile(u32 x, u32 y);
-
-	template <typename TileT>
-	void FillCircle(u32 centerX, u32 centerY, u32 r, const TileT* tile)
-	{
-		u32 startX = ((centerX - static_cast<i64>(r)) < 0 ? 0 : centerX - r);
-		u32 startY = ((centerY - static_cast<i64>(r)) < 0 ? 0 : centerY - r);
-
-		for (u32 y = startY; y <= (centerY + r) && y < h_; ++y) {
-			for (u32 x = startX; x <= (centerX + r) && x < w_; ++x) {
-				if (((x - centerX) * (x - centerX)) + ((y - centerY) * (y - centerY)) <= r * r) {
-					if (tile) {
-						SetTile(x, y, static_cast<std::unique_ptr<BaseTile>>(std::make_unique<TileT>(*tile)));
-					}
-					else {
-						RemoveTile(x, y);
-					}
-				}
-			}
-		}
-	}
-
-	inline void FillCircle(u32 centerX, u32 centerY, u32 r, GenericTileType type)
-	{
-        auto tile = GenericTile(type);
-		FillCircle<GenericTile>(centerX, centerY, r, &tile);
-	}
-
-	template <typename TileT>
-	void FillRectangle(u32 startX, u32 startY, u32 w, u32 h, const TileT* tile)
-	{
-		for (u32 y = startY; y <= (startY + h) && y < h_; ++y) {
-			for (u32 x = startX; x <= (startX + w) && x < w_; ++x) {
-				if (tile) {
-					SetTile(x, y, static_cast<std::unique_ptr<BaseTile>>(std::make_unique<TileT>(*tile)));
-				}
-				else {
-					RemoveTile(x, y);
-				}
-			}
-		}
-	}
-
-	inline void FillRectangle(u32 startX, u32 startY, u32 w, u32 h, GenericTileType type)
-	{
-        auto tile = GenericTile(type);
-		FillRectangle<GenericTile>(startX, startY, w, h, &tile);
-	}
 
     bool CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const;
 
@@ -209,7 +161,7 @@ public:
         BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
 
     template <typename T>
-    EntityId AddEntity(std::unique_ptr<T> ent)
+    EntityId AddEntity(std::unique_ptr<T>&& ent)
     {
         if (ent->assignedArea_ != nullptr) {
             fprintf(stderr, "WARN!! Entity %s (id: %u, area ptr: %p) already assigned to another area!\n",

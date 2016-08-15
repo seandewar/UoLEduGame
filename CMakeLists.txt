@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.5)
 # project name
 project(UoLEduGame)
 
-# c++11 standard required
-set(CMAKE_CXX_STANDARD 11)
+# c++14 standard required
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # set output dirs

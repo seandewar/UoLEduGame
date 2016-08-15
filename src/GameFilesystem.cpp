@@ -18,7 +18,7 @@ GameFilesystemNode::~GameFilesystemNode()
 }
 
 
-GameFilesystemNode* GameFilesystemNode::AddChildNode(std::unique_ptr<GameFilesystemNode> node)
+GameFilesystemNode* GameFilesystemNode::AddChildNode(std::unique_ptr<GameFilesystemNode>&& node)
 {
     if (!IsDirectory()) {
         throw GameFilesystemException("A node that isn't a directory cannot have children.");
@@ -202,7 +202,7 @@ GameFilesystemNode* GameFilesystem::GetNodeFromPathString(const std::string& pat
 }
 
 
-GameFilesystemNode* GameFilesystem::SetRootNode(std::unique_ptr<GameFilesystemNode> node)
+GameFilesystemNode* GameFilesystem::SetRootNode(std::unique_ptr<GameFilesystemNode>&& node)
 {
 	if (!node->IsRootDirectoryNode()) {
 		throw GameFilesystemException("The root node of a GameFilesystem should be of type RootDirectory!");

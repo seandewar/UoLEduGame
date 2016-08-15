@@ -27,6 +27,21 @@ WorldArea::~WorldArea()
 }
 
 
+void WorldArea::AddDebugRenderableImpl(const sf::Time& timeToDraw,
+        std::unique_ptr<sf::Drawable> drawable, const std::string& labelString)
+{
+    if (drawable) {
+        debugRenderables_.emplace_back(timeToDraw, std::move(drawable), labelString);
+    }
+}
+
+
+void WorldArea::AddDebugRenderableImpl(std::unique_ptr<sf::Drawable> drawable, const std::string& labelString)
+{
+    AddDebugRenderable(Game::FrameTimeStep, std::move(drawable), labelString);
+}
+
+
 void WorldArea::ClearTiles()
 {
 	printf("Clearing all tiles from area...\n");
@@ -36,7 +51,7 @@ void WorldArea::ClearTiles()
 }
 
 
-BaseTile* WorldArea::SetTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile)
+BaseTile* WorldArea::SetTile(u32 x, u32 y, std::unique_ptr<BaseTile>&& tile)
 {
 	if (!IsTileLocationInBounds(x, y)) {
 		return nullptr;
@@ -51,7 +66,7 @@ BaseTile* WorldArea::SetTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile)
 }
 
 
-BaseTile* WorldArea::PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile)
+BaseTile* WorldArea::PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile>&& tile)
 {
     if (!IsTileLocationInBounds(x, y)) {
         return nullptr;

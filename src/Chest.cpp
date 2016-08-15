@@ -249,7 +249,7 @@ void ChestEntity::Render(sf::RenderTarget& target)
             area->AddFrameUIRenderable(Helper::GetTextDropShadow(*chestText,
                 Game::Get().IsInMapMode() ? sf::Vector2f(2.0f, 2.0f) : sf::Vector2f(0.5f, 0.5f),
                 isOpened_ ? sf::Color(0, 0, 0, 150) : sf::Color(0, 0, 0, 255)));
-            area->AddFrameUIRenderable(chestText);
+            area->AddFrameUIRenderable(std::move(chestText));
         }
     }
 }

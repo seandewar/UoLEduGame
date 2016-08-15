@@ -57,7 +57,7 @@ class GameFilesystemGen
 
 	inline RngInt GenerateNewId(Rng& rng) { return rng(); }
 
-    GameFilesystemNode* AddNodeWithUniqueName(GameFilesystemNode& parent, std::unique_ptr<GameFilesystemNode>& node);
+    GameFilesystemNode* AddNodeWithUniqueName(GameFilesystemNode& parent, std::unique_ptr<GameFilesystemNode> node);
     void GenerateRandomFiles(GameFilesystemNode& parent, Rng& rng, std::size_t numFiles);
 
     std::size_t GenRandomFileDirsRecurse(GameFilesystemNode* node, Rng& rng, std::size_t numDirsLeft,

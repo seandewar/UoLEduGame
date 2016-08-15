@@ -78,12 +78,12 @@ void Enemy::Render(sf::RenderTarget& target)
 
             auto nameTextShadow = Helper::GetTextDropShadow(*nameText, sf::Vector2f(0.2f, 0.2f));
 
-            area->AddFrameUIRenderable(healthBarBg);
-            area->AddFrameUIRenderable(healthBarFg);
-            area->AddFrameUIRenderable(healthLabelShadow);
-            area->AddFrameUIRenderable(healthLabelText);
-            area->AddFrameUIRenderable(nameTextShadow);
-            area->AddFrameUIRenderable(nameText);
+            area->AddFrameUIRenderable(std::move(healthBarBg));
+            area->AddFrameUIRenderable(std::move(healthBarFg));
+            area->AddFrameUIRenderable(std::move(healthLabelShadow));
+            area->AddFrameUIRenderable(std::move(healthLabelText));
+            area->AddFrameUIRenderable(std::move(nameTextShadow));
+            area->AddFrameUIRenderable(std::move(nameText));
         }
     }
 }
@@ -486,7 +486,7 @@ void DungeonGuardian::Render(sf::RenderTarget& target)
 
     // render dead effect
     if (GetStats() && !GetStats()->IsAlive()) {
-        area->AddFrameUIRenderable(bossSprite);
+        area->AddFrameUIRenderable(std::move(bossSprite));
     }
     else {
         target.draw(*bossSprite);

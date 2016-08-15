@@ -243,6 +243,6 @@ void ProjectileEntity::Render(sf::RenderTarget& target)
             break;
         }
 
-        area->AddFrameUIRenderable(projectileSprite);
+        area->AddFrameUIRenderable(std::move(projectileSprite));
     }
 }

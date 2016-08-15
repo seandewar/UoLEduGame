@@ -34,7 +34,7 @@ public:
         type_(type)
 	{ }
 	
-	virtual ~GameFilesystemException()
+    virtual ~GameFilesystemException() throw()
     { }
 
     inline GameFilesystemExceptionType GetType() const { return type_; }
@@ -79,7 +79,7 @@ public:
 	GameFilesystemNode(const std::string& name, GameFilesystemNodeType type, RngInt randomId);
 	~GameFilesystemNode();
 
-	GameFilesystemNode* AddChildNode(std::unique_ptr<GameFilesystemNode>& node);
+	GameFilesystemNode* AddChildNode(std::unique_ptr<GameFilesystemNode> node);
 
 	inline GameFilesystemNode* GetChildNode(std::size_t i) 
     { 
@@ -149,7 +149,7 @@ public:
 
     GameFilesystemNode* GetNodeFromPathString(const std::string& path);
 
-	GameFilesystemNode* SetRootNode(std::unique_ptr<GameFilesystemNode>& node);
+	GameFilesystemNode* SetRootNode(std::unique_ptr<GameFilesystemNode> node);
 	inline GameFilesystemNode* GetRootNode() { return rootNode_.get(); }
 };
 

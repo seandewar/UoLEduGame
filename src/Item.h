@@ -375,7 +375,7 @@ public:
         }
     }
 
-    inline void SetItem(std::unique_ptr<Item>& item) { item_ = std::move(item); }
+    inline void SetItem(std::unique_ptr<Item> item) { item_ = std::move(item); }
 
     inline Item* GetItem() { return item_.get(); }
     inline const Item* GetItem() const { return item_.get(); }

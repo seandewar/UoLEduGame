@@ -36,7 +36,7 @@ void WorldArea::ClearTiles()
 }
 
 
-BaseTile* WorldArea::SetTile(u32 x, u32 y, std::unique_ptr<BaseTile>& tile)
+BaseTile* WorldArea::SetTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile)
 {
 	if (!IsTileLocationInBounds(x, y)) {
 		return nullptr;
@@ -51,7 +51,7 @@ BaseTile* WorldArea::SetTile(u32 x, u32 y, std::unique_ptr<BaseTile>& tile)
 }
 
 
-BaseTile* WorldArea::PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile>& tile)
+BaseTile* WorldArea::PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile)
 {
     if (!IsTileLocationInBounds(x, y)) {
         return nullptr;
@@ -212,7 +212,7 @@ void WorldArea::Render(sf::RenderTarget& target, bool renderDebug)
                     worldEntRectDbg->setOutlineColor(sf::Color(255, 100, 100));
                     worldEntRectDbg->setOutlineThickness(-1.0f);
 
-                    AddDebugRenderable(worldEntRectDbg,
+                    AddDebugRenderable(std::move(worldEntRectDbg),
                         std::string("id ") + std::to_string(entEntry.first) + "\n" + worldEnt->GetName());
                 }
             }

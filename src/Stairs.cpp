@@ -88,7 +88,7 @@ void UpStairEntity::Render(sf::RenderTarget& target)
         area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText, 
             Game::Get().IsInMapMode() ? sf::Vector2f(2.0f, 2.0f) : sf::Vector2f(0.5f, 0.5f),
             shadowColor));
-        area->AddFrameUIRenderable(stairTargetText);
+        area->AddFrameUIRenderable(std::move(stairTargetText));
     }
 }
 
@@ -175,7 +175,7 @@ void DownStairEntity::Render(sf::RenderTarget& target)
             area->AddFrameUIRenderable(Helper::GetTextDropShadow(*stairTargetText,
                 Game::Get().IsInMapMode() ? sf::Vector2f(3.0f, 3.0f) : sf::Vector2f(0.5f, 0.5f),
                 shadowColor));
-            area->AddFrameUIRenderable(stairTargetText);
+            area->AddFrameUIRenderable(std::move(stairTargetText));
         }
     }
 }

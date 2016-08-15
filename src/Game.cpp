@@ -271,8 +271,16 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
                 GameFilesystem::GetNodePathString(*currentFsNode).c_str());
         }
 
-        if (!SpawnPlayer(startDownstairEnt ? &startDownstairEnt->GetPosition() : nullptr)) {
-            return false;
+        if (startDownstairEnt) {
+            auto spawnPos = startDownstairEnt->GetPosition();
+            if (!SpawnPlayer(&spawnPos)) {
+                return false;
+            }
+        }
+        else {
+            if (!SpawnPlayer()) {
+                return false;
+            }
         }
     }
     else if (currentFsNode && currentFsNode->GetParent() == oldFsNode) {
@@ -282,8 +290,16 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         auto upstairEnt = currentArea->GetEntity<UpStairEntity>(
             currentArea->GetFirstEntityOfType<UpStairEntity>());
 
-        if (!SpawnPlayer(upstairEnt ? &upstairEnt->GetPosition() : nullptr)) {
-            return false;
+        if (upstairEnt) {
+            auto spawnPos = upstairEnt->GetPosition();
+            if (!SpawnPlayer(&spawnPos)) {
+                return false;
+            }
+        }
+        else {
+            if (!SpawnPlayer()) {
+                return false;
+            }
         }
     }
     else {
@@ -718,8 +734,12 @@ void Game::Tick()
 
                     weapon = std::make_unique<MeleeWeapon>(MeleeWeaponType::ThornedSabre);
                     armour = std::make_unique<Armour>(ArmourType::BalanceHeadgear);
-                    player->PickupItem(&PotionItem(ItemType::HealthPotion, 10));
-                    player->PickupItem(&PotionItem(ItemType::MagicPotion, 10));
+
+                    auto healthPotions = PotionItem(ItemType::HealthPotion, 10);
+                    auto magicPotions = PotionItem(ItemType::MagicPotion, 10);
+
+                    player->PickupItem(&healthPotions);
+                    player->PickupItem(&magicPotions);
                 }
                 else if (Game::IsKeyPressedFromEvent(sf::Keyboard::F11) && GetWorldArea()) {
                     director_.EndGame();

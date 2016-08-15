@@ -123,7 +123,7 @@ void DamageTextEntity::Render(sf::RenderTarget& target)
     damageTypeSprite->setScale(0.35f, 0.35f);
     damageTypeSprite->setPosition(GetPosition() - sf::Vector2f(0.0f, 2.0f));
 
-    area->AddFrameUIRenderable(damageTypeSprite);
+    area->AddFrameUIRenderable(std::move(damageTypeSprite));
 
     // damage amount text / blocked sprite
     if (damage_ > 0 || type_ == DamageType::Other) {
@@ -134,8 +134,8 @@ void DamageTextEntity::Render(sf::RenderTarget& target)
 
         auto damageShadow = Helper::GetTextDropShadow(*damageText, sf::Vector2f(0.35f, 0.35f));
 
-        area->AddFrameUIRenderable(damageShadow);
-        area->AddFrameUIRenderable(damageText);
+        area->AddFrameUIRenderable(std::move(damageShadow));
+        area->AddFrameUIRenderable(std::move(damageText));
     }
     else {
         auto damageBlockedSprite = std::make_unique<sf::Sprite>(GameAssets::Get().damageTypesSpriteSheet,
@@ -143,7 +143,7 @@ void DamageTextEntity::Render(sf::RenderTarget& target)
         damageBlockedSprite->setScale(0.35f, 0.35f);
         damageBlockedSprite->setPosition(GetPosition() + sf::Vector2f(6.0f, -2.0f));
 
-        area->AddFrameUIRenderable(damageBlockedSprite);
+        area->AddFrameUIRenderable(std::move(damageBlockedSprite));
     }
 }
 
@@ -246,7 +246,7 @@ void DamageEffectEntity::Render(sf::RenderTarget& target)
         effectSprite->setScale(1.5f, 1.5f);
     }
 
-    GetAssignedArea()->AddFrameUIRenderable(effectSprite);
+    GetAssignedArea()->AddFrameUIRenderable(std::move(effectSprite));
 }
 
 

@@ -31,7 +31,7 @@ class WorldArea
         std::unique_ptr<sf::Drawable> drawable;
         std::string labelString;
 
-        DebugRenderableInfo(const sf::Time& time, std::unique_ptr<sf::Drawable>& drawable,
+        DebugRenderableInfo(const sf::Time& time, std::unique_ptr<sf::Drawable> drawable,
             const std::string& labelString) :
             timeLeft(time),
             drawable(std::move(drawable)),
@@ -87,25 +87,24 @@ public:
 	~WorldArea();
 
     template <typename T>
-    inline void AddDebugRenderable(const sf::Time& timeToDraw, std::unique_ptr<T>& drawable,
+    inline void AddDebugRenderable(const sf::Time& timeToDraw, std::unique_ptr<T> drawable,
         const std::string& labelString = std::string())
     {
         if (drawable) {
             // TODO: No idea why I have to perform a move for the conversion...?
             // probably due to DebugRenderableInfo's definition...
-            debugRenderables_.emplace_back(timeToDraw,
-                static_cast<std::unique_ptr<sf::Drawable>>(std::move(drawable)), labelString);
+            debugRenderables_.emplace_back(timeToDraw, std::move(drawable), labelString);
         }
     }
 
     template <typename T>
-    inline void AddDebugRenderable(std::unique_ptr<T>& drawable, const std::string& labelString = std::string())
+    inline void AddDebugRenderable(std::unique_ptr<T> drawable, const std::string& labelString = std::string())
     {
-        AddDebugRenderable<T>(Game::FrameTimeStep, drawable, labelString);
+        AddDebugRenderable<T>(Game::FrameTimeStep, std::move(drawable), labelString);
     }
 
     template <typename T>
-    inline void AddFrameUIRenderable(std::unique_ptr<T>& drawable)
+    inline void AddFrameUIRenderable(std::unique_ptr<T> drawable)
     {
         if (drawable) {
             frameUiRenderables_.emplace_back(std::move(drawable));
@@ -116,21 +115,19 @@ public:
 
 	void ClearTiles();
 
-	BaseTile* SetTile(u32 x, u32 y, std::unique_ptr<BaseTile>& tile);
+	BaseTile* SetTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile);
 	inline BaseTile* SetTile(u32 x, u32 y, GenericTileType type)
 	{
-        std::unique_ptr<BaseTile> tile = std::make_unique<GenericTile>(type);
-		return SetTile(x, y, tile);
+        return SetTile(x, y, std::make_unique<GenericTile>(type));
 	}
 
     /**
     * PlaceTile() acts like SetTile(), but fails if a tile is already at the position.
     */
-    BaseTile* PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile>& tile);
+    BaseTile* PlaceTile(u32 x, u32 y, std::unique_ptr<BaseTile> tile);
     inline BaseTile* PlaceTile(u32 x, u32 y, GenericTileType type)
     {
-        std::unique_ptr<BaseTile> tile = std::make_unique<GenericTile>(type);
-        return PlaceTile(x, y, tile);
+        return PlaceTile(x, y, std::make_unique<GenericTile>(type));
     }
 
 	bool RemoveTile(u32 x, u32 y);
@@ -157,7 +154,8 @@ public:
 
 	inline void FillCircle(u32 centerX, u32 centerY, u32 r, GenericTileType type)
 	{
-		FillCircle<GenericTile>(centerX, centerY, r, &GenericTile(type));
+        auto tile = GenericTile(type);
+		FillCircle<GenericTile>(centerX, centerY, r, &tile);
 	}
 
 	template <typename TileT>
@@ -177,7 +175,8 @@ public:
 
 	inline void FillRectangle(u32 startX, u32 startY, u32 w, u32 h, GenericTileType type)
 	{
-		FillRectangle<GenericTile>(startX, startY, w, h, &GenericTile(type));
+        auto tile = GenericTile(type);
+		FillRectangle<GenericTile>(startX, startY, w, h, &tile);
 	}
 
     bool CheckRectanglePlaceable(u32 topX, u32 topY, u32 w, u32 h) const;
@@ -210,7 +209,7 @@ public:
         BaseTile** outCollidedTile = nullptr, u32* outCollidedTileX = nullptr, u32* outCollidedTileY = nullptr);
 
     template <typename T>
-    EntityId AddEntity(std::unique_ptr<T>& ent)
+    EntityId AddEntity(std::unique_ptr<T> ent)
     {
         if (ent->assignedArea_ != nullptr) {
             fprintf(stderr, "WARN!! Entity %s (id: %u, area ptr: %p) already assigned to another area!\n",

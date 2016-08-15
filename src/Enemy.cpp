@@ -656,7 +656,7 @@ void BasicEnemy::ResetStats(float difficultyMul)
         stats_->SetMoveSpeed(32.5f);
         stats_->SetMeleeAttack(100 + static_cast<u32>(50 * difficultyMul));
         stats_->SetMagicAttack(0);
-        stats_->SetMeleeDefence(80 + static_cast<u32>(60 * difficultyMul));
+        stats_->SetMeleeDefence(50 + static_cast<u32>(50 * difficultyMul));
         stats_->SetMagicDefence(0);
         break;
 
@@ -665,7 +665,7 @@ void BasicEnemy::ResetStats(float difficultyMul)
         stats_->SetMoveSpeed(67.5f);
         stats_->SetMeleeAttack(0);
         stats_->SetMagicAttack(115 + static_cast<u32>(55 * difficultyMul));
-        stats_->SetMeleeDefence(85 + static_cast<u32>(62 * difficultyMul));
+        stats_->SetMeleeDefence(60 + static_cast<u32>(62 * difficultyMul));
         stats_->SetMagicDefence(20 + static_cast<u32>(8 * difficultyMul));
         break;
 

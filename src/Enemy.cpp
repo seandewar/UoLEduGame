@@ -65,7 +65,7 @@ void Enemy::Render(sf::RenderTarget& target)
             healthLabelText->setScale(0.2f, 0.25f);
             healthLabelText->setPosition(healthBarBg->getPosition() + 0.5f * healthBarBg->getSize() - 0.5f *
                 sf::Vector2f(healthLabelText->getGlobalBounds().width, healthLabelText->getGlobalBounds().height));
-            healthLabelText->setColor(sf::Color(255, 255, 255));
+            healthLabelText->setFillColor(sf::Color(255, 255, 255));
 
             auto healthLabelShadow = Helper::GetTextDropShadow(*healthLabelText, sf::Vector2f(0.2f, 0.2f));
 
@@ -74,7 +74,7 @@ void Enemy::Render(sf::RenderTarget& target)
             nameText->setScale(0.2f, 0.25f);
             nameText->setPosition(healthBarBg->getPosition() + 0.5f * healthBarBg->getSize() - 0.5f *
                 sf::Vector2f(nameText->getGlobalBounds().width, 10.0f));
-            nameText->setColor(sf::Color(255, 255, 255));
+            nameText->setFillColor(sf::Color(255, 255, 255));
 
             auto nameTextShadow = Helper::GetTextDropShadow(*nameText, sf::Vector2f(0.2f, 0.2f));
 

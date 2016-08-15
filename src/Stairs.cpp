@@ -65,10 +65,10 @@ void UpStairEntity::Render(sf::RenderTarget& target)
         stairTargetText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.6f, 0.6f) : sf::Vector2f(0.15f, 0.15f));
 
         if (!IsAvailable()) {
-            stairTargetText->setColor(sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150));
+            stairTargetText->setFillColor(sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150));
         }
         else {
-            stairTargetText->setColor(sf::Color(255, 255, 0));
+            stairTargetText->setFillColor(sf::Color(255, 255, 0));
         }
 
         auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
@@ -152,10 +152,10 @@ void DownStairEntity::Render(sf::RenderTarget& target)
             stairTargetText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.8f, 0.8f) : sf::Vector2f(0.15f, 0.15f));
 
             if (!IsAvailable()) {
-                stairTargetText->setColor(sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150));
+                stairTargetText->setFillColor(sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150));
             }
             else {
-                stairTargetText->setColor(sf::Color(255, 255, 0));
+                stairTargetText->setFillColor(sf::Color(255, 255, 0));
             }
 
             auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -

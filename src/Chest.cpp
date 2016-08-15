@@ -239,7 +239,7 @@ void ChestEntity::Render(sf::RenderTarget& target)
         if (area) {
             auto chestText = std::make_unique<sf::Text>(chestFsNodeName_, GameAssets::Get().gameFont, 18);
             chestText->setScale(Game::Get().IsInMapMode() ? sf::Vector2f(0.6f, 0.6f) : sf::Vector2f(0.15f, 0.15f));
-            chestText->setColor(isOpened_ ? sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150) : sf::Color(255, 165, 0, 255));
+            chestText->setFillColor(isOpened_ ? sf::Color(150, 150, 150, Game::Get().IsInMapMode() ? 255 : 150) : sf::Color(255, 165, 0, 255));
 
             auto textPos = sf::Vector2f(GetCenterPosition().x, GetPosition().y) -
                 sf::Vector2f(0.5f * chestText->getGlobalBounds().width, 3.0f);

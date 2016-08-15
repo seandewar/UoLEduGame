@@ -74,7 +74,7 @@ public:
     {
         auto textShadow = text;
         textShadow.move(offset);
-        textShadow.setColor(color);
+        textShadow.setFillColor(color);
 
         return std::move(std::make_unique<sf::Text>(textShadow));
     }

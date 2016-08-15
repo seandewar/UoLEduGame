@@ -830,7 +830,7 @@ void Game::RenderUILocation(sf::RenderTarget& target)
     if (world_) {
         sf::Text locationText(world_->GetCurrentAreaFsPath(), GameAssets::Get().gameFont, 22);
         locationText.setPosition(5.0f, 5.0f);
-        locationText.setColor(sf::Color(255, 255, 255));
+        locationText.setFillColor(sf::Color(255, 255, 255));
 
         Helper::RenderTextWithDropShadow(target, locationText);
     }
@@ -844,7 +844,7 @@ void Game::RenderUIObjective(sf::RenderTarget& target)
         director_.GetCurrentObjectiveType() != GameObjectiveType::End) {
         sf::Text objText("Objective: " + director_.GetObjectiveText(), GameAssets::Get().gameFont, 8);
         objText.setPosition(5.0f, 35.0f);
-        objText.setColor(sf::Color(255, 150, 0));
+        objText.setFillColor(sf::Color(255, 150, 0));
 
         Helper::RenderTextWithDropShadow(target, objText);
     }
@@ -864,7 +864,7 @@ void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
 
             if (useable->IsUsable(player->GetAssignedId())) {
                 targetUseText.setString(std::string("Press E: ") + useable->GetUseText());
-                targetUseText.setColor(sf::Color(255, 255, 0));
+                targetUseText.setFillColor(sf::Color(255, 255, 0));
             }
             else {
                 // our target is not currently usable right now.
@@ -873,7 +873,7 @@ void Game::RenderUIPlayerUseTargetText(sf::RenderTarget& target)
                 }
 
                 targetUseText.setString(useable->GetCannotUseText());
-                targetUseText.setColor(sf::Color(150, 150, 150));
+                targetUseText.setFillColor(sf::Color(150, 150, 150));
             }
 
             targetUseText.setPosition(
@@ -929,7 +929,7 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
         sf::Text healthLabelText(std::string("H: ") + std::to_string(playerHealth), GameAssets::Get().gameFont, 16);
         healthLabelText.setPosition(healthBarBg.getPosition() + 0.5f * healthBarBg.getSize() - 0.5f *
             sf::Vector2f(healthLabelText.getGlobalBounds().width, healthLabelText.getGlobalBounds().height));
-        healthLabelText.setColor(sf::Color(255, 255, 255));
+        healthLabelText.setFillColor(sf::Color(255, 255, 255));
 
         Helper::RenderTextWithDropShadow(target, healthLabelText);
 
@@ -961,7 +961,7 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
         sf::Text manaLabelText(std::string("M: ") + std::to_string(playerMana), GameAssets::Get().gameFont, 16);
         manaLabelText.setPosition(manaBarBg.getPosition() + 0.5f * manaBarBg.getSize() - 0.5f *
             sf::Vector2f(manaLabelText.getGlobalBounds().width, manaLabelText.getGlobalBounds().height));
-        manaLabelText.setColor(sf::Color(255, 255, 255));
+        manaLabelText.setFillColor(sf::Color(255, 255, 255));
 
         Helper::RenderTextWithDropShadow(target, manaLabelText);
     }
@@ -975,21 +975,21 @@ void Game::RenderUIControls(sf::RenderTarget& target)
     }
 
     sf::Text moveControls("Press W, A, S, D to move", GameAssets::Get().gameFont, 8);
-    moveControls.setColor(sf::Color(255, 255, 0));
+    moveControls.setFillColor(sf::Color(255, 255, 0));
     moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
         target.getView().getSize().y - 100.0f);
 
     Helper::RenderTextWithDropShadow(target, moveControls);
 
     sf::Text invControls("Press 1-4 to use inventory item", GameAssets::Get().gameFont, 8);
-    invControls.setColor(sf::Color(255, 255, 0));
+    invControls.setFillColor(sf::Color(255, 255, 0));
     invControls.setPosition(target.getSize().x - invControls.getGlobalBounds().width - 5.0f,
         target.getView().getSize().y - 85.0f);
 
     Helper::RenderTextWithDropShadow(target, invControls);
 
     sf::Text mapControls("Press M or TAB to toggle map mode", GameAssets::Get().gameFont, 8);
-    mapControls.setColor(sf::Color(255, 255, 0));
+    mapControls.setFillColor(sf::Color(255, 255, 0));
     mapControls.setPosition(target.getSize().x - mapControls.getGlobalBounds().width - 5.0f,
         target.getView().getSize().y - 70.0f);
 
@@ -1069,7 +1069,7 @@ void Game::RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, 
                 invItemBg.getPosition().y + 2.0f
                 );
 
-            invItemAmountText.setColor(item->GetAmount() < item->GetMaxAmount() ? sf::Color(255, 255, 0) : sf::Color(255, 0, 0));
+            invItemAmountText.setFillColor(item->GetAmount() < item->GetMaxAmount() ? sf::Color(255, 255, 0) : sf::Color(255, 0, 0));
 
             Helper::RenderTextWithDropShadow(target, invItemAmountText);
         }
@@ -1078,7 +1078,7 @@ void Game::RenderUIItem(sf::RenderTarget& target, const sf::Vector2f& position, 
     // render inv text label
     sf::Text invItemKeyText(label, GameAssets::Get().gameFont, 8);
     invItemKeyText.setPosition(invItemBg.getPosition() + sf::Vector2f(2.0f, 2.0f));
-    invItemKeyText.setColor(sf::Color(255, 255, 255));
+    invItemKeyText.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, invItemKeyText);
 }
@@ -1096,7 +1096,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             sf::Text invWeaponsLabelText("Weapons", GameAssets::Get().gameFont, 8);
             invWeaponsLabelText.setPosition(5.0f,
                 target.getView().getSize().y - 192.0f - invWeaponsLabelText.getGlobalBounds().height);
-            invWeaponsLabelText.setColor(sf::Color(255, 255, 255));
+            invWeaponsLabelText.setFillColor(sf::Color(255, 255, 255));
 
             Helper::RenderTextWithDropShadow(target, invWeaponsLabelText);
 
@@ -1114,7 +1114,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             // melee name
             sf::Text invMeleeInfoNameText(std::string(), GameAssets::Get().gameFont, 8);
             invMeleeInfoNameText.setPosition(82.0f, target.getView().getSize().y - 187.0f);
-            invMeleeInfoNameText.setColor(sf::Color(255, 255, 255));
+            invMeleeInfoNameText.setFillColor(sf::Color(255, 255, 255));
 
             if (!playerInv->GetMeleeWeapon() || playerInv->GetMeleeWeapon()->GetAmount() <= 0) {
                 invMeleeInfoNameText.setString("None");
@@ -1132,7 +1132,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 
                 sf::Text invMeleeInfoStatsText(oss.str(), GameAssets::Get().gameFont, 8);
                 invMeleeInfoStatsText.setPosition(64.0f, target.getView().getSize().y - 174.0f);
-                invMeleeInfoStatsText.setColor(sf::Color(255, 255, 255));
+                invMeleeInfoStatsText.setFillColor(sf::Color(255, 255, 255));
 
                 Helper::RenderTextWithDropShadow(target, invMeleeInfoStatsText);
 
@@ -1140,7 +1140,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
                 sf::Text invMeleeInfoDescText(playerInv->GetMeleeWeapon()->GetShortDescription(),
                     GameAssets::Get().gameFont, 8);
                 invMeleeInfoDescText.setPosition(64.0f, target.getView().getSize().y - 144.0f);
-                invMeleeInfoDescText.setColor(sf::Color(255, 255, 0));
+                invMeleeInfoDescText.setFillColor(sf::Color(255, 255, 0));
 
                 Helper::RenderTextWithDropShadow(target, invMeleeInfoDescText);
             }
@@ -1161,7 +1161,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             // magic name
             sf::Text invMagicInfoNameText(std::string(), GameAssets::Get().gameFont, 8);
             invMagicInfoNameText.setPosition(82.0f, target.getView().getSize().y - 126.0f);
-            invMagicInfoNameText.setColor(sf::Color(255, 255, 255));
+            invMagicInfoNameText.setFillColor(sf::Color(255, 255, 255));
 
             if (!playerInv->GetMagicWeapon() || playerInv->GetMagicWeapon()->GetAmount() <= 0) {
                 invMagicInfoNameText.setString("None");
@@ -1178,7 +1178,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 
                 sf::Text invMagicInfoStatsText(oss.str(), GameAssets::Get().gameFont, 8);
                 invMagicInfoStatsText.setPosition(64.0f, target.getView().getSize().y - 113.0f);
-                invMagicInfoStatsText.setColor(sf::Color(255, 255, 255));
+                invMagicInfoStatsText.setFillColor(sf::Color(255, 255, 255));
 
                 Helper::RenderTextWithDropShadow(target, invMagicInfoStatsText);
 
@@ -1186,7 +1186,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
                 sf::Text invMagicInfoDescText(playerInv->GetMagicWeapon()->GetShortDescription(),
                     GameAssets::Get().gameFont, 8);
                 invMagicInfoDescText.setPosition(64.0f, target.getView().getSize().y - 83.0f);
-                invMagicInfoDescText.setColor(sf::Color(255, 255, 0));
+                invMagicInfoDescText.setFillColor(sf::Color(255, 255, 0));
 
                 Helper::RenderTextWithDropShadow(target, invMagicInfoDescText);
             }
@@ -1197,7 +1197,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             sf::Text invArmourLabelText("Armour", GameAssets::Get().gameFont, 8);
             invArmourLabelText.setPosition(5.0f,
                 target.getView().getSize().y - 60.0f - invArmourLabelText.getGlobalBounds().height);
-            invArmourLabelText.setColor(sf::Color(255, 255, 255));
+            invArmourLabelText.setFillColor(sf::Color(255, 255, 255));
 
             Helper::RenderTextWithDropShadow(target, invArmourLabelText);
 
@@ -1215,7 +1215,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             // armour name
             sf::Text invArmourInfoNameText(std::string(), GameAssets::Get().gameFont, 8);
             invArmourInfoNameText.setPosition(82.0f, target.getView().getSize().y - 55.0f);
-            invArmourInfoNameText.setColor(sf::Color(255, 255, 255));
+            invArmourInfoNameText.setFillColor(sf::Color(255, 255, 255));
 
             if (!playerInv->GetArmour() || playerInv->GetArmour()->GetAmount() <= 0) {
                 invArmourInfoNameText.setString("None");
@@ -1231,7 +1231,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
 
                 sf::Text invArmourInfoStatsText(oss.str(), GameAssets::Get().gameFont, 8);
                 invArmourInfoStatsText.setPosition(64.0f, target.getView().getSize().y - 42.0f);
-                invArmourInfoStatsText.setColor(sf::Color(255, 255, 255));
+                invArmourInfoStatsText.setFillColor(sf::Color(255, 255, 255));
 
                 Helper::RenderTextWithDropShadow(target, invArmourInfoStatsText);
 
@@ -1239,7 +1239,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
                 sf::Text invArmourInfoDescText(playerInv->GetArmour()->GetShortDescription(),
                     GameAssets::Get().gameFont, 8);
                 invArmourInfoDescText.setPosition(64.0f, target.getView().getSize().y - 12.0f);
-                invArmourInfoDescText.setColor(sf::Color(255, 255, 0));
+                invArmourInfoDescText.setFillColor(sf::Color(255, 255, 0));
 
                 Helper::RenderTextWithDropShadow(target, invArmourInfoDescText);
             }
@@ -1250,7 +1250,7 @@ void Game::RenderUIPlayerInventory(sf::RenderTarget& target)
             sf::Text invPotionsLabelText("Potions", GameAssets::Get().gameFont, 8);
             invPotionsLabelText.setPosition(282.5f,
                 target.getView().getSize().y - 60.0f - invPotionsLabelText.getGlobalBounds().height);
-            invPotionsLabelText.setColor(sf::Color(255, 255, 255));
+            invPotionsLabelText.setFillColor(sf::Color(255, 255, 255));
 
             Helper::RenderTextWithDropShadow(target, invPotionsLabelText);
 
@@ -1275,7 +1275,7 @@ void Game::RenderUIMessages(sf::RenderTarget& target)
         auto alpha = static_cast<sf::Uint8>(255 * (1.0f - (static_cast<float>(i) / MaxMessages)));
 
         sf::Text msgText(msg.message, GameAssets::Get().gameFont, 8);
-        msgText.setColor(sf::Color(msg.color.r, msg.color.g, msg.color.b, alpha));
+        msgText.setFillColor(sf::Color(msg.color.r, msg.color.g, msg.color.b, alpha));
         msgText.setPosition(5.0f, target.getView().getSize().y - 250.0f - 15.0f * i);
 
         Helper::RenderTextWithDropShadow(target, msgText, sf::Vector2f(2.0f, 2.0f),
@@ -1303,7 +1303,7 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
     sf::Text uiLabel("Answer this question correctly to unlock the chest:", GameAssets::Get().gameFont, 8);
     uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width),
         20.0f));
-    uiLabel.setColor(sf::Color(255, 255, 255));
+    uiLabel.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiLabel);
 
@@ -1311,7 +1311,7 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
     sf::Text uiQuestion(displayedQuestion_->GetQuestion(), GameAssets::Get().gameFont, 10);
     uiQuestion.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiQuestion.getGlobalBounds().width), 50.0f));
-    uiQuestion.setColor(sf::Color(255, 145, 0));
+    uiQuestion.setFillColor(sf::Color(255, 145, 0));
 
     Helper::RenderTextWithDropShadow(target, uiQuestion);
 
@@ -1320,7 +1320,7 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
         GameAssets::Get().gameFont, 10);
     uiChoiceA.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiChoiceA.getGlobalBounds().width), 100.0f));
-    uiChoiceA.setColor(displayedQuestionSelectedChoice_ == 0 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
+    uiChoiceA.setFillColor(displayedQuestionSelectedChoice_ == 0 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
     uiChoiceA.setStyle(displayedQuestionSelectedChoice_ == 0 ? sf::Text::Underlined : sf::Text::Regular);
 
     Helper::RenderTextWithDropShadow(target, uiChoiceA);
@@ -1330,7 +1330,7 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
         GameAssets::Get().gameFont, 10);
     uiChoiceB.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiChoiceB.getGlobalBounds().width), 130.0f));
-    uiChoiceB.setColor(displayedQuestionSelectedChoice_ == 1 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
+    uiChoiceB.setFillColor(displayedQuestionSelectedChoice_ == 1 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
     uiChoiceB.setStyle(displayedQuestionSelectedChoice_ == 1 ? sf::Text::Underlined : sf::Text::Regular);
 
     Helper::RenderTextWithDropShadow(target, uiChoiceB);
@@ -1340,7 +1340,7 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
         GameAssets::Get().gameFont, 10);
     uiChoiceC.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiChoiceC.getGlobalBounds().width), 160.0f));
-    uiChoiceC.setColor(displayedQuestionSelectedChoice_ == 2 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
+    uiChoiceC.setFillColor(displayedQuestionSelectedChoice_ == 2 ? sf::Color(255, 255, 0) : sf::Color(255, 255, 255));
     uiChoiceC.setStyle(displayedQuestionSelectedChoice_ == 2 ? sf::Text::Underlined : sf::Text::Regular);
 
     Helper::RenderTextWithDropShadow(target, uiChoiceC);
@@ -1349,7 +1349,7 @@ void Game::RenderUIDisplayedQuestion(sf::RenderTarget& target)
     sf::Text uiConfirmLabel("Press ENTER to confirm your answer.", GameAssets::Get().gameFont, 8);
     uiConfirmLabel.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiConfirmLabel.getGlobalBounds().width), 220.0f));
-    uiConfirmLabel.setColor(sf::Color(255, 255, 0));
+    uiConfirmLabel.setFillColor(sf::Color(255, 255, 0));
 
     Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
 }
@@ -1377,7 +1377,7 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
     sf::Text uiLabel("Oh dear - Bob has been knocked out!", GameAssets::Get().gameFont, 16);
     uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width),
         20.0f));
-    uiLabel.setColor(sf::Color(255, 50, 50));
+    uiLabel.setFillColor(sf::Color(255, 50, 50));
 
     Helper::RenderTextWithDropShadow(target, uiLabel);
 
@@ -1385,21 +1385,21 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
     sf::Text uiSacrificeLabel1("However, not all hope is lost!", GameAssets::Get().gameFont, 10);
     uiSacrificeLabel1.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeLabel1.getGlobalBounds().width), 60.0f));
-    uiSacrificeLabel1.setColor(sf::Color(255, 255, 255));
+    uiSacrificeLabel1.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiSacrificeLabel1);
 
     sf::Text uiSacrificeLabel2("Bob can be revived, but at a price...", GameAssets::Get().gameFont, 10);
     uiSacrificeLabel2.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeLabel2.getGlobalBounds().width), 80.0f));
-    uiSacrificeLabel2.setColor(sf::Color(255, 255, 255));
+    uiSacrificeLabel2.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiSacrificeLabel2);
 
     sf::Text uiSacrificeLabel3("You will lose the following things after you have been revived:", GameAssets::Get().gameFont, 8);
     uiSacrificeLabel3.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiSacrificeLabel3.getGlobalBounds().width), 110.0f));
-    uiSacrificeLabel3.setColor(sf::Color(255, 145, 0));
+    uiSacrificeLabel3.setFillColor(sf::Color(255, 145, 0));
 
     Helper::RenderTextWithDropShadow(target, uiSacrificeLabel3);
 
@@ -1411,12 +1411,12 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
     // render list labels
     for (int i = 0; i < 4; ++i) {
         sf::Text uiSacrificeItemLabel(std::string(), GameAssets::Get().gameFont, 8);
-        uiSacrificeItemLabel.setColor(sf::Color(255, 255, 255));
+        uiSacrificeItemLabel.setFillColor(sf::Color(255, 255, 255));
 
         if (i == 0) {
             // lose mana
             uiSacrificeItemLabel.setString("Any remaining Mana that you have");
-            uiSacrificeItemLabel.setColor(sf::Color(100, 100, 255));
+            uiSacrificeItemLabel.setFillColor(sf::Color(100, 100, 255));
         }
         else if (pInv) {
             // lose items
@@ -1436,7 +1436,7 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
                 }
 
                 uiSacrificeItemLabel.setString("All of your Health Potions");
-                uiSacrificeItemLabel.setColor(sf::Color(255, 100, 100));
+                uiSacrificeItemLabel.setFillColor(sf::Color(255, 100, 100));
             }
             else if (i == 3) {
                 // lose magic potions
@@ -1445,7 +1445,7 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
                 }
 
                 uiSacrificeItemLabel.setString("All of your Magic Potions");
-                uiSacrificeItemLabel.setColor(sf::Color(100, 100, 255));
+                uiSacrificeItemLabel.setFillColor(sf::Color(100, 100, 255));
             }
         }
 
@@ -1462,7 +1462,7 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
     sf::Text uiConfirmLabel("Press ENTER to be revived.", GameAssets::Get().gameFont, 8);
     uiConfirmLabel.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiConfirmLabel.getGlobalBounds().width), 220.0f));
-    uiConfirmLabel.setColor(sf::Color(255, 255, 0));
+    uiConfirmLabel.setFillColor(sf::Color(255, 255, 0));
 
     Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
 }
@@ -1478,7 +1478,7 @@ void Game::RenderUILowStatsWarning(sf::RenderTarget& target)
 
     if (IsPlayerLowHealth()) {
         sf::Text uiLowHealth("Low Health!", GameAssets::Get().gameFont, 12);
-        uiLowHealth.setColor(sf::Color(255, 0, 0));
+        uiLowHealth.setFillColor(sf::Color(255, 0, 0));
         uiLowHealth.setPosition(0.5f * (target.getView().getSize().x - uiLowHealth.getGlobalBounds().width),
             0.8f * target.getView().getSize().y);
 
@@ -1488,7 +1488,7 @@ void Game::RenderUILowStatsWarning(sf::RenderTarget& target)
     // TODO: rely on weapon mana cost instead?
     //if (IsPlayerLowMana()) {
     //    sf::Text uiLowMana("Low Mana!", GameAssets::Get().gameFont, 12);
-    //    uiLowMana.setColor(sf::Color(0, 0, 255));
+    //    uiLowMana.setFillColor(sf::Color(0, 0, 255));
     //    uiLowMana.setPosition(0.5f * (target.getView().getSize().x - uiLowMana.getGlobalBounds().width),
     //        0.8f * target.getView().getSize().y + 18.0f);
 
@@ -1500,13 +1500,13 @@ void Game::RenderUILowStatsWarning(sf::RenderTarget& target)
 void Game::RenderUIMapMode(sf::RenderTarget& target)
 {
     sf::Text mapLabel("You are in Map Mode.", GameAssets::Get().gameFont, 16);
-    mapLabel.setColor(sf::Color(255, 255, 255));
+    mapLabel.setFillColor(sf::Color(255, 255, 255));
     mapLabel.setPosition(5.0f, target.getView().getSize().y - 40.0f);
 
     Helper::RenderTextWithDropShadow(target, mapLabel);
 
     sf::Text mapControls("Press M or TAB to disable.", GameAssets::Get().gameFont, 10);
-    mapControls.setColor(sf::Color(255, 255, 0));
+    mapControls.setFillColor(sf::Color(255, 255, 0));
     mapControls.setPosition(5.0f, target.getView().getSize().y - 20.0f);
 
     Helper::RenderTextWithDropShadow(target, mapControls);
@@ -1522,28 +1522,28 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
     target.draw(menuBack);
 
     sf::Text menuTitleThe("The", GameAssets::Get().gameFont, 18);
-    menuTitleThe.setColor(sf::Color(200, 200, 200));
+    menuTitleThe.setFillColor(sf::Color(200, 200, 200));
     menuTitleThe.setPosition(0.5f * (target.getView().getSize().x - menuTitleThe.getGlobalBounds().width),
         30.0f);
 
     Helper::RenderTextWithDropShadow(target, menuTitleThe, sf::Vector2f(5.0f, 5.0f));
 
     sf::Text menuTitleFs("File System Dungeon", GameAssets::Get().gameFont, 32);
-    menuTitleFs.setColor(sf::Color(255, 255, 255));
+    menuTitleFs.setFillColor(sf::Color(255, 255, 255));
     menuTitleFs.setPosition(0.5f * (target.getView().getSize().x - menuTitleFs.getGlobalBounds().width),
         60.0f);
 
     Helper::RenderTextWithDropShadow(target, menuTitleFs, sf::Vector2f(5.0f, 5.0f));
 
     sf::Text menuCreds("By Sean Dewar", GameAssets::Get().altFont, 10);
-    menuCreds.setColor(sf::Color(200, 200, 200));
+    menuCreds.setFillColor(sf::Color(200, 200, 200));
     menuCreds.setPosition(0.5f * (target.getView().getSize().x - menuCreds.getGlobalBounds().width),
         105.0f);
 
     Helper::RenderTextWithDropShadow(target, menuCreds);
 
     sf::Text menuCont("Press ENTER to generate the dungeon & play!", GameAssets::Get().gameFont, 12);
-    menuCont.setColor(sf::Color(255, 255, 0));
+    menuCont.setFillColor(sf::Color(255, 255, 0));
     menuCont.setPosition(0.5f * (target.getView().getSize().x - menuCont.getGlobalBounds().width),
         135.0f);
 
@@ -1552,7 +1552,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
     // menu1
     if (state_ == GameState::Menu1) {
         sf::Text menuCredits("Press ESC for about & credits.", GameAssets::Get().gameFont, 9);
-        menuCredits.setColor(sf::Color(200, 200, 0));
+        menuCredits.setFillColor(sf::Color(200, 200, 0));
         menuCredits.setPosition(0.5f * (target.getView().getSize().x - menuCredits.getGlobalBounds().width),
             155.0f);
 
@@ -1582,7 +1582,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
         oss << "computers whatsoever!";
 
         sf::Text menuDesc1(oss.str(), GameAssets::Get().altFont, 12);
-        menuDesc1.setColor(sf::Color(200, 200, 200));
+        menuDesc1.setFillColor(sf::Color(200, 200, 200));
         menuDesc1.setPosition(0.5f * (target.getView().getSize().x - menuDesc1.getGlobalBounds().width),
             275.0f);
 
@@ -1664,7 +1664,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
         oss << "Good luck!";
 
         sf::Text menuDesc2(oss.str(), GameAssets::Get().altFont, 12);
-        menuDesc2.setColor(sf::Color(200, 200, 200));
+        menuDesc2.setFillColor(sf::Color(200, 200, 200));
         menuDesc2.setPosition(0.5f * (target.getView().getSize().x - menuDesc2.getGlobalBounds().width),
             570.0f);
 
@@ -1672,7 +1672,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
     }
     else if (state_ == GameState::MenuCredits) {
         sf::Text menuMain("Press ESC to return to main title.", GameAssets::Get().gameFont, 9);
-        menuMain.setColor(sf::Color(200, 200, 0));
+        menuMain.setFillColor(sf::Color(200, 200, 0));
         menuMain.setPosition(0.5f * (target.getView().getSize().x - menuMain.getGlobalBounds().width),
             155.0f);
 
@@ -1712,7 +1712,7 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
         oss << "providing the chest sprites used within the game!\n\n";
 
         sf::Text menuAbout(oss.str(), GameAssets::Get().altFont, 12);
-        menuAbout.setColor(sf::Color(200, 200, 200));
+        menuAbout.setFillColor(sf::Color(200, 200, 200));
         menuAbout.setPosition(0.5f * (target.getView().getSize().x - menuAbout.getGlobalBounds().width),
             275.0f);
 
@@ -1754,7 +1754,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiLabel("Congratulations!", GameAssets::Get().gameFont, 16);
     uiLabel.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiLabel.getGlobalBounds().width),
         20.0f));
-    uiLabel.setColor(sf::Color(255, 255, 255));
+    uiLabel.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiLabel);
 
@@ -1762,14 +1762,14 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiText1("Thanks to you, Bob has made it out of the dungeon in one piece!", GameAssets::Get().gameFont, 8);
     uiText1.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiText1.getGlobalBounds().width),
         50.0f));
-    uiText1.setColor(sf::Color(255, 255, 255));
+    uiText1.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiText1);
 
     sf::Text uiText2("Here are some of the stats for your journey:", GameAssets::Get().gameFont, 8);
     uiText2.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiText2.getGlobalBounds().width),
         62.0f));
-    uiText2.setColor(sf::Color(255, 255, 255));
+    uiText2.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiText2);
 
@@ -1782,7 +1782,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiTime(oss.str(), GameAssets::Get().gameFont, 8);
     uiTime.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiTime.getGlobalBounds().width),
         90.0f));
-    uiTime.setColor(sf::Color(255, 145, 0));
+    uiTime.setFillColor(sf::Color(255, 145, 0));
 
     Helper::RenderTextWithDropShadow(target, uiTime);
 
@@ -1794,7 +1794,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiDamage(oss.str(), GameAssets::Get().gameFont, 8);
     uiDamage.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiDamage.getGlobalBounds().width),
         102.0f));
-    uiDamage.setColor(sf::Color(255, 145, 0));
+    uiDamage.setFillColor(sf::Color(255, 145, 0));
 
     Helper::RenderTextWithDropShadow(target, uiDamage);
 
@@ -1805,7 +1805,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiDeaths(oss.str(), GameAssets::Get().gameFont, 8);
     uiDeaths.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiDeaths.getGlobalBounds().width),
         114.0f));
-    uiDeaths.setColor(sf::Color(255, 145, 0));
+    uiDeaths.setFillColor(sf::Color(255, 145, 0));
 
     Helper::RenderTextWithDropShadow(target, uiDeaths);
 
@@ -1817,7 +1817,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiQWrong(oss.str(), GameAssets::Get().gameFont, 8);
     uiQWrong.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiQWrong.getGlobalBounds().width),
         126.0f));
-    uiQWrong.setColor(sf::Color(255, 145, 0));
+    uiQWrong.setFillColor(sf::Color(255, 145, 0));
 
     Helper::RenderTextWithDropShadow(target, uiQWrong);
 
@@ -1825,7 +1825,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiText3("Thanks for playing!", GameAssets::Get().gameFont, 10);
     uiText3.setPosition(uiBg.getPosition() + sf::Vector2f(0.5f * (uiBg.getSize().x - uiText3.getGlobalBounds().width) +
         30.0f, 170.0f));
-    uiText3.setColor(sf::Color(255, 255, 255));
+    uiText3.setFillColor(sf::Color(255, 255, 255));
 
     Helper::RenderTextWithDropShadow(target, uiText3);
 
@@ -1841,7 +1841,7 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
     sf::Text uiConfirmLabel("Press ENTER to return to the title screen.", GameAssets::Get().gameFont, 8);
     uiConfirmLabel.setPosition(uiBg.getPosition() +
         sf::Vector2f(0.5f * (uiBg.getSize().x - uiConfirmLabel.getGlobalBounds().width), 220.0f));
-    uiConfirmLabel.setColor(sf::Color(255, 255, 0));
+    uiConfirmLabel.setFillColor(sf::Color(255, 255, 0));
 
     Helper::RenderTextWithDropShadow(target, uiConfirmLabel);
 }

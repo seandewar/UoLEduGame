@@ -130,7 +130,7 @@ void DamageTextEntity::Render(sf::RenderTarget& target)
         auto damageText = std::make_unique<sf::Text>(std::to_string(damage_), GameAssets::Get().gameFont, 12);
         damageText->setScale(0.25f, 0.25f);
         damageText->setPosition(GetPosition() + sf::Vector2f(6.0f, 0.0f));
-        damageText->setColor(color_);
+        damageText->setFillColor(color_);
 
         auto damageShadow = Helper::GetTextDropShadow(*damageText, sf::Vector2f(0.35f, 0.35f));
 

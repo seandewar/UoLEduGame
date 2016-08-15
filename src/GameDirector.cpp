@@ -353,27 +353,52 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
 
     if (std::find(objectiveUpdatedAreas_.begin(), objectiveUpdatedAreas_.end(), newArea) ==
         objectiveUpdatedAreas_.end()) {
-        if (objective_ == GameObjectiveType::CollectArtefact &&
-            objectiveFsNode_ && objectiveFsNode_->GetParent() == newArea->GetRelatedNode()) {
-            // "mysteriously" close the chest with the artefact if it's already been previously opened
-            auto chestIds = newArea->GetAllEntitiesOfType<ChestEntity>();
+        // reopen some of the chests & always reopen the artefact chest.
+        auto chestIds = newArea->GetAllEntitiesOfType<ChestEntity>();
 
-            bool foundArtefactChest = false;
-            for (auto id : chestIds) {
-                auto chestEnt = newArea->GetEntity<ChestEntity>(id);
-                assert(chestEnt);
+        bool isArtefactFloor = (objective_ == GameObjectiveType::CollectArtefact &&
+            objectiveFsNode_ && objectiveFsNode_->GetParent() == newArea->GetRelatedNode());
+        bool foundArtefactChest = false;
+        int numChestsClosed = 0;
 
-                if (objectiveFsNode_->GetName() == chestEnt->GetChestFsNodeName()) {
-                    // this is the artefact chest - close it
+        for (auto id : chestIds) {
+            auto chestEnt = newArea->GetEntity<ChestEntity>(id);
+            assert(chestEnt);
+
+            bool isArtefactChest = isArtefactFloor && objectiveFsNode_->GetName() == chestEnt->GetChestFsNodeName();
+
+            if (chestEnt->IsOpened()) {
+                if (isArtefactChest || Helper::GenerateRandomBool(0.5f)) {
+                    // close this chest again
                     chestEnt->SetOpened(false);
-                    foundArtefactChest = true;
-                    break;
+                    ++numChestsClosed;
+
+                    // spawn an effect here lol
+                    auto effect = newArea->GetEntity<DamageEffectEntity>(
+                        newArea->EmplaceEntity<DamageEffectEntity>(DamageEffectType::EnemyWave, sf::seconds(0.5f)));
+                    assert(effect);
+                    
+                    effect->SetCenterPosition(chestEnt->GetCenterPosition());
+                    GameAssets::Get().drainSound.play();
                 }
             }
 
-            assert(foundArtefactChest && "Artefact chest not found on artefact floor!!!!");
+            if (isArtefactChest) {
+                assert(!foundArtefactChest && "Already found an artefact chest on this floor!!!");
+                foundArtefactChest = true;
+            }
         }
 
+        assert((!isArtefactFloor || foundArtefactChest) && "Artefact chest not found on artefact floor!!!!");
+
+        // announce num chests closed again
+        printf("GameDirector - Closed %d chests on this floor.\n", numChestsClosed);
+        if (numChestsClosed > 0) {
+            Game::Get().AddMessage(std::to_string(numChestsClosed) + (numChestsClosed > 1 ? " chests have " : " chest has ") +
+                "been mysteriously shut again on this floor...", sf::Color(255, 150, 0));
+        }
+
+        // populate with enemies again if needed
         if (updateEnemies) {
             RemoveAllEnemies(newArea);
             PopulateWithEnemies(newArea);

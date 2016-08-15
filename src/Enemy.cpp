@@ -1186,6 +1186,7 @@ void BasicEnemy::Render(sf::RenderTarget& target)
 
             // dead sprites
             enemySprite.setTexture(GameAssets::Get().enemySpriteSheet);
+            enemySprite.setColor(sf::Color(255, 255, 255, 100));
 
             switch (enemyType_) {
             case EnemyType::SkeletonBasic:

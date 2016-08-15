@@ -261,7 +261,7 @@ void GameFilesystemGen::GenerateHomeDir(GameFilesystemNode& parent, Rng& rng)
             Directory, rng));
         assert(user);
 
-        auto n = GenRandomFileDirsRecurse(user, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 5));
+        auto n = GenRandomFileDirsRecurse(user, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 4));
         assert(n == 0);
     }
 }
@@ -516,7 +516,7 @@ void GameFilesystemGen::GenerateMntDir(GameFilesystemNode& parent, Rng& rng)
         auto mnt = AddNodeWithUniqueName(*mntNode, NEW_NODE(GenerateRandomPhraseName(rng, 1), Directory, rng));
         assert(mnt);
 
-        auto n = GenRandomFileDirsRecurse(mnt, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 5));
+        auto n = GenRandomFileDirsRecurse(mnt, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 4));
         assert(n == 0);
     }
 }
@@ -530,7 +530,7 @@ void GameFilesystemGen::GenerateMediaDir(GameFilesystemNode& parent, Rng& rng)
         auto media = AddNodeWithUniqueName(*mediaNode, NEW_NODE("cdrom", Directory, rng));
         assert(media);
 
-        auto n = GenRandomFileDirsRecurse(media, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 5));
+        auto n = GenRandomFileDirsRecurse(media, rng, Helper::GenerateRandomInt<Rng, std::size_t>(rng, 1, 4));
         assert(n == 0);
     }
 }

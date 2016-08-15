@@ -160,7 +160,7 @@ void Game::ResetPlayerStats()
     playerStats_.SetMaxMana(1000);
     playerStats_.SetMana(1000);
 
-    playerStats_.SetMoveSpeed(75.0f);
+    playerStats_.SetMoveSpeed(77.5f);
 }
 
 

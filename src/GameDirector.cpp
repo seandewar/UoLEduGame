@@ -282,19 +282,19 @@ void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
 {
     if (area && area->GetRelatedNode()) {
         int targetEnemies = Helper::GenerateRandomInt<int>(area->GetRelatedNode()->GetChildrenCount() / 2,
-            std::max<int>(3, static_cast<std::size_t>(area->GetRelatedNode()->GetChildrenCount() * 1.6f)));
+            std::max<int>(3, static_cast<std::size_t>(area->GetRelatedNode()->GetChildrenCount() * 1.25f)));
         printf("Target enemies for floor: %d\n", targetEnemies);
 
         // select enemy types that can be spawned
         std::vector<EnemyType> spawnableEnemies;
 
-        if (difficultyMul < 7.0f) {
+        if (difficultyMul < 8.0f) {
             spawnableEnemies.emplace_back(EnemyType::GreenBlobBasic);
         }
-        if (difficultyMul >= 1.0f && difficultyMul < 8.0f) {
+        if (difficultyMul >= 1.0f) {
             spawnableEnemies.emplace_back(EnemyType::BlueBlobBasic);
         }
-        if (difficultyMul >= 2.0f && difficultyMul < 9.0f) {
+        if (difficultyMul >= 2.0f) {
             spawnableEnemies.emplace_back(EnemyType::RedBlobBasic);
         }
         if (difficultyMul >= 3.0f) {

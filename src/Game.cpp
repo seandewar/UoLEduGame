@@ -1667,16 +1667,28 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
         std::ostringstream oss;
 
         oss << "The File System Dungeon is a game made in 2016 by\n";
-        oss << "Sean Dewar for the University of Leicester.\n\n";
+        oss << "Sean Dewar for the University of Leicester\n";
+        oss << "(le.ac.uk).\n\n";
 
-        oss << "The game is written in C++ and uses SFML, which is\n";
-        oss << "distributed under the zlib/png license.\n\n";
+        oss << "The game is written in C++ and uses SFML\n";
+        oss << "(sfml-dev.org), which is distributed under the\n";
+        oss << "zlib/png license.\n\n";
 
-        oss << "as3sfxr was used for the creation of sounds used\n";
-        oss << "within the game. Sounds created using as3sfxr are\n";
-        oss << "distributed under the CC0 license.\n\n";
+        oss << "as3sfxr (superflashbros.net/as3sfxr) was used for\n";
+        oss << "the creation of sounds used within the game.\n";
+        oss << "Sounds created using as3sfxr are distributed\n";
+        oss << "under the CC0 license.\n\n";
 
-        oss << "Special thanks to my good friend Joshua Pitcher for\n";
+        oss << "The game uses the Press Start Regular (distributed\n";
+        oss << "under the Bitstream Vera Fonts license) and\n";
+        oss << "Press Start 2P (distributed under the OFL license)\n";
+        oss << "fonts by codeman38 (zone38.net).\n\n";
+
+        oss << "Special thanks to my good friends Joshua Pitcher,\n";
+        oss << "Matthew Sparrow and Joshua Berry for kindly\n";
+        oss << "playtesting the game and providing valuable feedback!\n\n";
+
+        oss << "Additional thanks again to Joshua Pitcher for\n";
         oss << "providing the chest sprites used within the game!\n\n";
 
         sf::Text menuAbout(oss.str(), GameAssets::Get().altFont, 12);
@@ -1689,14 +1701,14 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
         sf::Sprite menuUoLLogo(GameAssets::Get().uolLogo);
         menuUoLLogo.setScale(0.5f, 0.5f);
         menuUoLLogo.setPosition(0.5f * (target.getView().getSize().x - menuUoLLogo.getGlobalBounds().width) -
-            125.0f, 450.0f);
+            125.0f, 590.0f);
 
         target.draw(menuUoLLogo);
 
         sf::Sprite menuSfmlLogo(GameAssets::Get().sfmlLogo);
         menuSfmlLogo.setScale(0.5f, 0.5f);
         menuSfmlLogo.setPosition(0.5f * (target.getView().getSize().x - menuSfmlLogo.getGlobalBounds().width) +
-            125.0f, 450.0f);
+            125.0f, 590.0f);
 
         target.draw(menuSfmlLogo);
     }

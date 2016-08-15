@@ -37,11 +37,11 @@ todo   = scheduled
 [projectiles]
 [Objective system finished + floor nav] 
 [Chest class rolls items when opened (dungeon gen only spawns special items in chest)]
->[game state, menu,] win & [death + penalty]
+[game state, menu, win & death + penalty]
 [GameFilesystemGen usr & lib & mnt & media]
 [Procedural ent alivestats based on difficulty and seed]
 [Questions for each item with UI and chest trigger]
 [altar + BETTER ALTAR SPRITE!!!1 Maybe change artefacts to pages & altar to tp book!!?!?!?]
->Boss?
-Linux port
+[Boss?]
+>Linux port
 [AUDIO]

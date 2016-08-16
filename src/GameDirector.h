@@ -132,6 +132,8 @@ public:
     void BossDefeated();
     void EndGame();
 
+    void PlayerKilled(WorldArea* area);
+
     inline GameFilesystemNode* GetCurrentArtefactNode()
     { 
         return objective_ == GameObjectiveType::CollectArtefact ? objectiveFsNode_ : nullptr;

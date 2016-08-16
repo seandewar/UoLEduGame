@@ -218,6 +218,31 @@ void DungeonGuardian::TickAnimations()
 }
 
 
+void DungeonGuardian::PlayerKilled()
+{
+    auto stats = GetStats();
+
+    if (!stats || !stats->IsAlive()) {
+        return;
+    }
+
+    // heal some health
+    if (stats->GetHealth() < stats->GetMaxHealth()) {
+        Game::Get().AddMessage("The Dungeon Guardian restores some health...", sf::Color(255, 255, 255));
+
+        stats->ApplyHealing(std::max<u32>(100, 
+            Helper::GenerateRandomInt<u32>(stats->GetMaxHealth() / 25, stats->GetMaxHealth() / 5)));
+
+        GameAssets::Get().drainSound.play();
+    }
+
+    // schedule next action
+    if (actionTimeLeft_ > sf::seconds(0.75f)) {
+        actionTimeLeft_ = sf::seconds(0.75f);
+    }
+}
+
+
 void DungeonGuardian::Tick()
 {
     auto area = GetAssignedArea();

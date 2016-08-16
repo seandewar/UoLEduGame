@@ -449,6 +449,7 @@ void PlayerEntity::Tick()
             Game::Get().AddMessage("Oh dear - you have been knocked out!", sf::Color(255, 0, 0));
 
             Game::Get().NotifyPlayerDeath();
+            Game::Get().GetDirector().PlayerKilled(GetAssignedArea());
             handledDeath_ = true;
         }
 

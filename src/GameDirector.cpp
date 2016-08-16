@@ -282,7 +282,7 @@ void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
 {
     if (area && area->GetRelatedNode()) {
         int targetEnemies = Helper::GenerateRandomInt<int>(area->GetRelatedNode()->GetChildrenCount() / 2,
-            std::max<int>(3, static_cast<std::size_t>(area->GetRelatedNode()->GetChildrenCount() * 1.25f)));
+            std::max<int>(3, static_cast<std::size_t>(area->GetRelatedNode()->GetChildrenCount() * 1.4f)));
         printf("Target enemies for floor: %d\n", targetEnemies);
 
         // select enemy types that can be spawned
@@ -567,6 +567,27 @@ void GameDirector::ReleaseTheBoss(WorldArea* spawnArea, const sf::Vector2f& pos)
     assert(boss);
 
     boss->SetPosition(pos);
+}
+
+
+void GameDirector::PlayerKilled(WorldArea* area)
+{
+    if (!area || objective_ != GameObjectiveType::BossFight) {
+        return;
+    }
+
+    printf("GameDirector - notify bosses player killed\n");
+
+    auto bosses = area->GetAllEntitiesOfType<DungeonGuardian>();
+
+    for (auto bossId : bosses) {
+        auto boss = area->GetEntity<DungeonGuardian>(bossId);
+        assert(boss);
+
+        if (boss->GetStats() && boss->GetStats()->IsAlive()) {
+            boss->PlayerKilled();
+        }
+    }
 }
 
 

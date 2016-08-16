@@ -86,6 +86,8 @@ public:
     DungeonGuardian();
     virtual ~DungeonGuardian();
 
+    void PlayerKilled();
+
     virtual void ResetStats(float difficultyMul);
     void ResetStats();
 

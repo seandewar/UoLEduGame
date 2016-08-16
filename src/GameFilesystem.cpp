@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <cassert>
+#include <iostream>
 
 
 GameFilesystemNode::GameFilesystemNode(const std::string& name, GameFilesystemNodeType type, RngInt randomId) :
@@ -26,7 +27,7 @@ GameFilesystemNode* GameFilesystemNode::AddChildNode(std::unique_ptr<GameFilesys
 
 	auto nodePtr = node.get();
 
-	if (node) {
+    if (node) {
         if (node->IsRootDirectoryNode()) {
             throw GameFilesystemException("A node of type RootDirectory cannot be a child of any other node!");
         }
@@ -40,11 +41,12 @@ GameFilesystemNode* GameFilesystemNode::AddChildNode(std::unique_ptr<GameFilesys
             }
         }
 
-		node->parentNode_ = this;
-		childNodes_.emplace_back(std::move(node));
+        node->parentNode_ = this;
+        childNodes_.emplace_back(std::move(node));
 
-		printf("Added: %s (%u)\n", GameFilesystem::GetNodePathString(*nodePtr).c_str(), nodePtr->GetRandomIdentifier());
-	}
+        std::cout << "Added: " << GameFilesystem::GetNodePathString(*nodePtr) << " ("
+            << nodePtr->GetRandomIdentifier() << ")\n";
+    }
 
 	return nodePtr;
 }

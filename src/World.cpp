@@ -1,6 +1,7 @@
 #include "World.h"
 
 #include <cassert>
+#include <iostream>
 
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
@@ -44,7 +45,7 @@ void WorldArea::AddDebugRenderableImpl(std::unique_ptr<sf::Drawable> drawable, c
 
 void WorldArea::ClearTiles()
 {
-	printf("Clearing all tiles from area...\n");
+	std::cout << "Clearing all tiles from area...\n";
 	for (auto& tile : tiles_) {
 		tile.reset();
 	}
@@ -564,7 +565,7 @@ bool World::PreloadFsArea(const std::string& fsAreaPath)
         auto fsNode = areaFs_.GetNodeFromPathString(fsAreaPath);
         if (!fsNode) {
             // area node not found
-            fprintf(stderr, "ERR World - could not preload area for '%s' - fs error!\n", fsAreaPath.c_str());
+            std::cerr << "ERR World - could not preload area for '" << fsAreaPath << "' - fs error!\n";
             return false;
         }
 
@@ -574,7 +575,7 @@ bool World::PreloadFsArea(const std::string& fsAreaPath)
 
         if (!area) {
             // area gen failed epically
-            fprintf(stderr, "ERR World - could not preload area for '%s' - area gen failed!\n", fsAreaPath.c_str());
+            std::cerr << "ERR World - could not preload area for '" << fsAreaPath << "' - area gen failed!\n";
             return false;
         }
 
@@ -583,7 +584,7 @@ bool World::PreloadFsArea(const std::string& fsAreaPath)
         auto result = areas_.emplace(fsAreaActualPath, std::move(area));
         assert(result.second);
 
-        printf("World - preloaded area for '%s'\n", fsAreaPath.c_str());
+        std::cerr << "World - preloaded area for '" << fsAreaPath << "'\n";
         return true;
     }
 }
@@ -592,7 +593,7 @@ bool World::PreloadFsArea(const std::string& fsAreaPath)
 bool World::NavigateToFsArea(const std::string& fsAreaPath)
 {
     if (!PreloadFsArea(fsAreaPath)) {
-        fprintf(stderr, "ERR World - could not switch to area for '%s' - preload failed!\n", fsAreaPath.c_str());
+        std::cerr << "ERR World - could not switch to area for '" << fsAreaPath << "' - preload failed!\n";
         return false;
     }
 
@@ -600,7 +601,7 @@ bool World::NavigateToFsArea(const std::string& fsAreaPath)
     assert(it != areas_.end());
     assert(it->second && it->second->GetRelatedNode());
 
-    printf("World - current area changed to loaded area for '%s'\n", fsAreaPath.c_str());
+    std::cout << "World - current area changed to loaded area for '" << fsAreaPath << "'\n";
     currentArea_ = it->second.get();
     currentAreaFsPath_ = GameFilesystem::GetNodePathString(*currentArea_->GetRelatedNode());
 

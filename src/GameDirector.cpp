@@ -1,5 +1,7 @@
 #include "GameDirector.h"
 
+#include <iostream>
+
 #include "Helper.h"
 #include "World.h"
 #include "Game.h"
@@ -207,13 +209,13 @@ void GameDirector::ResetUnusedQuestionsList()
     // selecting the first question to be given
     iActiveQuestion_ = unusedQuestions_.size();
 
-    printf("GameDirector - reset unused questions list\n");
+    std::cout << "GameDirector - reset unused questions list\n";
 }
 
 
 void GameDirector::StartNewSession(int maxArtefacts, WorldArea* currentArea, GameFilesystem* fs)
 {
-    printf("GameDirector - Creating new session!\n");
+    std::cout << "GameDirector - Creating new session!\n";
 
     numArtefacts_ = 0;
     maxArtefacts_ = maxArtefacts;
@@ -283,7 +285,7 @@ void GameDirector::PopulateWithEnemies(WorldArea* area, float difficultyMul)
     if (area && area->GetRelatedNode()) {
         int targetEnemies = Helper::GenerateRandomInt<int>(area->GetRelatedNode()->GetChildrenCount() / 2,
             std::max<int>(3, static_cast<std::size_t>(area->GetRelatedNode()->GetChildrenCount() * 1.4f)));
-        printf("Target enemies for floor: %d\n", targetEnemies);
+        std::cout << "Target enemies for floor: " << targetEnemies << "\n";
 
         // select enemy types that can be spawned
         std::vector<EnemyType> spawnableEnemies;
@@ -392,7 +394,7 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
         assert((!isArtefactFloor || foundArtefactChest) && "Artefact chest not found on artefact floor!!!!");
 
         // announce num chests closed again
-        printf("GameDirector - Closed %d chests on this floor.\n", numChestsClosed);
+        std::cout << "GameDirector - Closed " << numChestsClosed << " chests on this floor.\n";
         if (numChestsClosed > 0) {
             Game::Get().AddMessage(std::to_string(numChestsClosed) + (numChestsClosed > 1 ? " chests have " : " chest has ") +
                 "been mysteriously shut again on this floor...", sf::Color(255, 150, 0));
@@ -404,7 +406,7 @@ void GameDirector::PlayerChangedArea(WorldArea* newArea, bool updateEnemies)
             PopulateWithEnemies(newArea);
         }
 
-        printf("GameDirector - Updated area to reflect the current difficulty of %f\n", objectiveDifficultyMul_);
+        std::cout << "GameDirector - Updated area to reflect the current difficulty of " << objectiveDifficultyMul_ << "\n";
         objectiveUpdatedAreas_.emplace_back(newArea);
     }
 }
@@ -434,12 +436,12 @@ void GameDirector::AnswerQuestionResult(GameQuestionAnswerResult result, WorldAr
 
     if (GetCurrentQuestion()) {
         if (activeQuestionResult_ == GameQuestionAnswerResult::Correct) {
-            printf("GameDirector - Correct question answer! WEW\n");
+            std::cout << "GameDirector - Correct question answer! WEW\n";
             Game::Get().AddMessage("Nice - That was the correct answer!", sf::Color(0, 255, 0));
             Game::Get().AddMessage("You hear a click from the locking mechanism within the chest.", sf::Color(0, 255, 0));
         }
         else if (activeQuestionResult_ == GameQuestionAnswerResult::Wrong) {
-            printf("GameDirector - Incorrect question answer! :(\n");
+            std::cout << "GameDirector - Incorrect question answer! :(\n";
             Game::Get().AddMessage("Sorry - that answer is incorrect!", sf::Color(255, 0, 0));
 
             auto correctAnswer = GetCurrentQuestion()->GetAnswerChoice(GameQuestionAnswerChoice::CorrectChoice);
@@ -466,11 +468,12 @@ void GameDirector::ChooseNewArtefactLocation(WorldArea* newArea)
     objectiveFsNode_ = result.first;
     assert(objectiveFsNode_);
 
-    printf("GameDirector - Reservoir Sampling; %u file nodes considered.\n", result.second);
+    
+    std::cout << "GameDirector - Reservoir Sampling; " << result.second << " file nodes considered.\n";
 
     objectiveFsNodePath_ = GameFilesystem::GetNodePathString(*objectiveFsNode_);
 
-    printf("GameDirector - NEW ARTEFACT LOCATION: '%s'\n", objectiveFsNodePath_.c_str());
+    std::cout << "GameDirector - NEW ARTEFACT LOCATION: '" << objectiveFsNodePath_ << "'\n";
     Game::Get().AddMessage("An artefact piece is in the " + objectiveFsNodePath_ + " chest!",
         sf::Color(255, 150, 0));
 
@@ -522,7 +525,7 @@ void GameDirector::NewObjective(float newDifficultyMul)
     objectiveDifficultyMul_ = newDifficultyMul;
     objectiveUpdatedAreas_.clear();
 
-    printf("GameDirector - NEW OBJECTIVE: difficulty %f\n", objectiveDifficultyMul_);
+    std::cout << "GameDirector - NEW OBJECTIVE: difficulty " << objectiveDifficultyMul_ << "\n";
 }
 
 
@@ -540,7 +543,7 @@ void GameDirector::FoundArtefact(WorldArea* currentArea)
             // all artefacts found, next objective is altar in /
             objective_ = GameObjectiveType::RootArtefactAltar;
 
-            printf("GameDirector - ALL ARTEFACTS FOUND!\n");
+            std::cout << "GameDirector - ALL ARTEFACTS FOUND!\n";
             Game::Get().AddMessage("Well done! You have found all " + std::to_string(maxArtefacts_) + " artefact pieces.",
                 sf::Color(255, 150, 0));
             Game::Get().AddMessage("Mysterious stairs have appeared within the gilded room on /",
@@ -559,7 +562,7 @@ void GameDirector::ReleaseTheBoss(WorldArea* spawnArea, const sf::Vector2f& pos)
 
     objective_ = GameObjectiveType::BossFight;
 
-    printf("GameDirector - RELEASING THE BOSS!!!!\n");
+    std::cout << "GameDirector - RELEASING THE BOSS!!!!\n";
     Game::Get().AddMessage("The gilded stairs are suddenly engulfed in a magical flame!", sf::Color(255, 0, 0));
     Game::Get().AddMessage("The Dungeon Guardian has been awoken!", sf::Color(255, 0, 0));
     
@@ -576,7 +579,7 @@ void GameDirector::PlayerKilled(WorldArea* area)
         return;
     }
 
-    printf("GameDirector - notify bosses player killed\n");
+    std::cout << "GameDirector - notify bosses player killed\n";
 
     auto bosses = area->GetAllEntitiesOfType<DungeonGuardian>();
 
@@ -599,7 +602,7 @@ void GameDirector::BossDefeated()
 
     objective_ = GameObjectiveType::Complete;
 
-    printf("GameDirector - BOSS DEFEATED!!!!\n");
+    std::cout << "GameDirector - BOSS DEFEATED!!!!\n";
     Game::Get().AddMessage("Congratulations! The Dungeon Guardian has been defeated!", sf::Color(255, 150, 0));
     Game::Get().AddMessage("The magical flames blocking the gilded stairs have been doused!", sf::Color(255, 0, 255));
     Game::Get().AddMessage("Ascend the mysterious stairs to finally exit the dungeon!", sf::Color(255, 0, 255));
@@ -616,7 +619,7 @@ void GameDirector::EndGame()
 
     objective_ = GameObjectiveType::End;
 
-    printf("GameDirector - Game ended!\n");
+    std::cout << "GameDirector - Game ended!\n";
     Game::Get().AddMessage("Well done - you win!");
 
     GameAssets::Get().invincibilitySound.play();

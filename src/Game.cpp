@@ -1,5 +1,7 @@
 #include "Game.h"
 
+#include <iostream>
+
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
@@ -13,16 +15,16 @@
 
 
 #define LOAD_FROM_FILE(asset, assetPath) \
-    printf("Loading asset " #assetPath "..\n"); \
+    std::cout << "Loading asset " #assetPath "..\n"; \
     if (!asset.loadFromFile(assetPath)) { \
-        fprintf(stderr, "Failed to load asset " #assetPath "!\n"); \
+        std::cerr << "Failed to load asset " #assetPath "!\n"; \
         return false; \
     }
 
 
 bool GameAssets::LoadAssets()
 {
-    printf("Loading game assets...\n");
+    std::cout << "Loading game assets...\n";
 
     // fonts
     LOAD_FROM_FILE(gameFont, "assets/Fonts/PressStart2P.ttf");
@@ -174,7 +176,7 @@ bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
     }
 
     if (playerId_ != Entity::InvalidId && !RemovePlayer()) {
-        printf("SpawnPlayer() - could not remove previous player!\n");
+        std::cout << "SpawnPlayer() - could not remove previous player!\n";
         return false;
     }
 
@@ -191,11 +193,11 @@ bool Game::SpawnPlayer(const sf::Vector2f* optionalStartPos)
     
     // set player location to a default start or start pos if provided
     if (!optionalStartPos) {
-        printf("Spawning player at default start location for area\n");
+        std::cout << "Spawning player at default start location for area\n";
         player->SetPositionToDefaultStart();
     }
     else {
-        printf("Spawning player at custom start location\n");
+        std::cout << "Spawning player at custom start location\n";
         player->SetPosition(*optionalStartPos);
     }
 
@@ -266,10 +268,10 @@ bool Game::ChangeLevel(const std::string& fsNodePath)
         }
 
         if (!startDownstairEnt) {
-            fprintf(stderr, "WARN - could not find corrisponding DownStairEntity to spawn player at!\n");
-            fprintf(stderr, " Will spawn at default start instead.\n");
-            fprintf(stderr, "\t(From '%s' to '%s')\n", GameFilesystem::GetNodePathString(*oldFsNode).c_str(),
-                GameFilesystem::GetNodePathString(*currentFsNode).c_str());
+            std::cerr << "WARN - could not find corrisponding DownStairEntity to spawn player at!\n";
+            std::cerr << " Will spawn at default start instead.\n";
+            std::cerr << "\t(From '" << GameFilesystem::GetNodePathString(*oldFsNode) << "' to '"
+                << GameFilesystem::GetNodePathString(*currentFsNode) << "')\n";
         }
 
         if (startDownstairEnt) {
@@ -348,7 +350,7 @@ bool Game::TeleportPlayerToObjective()
                 if (director_.GetCurrentArtefactNode()->GetName() == chestEnt->GetChestFsNodeName()) {
                     // tp player to artefact chest
                     if (GetPlayerEntity()) {
-                        printf("Teleported player to artefact chest.\n");
+                        std::cout << "Teleported player to artefact chest.\n";
                         GetPlayerEntity()->SetCenterPosition(chestEnt->GetCenterPosition());
                     }
 
@@ -364,7 +366,7 @@ bool Game::TeleportPlayerToObjective()
         }
 
         if (GetPlayerEntity()) {
-            printf("Teleported player to default start in root.\n");
+            std::cout << "Teleported player to default start in root.\n";
             return GetPlayerEntity()->SetPositionToDefaultStart();
         }
 

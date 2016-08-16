@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <iostream>
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
@@ -16,12 +17,12 @@ int main(int argc, char* argv[])
 	window.setFramerateLimit(targetFrameRate);
 
     if (!GameAssets::Get().LoadAssets()) {
-        fprintf(stderr, "ERROR - Failed to load game assets! Exiting\n");
+        std::cerr << "ERROR - Failed to load game assets! Exiting\n";
         return EXIT_FAILURE;
     }
 
     if (!Game::Get().Init()) {
-        fprintf(stderr, "ERROR - Failed to init game! Exiting\n");
+        std::cerr << "ERROR - Failed to init game! Exiting\n";
         return EXIT_FAILURE;
     }
 
@@ -49,7 +50,7 @@ int main(int argc, char* argv[])
 
         // automatically pause if window not in focus
         if (!window.hasFocus() && !Game::Get().IsPaused()) {
-            printf("Window lost focus - pausing game\n");
+            std::cout << "Window lost focus - pausing game\n";
             Game::Get().SetPaused(true);
         }
 
@@ -58,6 +59,6 @@ int main(int argc, char* argv[])
 		window.display();
 	}
 
-    printf("Exiting game\n");
+    std::cout << "Exiting game\n";
     return EXIT_SUCCESS;
 }

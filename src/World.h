@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <chrono>
+#include <cinttypes>
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shape.hpp>
@@ -164,8 +165,8 @@ public:
     EntityId AddEntity(std::unique_ptr<T>&& ent)
     {
         if (ent->assignedArea_ != nullptr) {
-            fprintf(stderr, "WARN!! Entity %s (id: %u, area ptr: %p) already assigned to another area!\n",
-                ent->GetName().c_str(), ent->GetAssignedId(), static_cast<void*>(ent->GetAssignedArea()));
+            std::cerr << "WARN!! Entity " << ent->GetName() << " (id: " << ent->GetAssignedId() << ", area ptr: "
+                << static_cast<void*>(ent->GetAssignedArea()) << ") already assigned to another area!\n";
 
             assert(!"Entity already assigned to area!");
             return Entity::InvalidId;
@@ -180,7 +181,7 @@ public:
             return Entity::InvalidId;
         }
 
-        printf("Adding new ent %s (ent id %u)\n", ent->GetName().c_str(), nextEntId_);
+        std::cout << "Adding new ent " << ent->GetName() << " (ent id " << nextEntId_ << ")\n";
         ent->assignedArea_ = this;
         ent->assignedId_ = nextEntId_;
         ents_.emplace(nextEntId_, std::move(ent));

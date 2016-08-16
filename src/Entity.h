@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Time.hpp>
@@ -36,7 +37,7 @@ public:
     inline void MarkForDeletion()
     {
         if (!markedForDeletion_) {
-            printf("Marked for delete ent %s (ent id %u)\n", GetName().c_str(), assignedId_);
+            std::cout << "Marked for delete ent " << GetName() << " (ent id " << assignedId_ << ")\n";
             markedForDeletion_ = true;
         }
     }

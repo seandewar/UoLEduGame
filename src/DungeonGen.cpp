@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 #include "Helper.h"
 #include "World.h"
@@ -46,7 +47,7 @@ bool DungeonAreaGen::AddPlayerStart(WorldArea& area)
         if (!area.CheckEntRectangleWalkable(sf::FloatRect(
             areaCenter.x - altarEnt->GetSize().x * 0.5f, areaCenter.y - altarEnt->GetSize().y * 0.5f,
             altarEnt->GetSize().x, altarEnt->GetSize().y))) {
-            fprintf(stderr, "ERR - DungeonAreaGen - No room to place AltarEntity at player start!\n");
+            std::cout << "ERR - DungeonAreaGen - No room to place AltarEntity at player start!\n";
 
             area.RemoveEntity(altarEnt->GetAssignedId());
             return false;
@@ -64,7 +65,7 @@ bool DungeonAreaGen::AddPlayerStart(WorldArea& area)
         if (!area.CheckEntRectangleWalkable(sf::FloatRect(
             areaCenter.x - upstairEnt->GetSize().x * 0.5f, areaCenter.y - upstairEnt->GetSize().x * 0.5f,
             upstairEnt->GetSize().x, upstairEnt->GetSize().y))) {
-            fprintf(stderr, "ERR - DungeonAreaGen - No room to place UpStairEntity for player start!\n");
+            std::cerr << "ERR - DungeonAreaGen - No room to place UpStairEntity for player start!\n";
 
             area.RemoveEntity(upstairEnt->GetAssignedId());
             return false;
@@ -616,8 +617,9 @@ bool DungeonAreaGen::PlaceChests(WorldArea& area, Rng& rng)
 
 void DungeonAreaGen::ConfigureGenSettings()
 {
-    printf("DungeonAreaGen - ConfigureGenSettings(); node '%s' has random identifier %u and %u children.\n",
-        GameFilesystem::GetNodePathString(node_).c_str(), node_.GetRandomIdentifier(), node_.GetChildrenCount());
+    std::cout << "DungeonAreaGen - ConfigureGenSettings(); node '" << GameFilesystem::GetNodePathString(node_)
+        << "' has random identifier " << node_.GetRandomIdentifier() << " and " << node_.GetChildrenCount()
+        << " children.\n";
 
     Rng rng(node_.GetRandomIdentifier());
 
@@ -644,27 +646,27 @@ void DungeonAreaGen::ConfigureGenSettings()
     passageGrowLengthMin_ = 4;
     passageGrowLengthMax_ = 6;
 
-    printf("DungeonAreaGen - ConfigureGenSettings(); settings for dungeon area generation:\n");
-    printf("\tgenSeed: %u\n", genSeed_);
-    printf("\tgenIterations: %d\n", genIterations_);
-    printf("\tgenMaxRetries: %d\n", genMaxRetries_);
-    printf("\tfallbackRoomSize: (%u x %u)\n", fallbackRoomWidth_, fallbackRoomHeight_);
-    printf("\tminStructureAmount: %d\n", minStructureAmount_);
-    printf("\tmaxStructureAmount: %d\n", maxStructureAmount_);
-    printf("\ttargetStructureAmount: %d\n", targetStructureAmount_);
-    printf("\tstructureChanceAfterTargetMet: %f\n", structureChanceAfterTargetMet_);
-    printf("\tfirstRoomWidth: (%u, %u)\n", firstRoomWidthMin_, firstRoomWidthMax_);
-    printf("\totherRoomsWidth: (%u, %u)\n", otherRoomsWidthMin_, otherRoomsWidthMax_);
-    printf("\troomPassageGrowAmount: (%d, %d)\n", roomPassageGrowAmountMin_, roomPassageGrowAmountMax_);
-    printf("\tpassageRetryGrowAmount: (%d, %d)\n", passageRetryGrowAmountMin_, passageRetryGrowAmountMax_);
-    printf("\tpassageGrowLength: (%u, %u)\n", passageGrowLengthMin_, passageGrowLengthMax_);
-    printf("\n");
+    std::cout << "DungeonAreaGen - ConfigureGenSettings(); settings for dungeon area generation:\n";
+    std::cout << "\tgenSeed: " << genSeed_ << "\n";
+    std::cout << "\tgenIterations: " << genIterations_ << "\n";
+    std::cout << "\tgenMaxRetries: " << genMaxRetries_ << "\n";
+    std::cout << "\tfallbackRoomSize: (" << fallbackRoomWidth_ << " x " << fallbackRoomHeight_ << ")\n";
+    std::cout << "\tminStructureAmount: " << minStructureAmount_ << "\n";
+    std::cout << "\tmaxStructureAmount: " << maxStructureAmount_ << "\n";
+    std::cout << "\ttargetStructureAmount: " << targetStructureAmount_ << "\n";
+    std::cout << "\tstructureChanceAfterTargetMet: " << structureChanceAfterTargetMet_ << "\n";
+    std::cout << "\tfirstRoomWidth: (" << firstRoomWidthMin_ << ", " << firstRoomWidthMax_ << ")\n";
+    std::cout << "\totherRoomsWidth: (" << otherRoomsWidthMin_ << ", " << otherRoomsWidthMax_ << ")\n";
+    std::cout << "\troomPassageGrowAmount: (" << roomPassageGrowAmountMin_ << ", " << roomPassageGrowAmountMax_ << ")\n";
+    std::cout << "\tpassageRetryGrowAmount: (" << roomPassageGrowAmountMin_ << ", " << passageRetryGrowAmountMax_ << ")\n";
+    std::cout << "\tpassageGrowLength: (" << passageGrowLengthMin_ << ", " << passageGrowLengthMax_ << ")\n";
+    std::cout << "\n";
 }
 
 
 bool DungeonAreaGen::GenerateFallbackArea(WorldArea& area, Rng& rng)
 {
-    fprintf(stderr, "DungeonAreaGen: WARN - Generating fallback area!!!\n");
+    std::cerr << "DungeonAreaGen: WARN - Generating fallback area!!!\n";
     if (!GenerateCenterRoom(area, rng, fallbackRoomWidth_, fallbackRoomHeight_)) {
         return false;
     }
@@ -687,14 +689,14 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
                 Helper::GenerateRandomInt<Rng, u32>(rng, firstRoomWidthMin_, firstRoomWidthMax_),
                 Helper::GenerateRandomInt<Rng, u32>(rng, firstRoomWidthMin_, firstRoomWidthMax_)
                 )) {
-                fprintf(stderr, "DungeonAreaGen: WARN - could not generate starting room!!!\n");
+                std::cout << "DungeonAreaGen: WARN - could not generate starting room!!!\n";
                 assert(!"Failed to generate starting room!!!");
                 return false;
             }
 
             // Place start point
             if (!AddPlayerStart(area)) {
-                fprintf(stderr, "DungeonAreaGen: WARN - could not add player start!\n");
+                std::cerr << "DungeonAreaGen: WARN - could not add player start!\n";
                 return false;
             }
         }
@@ -720,15 +722,15 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
 
     // check if we met the min structure requirement, fail if we didn't.
     if (currentStructureCount_ < minStructureAmount_) {
-        fprintf(stderr, "DungeonAreaGen: WARN - Failed to meet minimum structure count! (%d < %d)\n",
-            currentStructureCount_, minStructureAmount_);
+        std::cerr << "DungeonAreaGen: WARN - Failed to meet minimum structure count! ("
+            << currentStructureCount_ << " < " << minStructureAmount_ << ")\n";
         
         return false;
     }
     
     if (currentStructureCount_ < targetStructureAmount_) {
-        fprintf(stderr, "DungeonAreaGen: WARN - Target structure count wasn't met... (%d < %d)\n",
-            currentStructureCount_, targetStructureAmount_);
+        std::cout <<  "DungeonAreaGen: WARN - Target structure count wasn't met... ("
+            << currentStructureCount_ << " < " << targetStructureAmount_ << ")\n";
     }
 
     // place down stairs and chests
@@ -742,7 +744,8 @@ bool DungeonAreaGen::GenerateArea(WorldArea& area, Rng& rng)
 
 std::unique_ptr<WorldArea> DungeonAreaGen::GenerateNewArea(u32 w, u32 h)
 {
-    printf("DungeonAreaGen: Generating new area for node '%s'\n", GameFilesystem::GetNodePathString(node_).c_str());
+    std::cout << "DungeonAreaGen: Generating new area for node '" << GameFilesystem::GetNodePathString(node_)
+        << "'\n";
 
     Rng rng(genSeed_);
     std::unique_ptr<WorldArea> area;
@@ -759,22 +762,23 @@ std::unique_ptr<WorldArea> DungeonAreaGen::GenerateNewArea(u32 w, u32 h)
 
         // generate fallback area if we've used all our retries
         if (genTryCount > genMaxRetries_) {
-            fprintf(stderr, "DungeonAreaGen: WARN - Failed to generate area after %d retries - generating fallback area!!\n", genMaxRetries_);
+            std::cerr << "DungeonAreaGen: WARN - Failed to generate area after " << genMaxRetries_
+                << " retries - generating fallback area!!\n";
 
             // we've used up all our retries, fallback!
             if (!GenerateFallbackArea(*area, rng)) {
-                fprintf(stderr, "DungeonAreaGen: ERROR - FAILED TO GENERATE FALLBACK AREA!\n");
+                std::cout << "DungeonAreaGen: ERROR - FAILED TO GENERATE FALLBACK AREA!\n";
                 assert(!"Failed to generate fallback area!!!!");
                 return nullptr;
             }
 
-            printf("DungeonAreaGen: Finished generating FALLBACK area\n");
+            std::cout << "DungeonAreaGen: Finished generating FALLBACK area\n";
             break;
         }
         
         // generate area
         if (GenerateArea(*area, rng)) {
-            printf("DungeonAreaGen: Finished area generation: %d structure(s) [excludes start room]\n", currentStructureCount_);
+            std::cout << "DungeonAreaGen: Finished area generation: " << currentStructureCount_ << " structure(s) [excludes start room]\n";
             break;
         }
     }

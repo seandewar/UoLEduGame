@@ -551,20 +551,22 @@ void Game::HandleRespawnSacrificeInput()
         if (pInv) {
             if (pInv->GetMagicWeapon() && pInv->GetMagicWeapon()->GetAmount() > 0) {
                 // magic weapon
-                AddMessage("You lose your " + pInv->GetMagicWeapon()->GetItemName(), sf::Color(100, 0, 0));
                 pInv->GetMagicWeapon()->SetAmount(0);
+                AddMessage("You lose your " + pInv->GetMagicWeapon()->GetItemName(), sf::Color(100, 0, 0));
             }
 
             if (pInv->GetHealthPotions() && pInv->GetHealthPotions()->GetAmount() > 0) {
                 // health potions
-                AddMessage("You lose your Health Potions", sf::Color(100, 0, 0));
-                pInv->GetHealthPotions()->SetAmount(0);
+                auto removedPots = pInv->GetHealthPotions()->RemoveAmount(std::max(3,
+                    pInv->GetHealthPotions()->GetAmount() / 2));
+                AddMessage("You lose " + std::to_string(removedPots) + " of your Health Potions", sf::Color(100, 0, 0));
             }
 
             if (pInv->GetMagicPotions() && pInv->GetMagicPotions()->GetAmount() > 0) {
                 // magic potions
-                AddMessage("You lose your Magic Potions", sf::Color(100, 0, 0));
-                pInv->GetMagicPotions()->SetAmount(0);
+                auto removedPots = pInv->GetMagicPotions()->RemoveAmount(std::max(3,
+                    pInv->GetMagicPotions()->GetAmount() / 2));
+                AddMessage("You lose " + std::to_string(removedPots) + " of your Magic Potions", sf::Color(100, 0, 0));
             }
         }
 
@@ -1456,7 +1458,10 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
                     continue;
                 }
 
-                uiSacrificeItemLabel.setString("All of your Health Potions");
+                int potLossAmount = std::min(pInv->GetHealthPotions()->GetAmount(), 
+                    std::max(3, pInv->GetHealthPotions()->GetAmount() / 2));
+
+                uiSacrificeItemLabel.setString(std::to_string(potLossAmount) + " of your Health Potions");
                 uiSacrificeItemLabel.setFillColor(sf::Color(255, 100, 100));
             }
             else if (i == 3) {
@@ -1465,7 +1470,10 @@ void Game::RenderUIRespawnSacrifice(sf::RenderTarget& target)
                     continue;
                 }
 
-                uiSacrificeItemLabel.setString("All of your Magic Potions");
+                int potLossAmount = std::min(pInv->GetMagicPotions()->GetAmount(),
+                    std::max(3, pInv->GetMagicPotions()->GetAmount() / 2));
+
+                uiSacrificeItemLabel.setString(std::to_string(potLossAmount) + " of your Magic Potions");
                 uiSacrificeItemLabel.setFillColor(sf::Color(100, 100, 255));
             }
         }
@@ -1556,12 +1564,12 @@ void Game::RenderUIMenu(sf::RenderTarget& target)
 
     Helper::RenderTextWithDropShadow(target, menuTitleFs, sf::Vector2f(5.0f, 5.0f));
 
-    sf::Text menuCreds("By Sean Dewar", GameAssets::Get().altFont, 10);
-    menuCreds.setFillColor(sf::Color(200, 200, 200));
-    menuCreds.setPosition(0.5f * (target.getView().getSize().x - menuCreds.getGlobalBounds().width),
+    sf::Text menuVer("VERSION 1.3", GameAssets::Get().altFont, 10);
+    menuVer.setFillColor(sf::Color(200, 200, 200));
+    menuVer.setPosition(0.5f * (target.getView().getSize().x - menuVer.getGlobalBounds().width),
         105.0f);
 
-    Helper::RenderTextWithDropShadow(target, menuCreds);
+    Helper::RenderTextWithDropShadow(target, menuVer);
 
     sf::Text menuCont("Press ENTER to generate the dungeon & play!", GameAssets::Get().gameFont, 12);
     menuCont.setFillColor(sf::Color(255, 255, 0));

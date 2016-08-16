@@ -117,6 +117,7 @@ debugMode_(false),
 playerId_(Entity::InvalidId),
 state_(GameState::Menu1),
 mapMode_(false),
+isPaused_(false),
 scheduledNewGame_(false)
 {
     // add these so that they can be shuffled when the display question UI is invoked.
@@ -401,6 +402,7 @@ bool Game::NewGame()
     ResetPlayerStats();
     state_ = GameState::InGame;
     mapMode_ = false;
+    isPaused_ = false;
 
     playerInv_.ResetInventory();
 
@@ -759,43 +761,54 @@ void Game::Tick()
 
         // handle state specific input
         if (state_ == GameState::InGame) {
-            // handle map mode toggle
-            if (Game::IsKeyPressedFromEvent(sf::Keyboard::M) || Game::IsKeyPressedFromEvent(sf::Keyboard::Tab)) {
+            // handle pause toggle if not in display question interface
+            // (because it already uses Escape key to toggle)
+            if (!displayedQuestion_ && Game::IsKeyPressedFromEvent(sf::Keyboard::Escape)) {
+                // toggle pausing
+                isPaused_ = !isPaused_;
                 GameAssets::Get().selectSound.play();
-                mapMode_ = !mapMode_;
             }
 
-            // increment end timer if game still going
-            if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
-                director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
-                endPlayerTimeTaken_ += FrameTimeStep;
-            }
+            // do not tick certain input if paused
+            if (!isPaused_) {
+                // handle map mode toggle
+                if (Game::IsKeyPressedFromEvent(sf::Keyboard::M) || Game::IsKeyPressedFromEvent(sf::Keyboard::Tab)) {
+                    GameAssets::Get().selectSound.play();
+                    mapMode_ = !mapMode_;
+                }
 
-            // handle low player health beep
-            HandlePlayerLowHealthBeep();
+                // increment end timer if game still going
+                if (director_.GetCurrentObjectiveType() != GameObjectiveType::End &&
+                    director_.GetCurrentObjectiveType() != GameObjectiveType::NotStarted) {
+                    endPlayerTimeTaken_ += FrameTimeStep;
+                }
 
-            // handle input for player inputs, interfaces or inventory
-            HandlePlayerMoveInput();
+                // handle low player health beep
+                HandlePlayerLowHealthBeep();
 
-            // interface input
-            if (director_.GetCurrentObjectiveType() == GameObjectiveType::End &&
-                Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
-                // return to menu1
-                GameAssets::Get().successSound.play();
-                state_ = GameState::Menu1;
-            }
-            else if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
-                HandleRespawnSacrificeInput();
-            }
-            else if (displayedQuestion_) {
-                HandleDisplayedQuestionInput();
-            }
-            else {
-                HandleUseInventory();
-                
-                // use ent in player's target
-                if (player && IsKeyPressedFromEvent(sf::Keyboard::E)) {
-                    player->SetUseTargetThisFrame(true);
+                // handle input for player inputs, interfaces or inventory
+                HandlePlayerMoveInput();
+
+                // interface input
+                if (director_.GetCurrentObjectiveType() == GameObjectiveType::End &&
+                    Game::IsKeyPressedFromEvent(sf::Keyboard::Return)) {
+                    // return to menu1
+                    GameAssets::Get().successSound.play();
+                    state_ = GameState::Menu1;
+                }
+                else if (player && player->GetStats() && !player->GetStats()->IsAlive()) {
+                    HandleRespawnSacrificeInput();
+                }
+                else if (displayedQuestion_) {
+                    HandleDisplayedQuestionInput();
+                }
+                else {
+                    HandleUseInventory();
+
+                    // use ent in player's target
+                    if (player && IsKeyPressedFromEvent(sf::Keyboard::E)) {
+                        player->SetUseTargetThisFrame(true);
+                    }
                 }
             }
         }
@@ -820,6 +833,8 @@ void Game::Tick()
         }
 
         world_->SetDebugMode(debugMode_);
+        world_->SetPaused(isPaused_);
+
         world_->Tick();
     }
 }
@@ -970,30 +985,36 @@ void Game::RenderUIPlayerStats(sf::RenderTarget& target)
 
 void Game::RenderUIControls(sf::RenderTarget& target)
 {
-    if (!GetPlayerEntity()) {
-        return;
+    if (GetPlayerEntity()) {
+        // player-specific controls
+        sf::Text moveControls("Press W, A, S, D to move", GameAssets::Get().gameFont, 8);
+        moveControls.setFillColor(sf::Color(255, 255, 0));
+        moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
+            target.getView().getSize().y - 115.0f);
+
+        Helper::RenderTextWithDropShadow(target, moveControls);
+
+        sf::Text invControls("Press 1-4 to use inventory item", GameAssets::Get().gameFont, 8);
+        invControls.setFillColor(sf::Color(255, 255, 0));
+        invControls.setPosition(target.getSize().x - invControls.getGlobalBounds().width - 5.0f,
+            target.getView().getSize().y - 100.0f);
+
+        Helper::RenderTextWithDropShadow(target, invControls);
     }
-
-    sf::Text moveControls("Press W, A, S, D to move", GameAssets::Get().gameFont, 8);
-    moveControls.setFillColor(sf::Color(255, 255, 0));
-    moveControls.setPosition(target.getSize().x - moveControls.getGlobalBounds().width - 5.0f,
-        target.getView().getSize().y - 100.0f);
-
-    Helper::RenderTextWithDropShadow(target, moveControls);
-
-    sf::Text invControls("Press 1-4 to use inventory item", GameAssets::Get().gameFont, 8);
-    invControls.setFillColor(sf::Color(255, 255, 0));
-    invControls.setPosition(target.getSize().x - invControls.getGlobalBounds().width - 5.0f,
-        target.getView().getSize().y - 85.0f);
-
-    Helper::RenderTextWithDropShadow(target, invControls);
 
     sf::Text mapControls("Press M or TAB to toggle map mode", GameAssets::Get().gameFont, 8);
     mapControls.setFillColor(sf::Color(255, 255, 0));
     mapControls.setPosition(target.getSize().x - mapControls.getGlobalBounds().width - 5.0f,
-        target.getView().getSize().y - 70.0f);
+        target.getView().getSize().y - 85.0f);
 
     Helper::RenderTextWithDropShadow(target, mapControls);
+
+    sf::Text pauseControls("Press ESC to pause the game", GameAssets::Get().gameFont, 8);
+    pauseControls.setFillColor(sf::Color(255, 255, 0));
+    pauseControls.setPosition(target.getSize().x - pauseControls.getGlobalBounds().width - 5.0f,
+        target.getView().getSize().y - 70.0f);
+
+    Helper::RenderTextWithDropShadow(target, pauseControls);
 }
 
 
@@ -1847,6 +1868,45 @@ void Game::RenderUIEndStats(sf::RenderTarget& target)
 }
 
 
+void Game::RenderUIPaused(sf::RenderTarget& target)
+{
+    if (!isPaused_) {
+        return;
+    }
+
+    // render screen bg effect
+    sf::RectangleShape uiScreenBg(target.getView().getSize());
+    uiScreenBg.setPosition(sf::Vector2f());
+    uiScreenBg.setFillColor(sf::Color(0, 0, 0, 150));
+
+    target.draw(uiScreenBg);
+
+    // render window bg
+    sf::RectangleShape uiBg(sf::Vector2f(320.0f, 60.0f));
+    uiBg.setFillColor(sf::Color(20, 20, 20, 250));
+    uiBg.setOutlineColor(sf::Color(0, 0, 0));
+    uiBg.setOutlineThickness(-2.0f);
+    uiBg.setPosition(0.5f * (target.getView().getSize() - uiBg.getSize()));
+
+    target.draw(uiBg);
+
+    // render text
+    sf::Text pausedText("Game Paused", GameAssets::Get().gameFont, 16);
+    pausedText.setPosition(target.getView().getCenter() - 0.5f *
+        sf::Vector2f(pausedText.getGlobalBounds().width, pausedText.getGlobalBounds().height + 20.0f));
+
+    Helper::RenderTextWithDropShadow(target, pausedText);
+
+    // render resume label
+    sf::Text uiResumeLabel("Press ESC to resume.", GameAssets::Get().gameFont, 9);
+    uiResumeLabel.setPosition(uiBg.getPosition() +
+        sf::Vector2f(0.5f * (uiBg.getSize().x - uiResumeLabel.getGlobalBounds().width), 40.0f));
+    uiResumeLabel.setFillColor(sf::Color(255, 255, 0));
+
+    Helper::RenderTextWithDropShadow(target, uiResumeLabel);
+}
+
+
 void Game::Render(sf::RenderTarget& target)
 {
     target.clear();
@@ -1908,6 +1968,11 @@ void Game::Render(sf::RenderTarget& target)
             }
             else {
                 RenderUIPlayerUseTargetText(target);
+            }
+
+            // paused ui
+            if (isPaused_) {
+                RenderUIPaused(target);
             }
         }
         else if (state_ == GameState::Menu1 || state_ == GameState::MenuCredits) {

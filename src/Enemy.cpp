@@ -32,7 +32,7 @@ void Enemy::Render(sf::RenderTarget& target)
 {
     auto area = GetAssignedArea();
 
-    if (!area || Game::Get().IsInMapMode()) {
+    if (!area || Game::Get().IsInMapMode() || Game::Get().GetCurrentGameState() != GameState::InGame) {
         return;
     }
 

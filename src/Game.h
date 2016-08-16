@@ -151,6 +151,7 @@ class Game
 	std::unique_ptr<World> world_;
 
     bool mapMode_;
+    bool isPaused_;
 
     GameDirector director_;
 
@@ -222,6 +223,7 @@ class Game
     void HandlePlayerLowHealthBeep();
 
     void RenderUIMessages(sf::RenderTarget& target);
+    void RenderUIPaused(sf::RenderTarget& target);
     void RenderUILoadingNewGame(sf::RenderTarget& target);
     void RenderUILoadingArea(sf::RenderTarget& target);
     void RenderUILocation(sf::RenderTarget& target);
@@ -313,6 +315,9 @@ public:
     inline GameDirector& GetDirector() { return director_; }
 
     inline bool IsInMapMode() const { return mapMode_; }
+
+    inline void SetPaused(bool paused) { isPaused_ = paused; }
+    inline bool IsPaused() const { return isPaused_; }
 
     inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
     inline bool IsInDebugMode() const { return debugMode_; }

@@ -196,7 +196,7 @@ public:
 
     bool RemoveEntity(EntityId id);
 
-	void Tick();
+	void Tick(bool paused = false);
 	void Render(sf::RenderTarget& target, bool renderDebug = false);
 
 	BaseTile* GetTile(u32 x, u32 y);
@@ -385,6 +385,7 @@ public:
 class World
 {
     bool debugMode_;
+    bool isPaused_;
 
     GameFilesystem& areaFs_;
 
@@ -411,5 +412,8 @@ public:
 
     inline void SetDebugMode(bool debugMode) { debugMode_ = debugMode; }
     inline bool IsInDebugMode() const { return debugMode_; }
+
+    inline void SetPaused(bool paused) { isPaused_ = paused; }
+    inline bool IsPaused() const { return isPaused_; }
 };
 

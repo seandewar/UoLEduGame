@@ -47,6 +47,12 @@ int main(int argc, char* argv[])
 			}
 		}
 
+        // automatically pause if window not in focus
+        if (!window.hasFocus() && !Game::Get().IsPaused()) {
+            printf("Window lost focus - pausing game\n");
+            Game::Get().SetPaused(true);
+        }
+
 		// game loop
         Game::Get().RunFrame(window);
 		window.display();

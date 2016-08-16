@@ -102,7 +102,7 @@ bool WorldArea::RemoveTile(u32 x, u32 y)
 }
 
 
-void WorldArea::Tick()
+void WorldArea::Tick(bool paused)
 {
     // tick debug renderables timer
     for (auto it = debugRenderables_.begin(); it != debugRenderables_.end();) {
@@ -118,37 +118,40 @@ void WorldArea::Tick()
         }
     }
 
-    // tick tiles
-	for (u32 y = 0; y < h_; ++y) {
-		for (u32 x = 0; x < w_; ++x) {
-			auto& tile = tiles_[GetTileIndex(x, y)];
+    // if not paused, tick area
+    if (!paused) {
+        // tick tiles
+        for (u32 y = 0; y < h_; ++y) {
+            for (u32 x = 0; x < w_; ++x) {
+                auto& tile = tiles_[GetTileIndex(x, y)];
 
-			if (tile) {
-				tile->Tick();
-			}
-		}
-	}
-
-    // tick ents
-    for (auto& entInfo : ents_) {
-        auto& ent = entInfo.second;
-        assert(ent);
-
-        if (!ent->IsMarkedForDeletion()) {
-            ent->Tick();
+                if (tile) {
+                    tile->Tick();
+                }
+            }
         }
-    }
 
-    // remove ents marked for deletion
-    for (auto it = ents_.begin(); it != ents_.end();) {
-        auto& ent = it->second;
-        assert(ent);
+        // tick ents
+        for (auto& entInfo : ents_) {
+            auto& ent = entInfo.second;
+            assert(ent);
 
-        if (ent->IsMarkedForDeletion()) {
-            it = ents_.erase(it);
+            if (!ent->IsMarkedForDeletion()) {
+                ent->Tick();
+            }
         }
-        else {
-            ++it;
+
+        // remove ents marked for deletion
+        for (auto it = ents_.begin(); it != ents_.end();) {
+            auto& ent = it->second;
+            assert(ent);
+
+            if (ent->IsMarkedForDeletion()) {
+                it = ents_.erase(it);
+            }
+            else {
+                ++it;
+            }
         }
     }
 }
@@ -532,7 +535,7 @@ World::~World()
 void World::Tick()
 {
 	if (currentArea_) {
-		currentArea_->Tick();
+		currentArea_->Tick(isPaused_);
 	}
 }
 
